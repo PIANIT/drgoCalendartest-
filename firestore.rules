@@ -1,0 +1,21 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /* 일정 데이터 - 읽기/쓰기 허용 (기존 규칙 유지) */
+    match /events/{docId} {
+      allow read, write: if true;
+    }
+
+    /* FCM 토큰 - 클라이언트에서 쓰기 허용, 읽기는 서버만 */
+    match /fcm_tokens/{token} {
+      allow write: if true;
+      allow read:  if false;   /* Functions(서버)에서만 읽음 */
+    }
+
+    /* 발송 기록 - 서버 전용 */
+    match /sent_notifs/{docId} {
+      allow read, write: if false;
+    }
+  }
+}
