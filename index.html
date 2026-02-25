@@ -3,6 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- PWA + iOS 알림 지원 -->
+<link rel="manifest" href="./manifest.json" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Calendar" />
+<meta name="theme-color" content="#1a1207" />
 <title>캘린더</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -1344,39 +1352,174 @@ const messaging = getMessaging(app);
 ══════════════════════════════════════ */
 const VAPID_KEY = 'BGsiBvkaSe82KtiqQFGjxZNXmsXcY1p0jEv9F8eRMumKWzkJV878XRaFTlfTGgRnAEb2uRsWWj_g2oXpajig5uc'; // ← Firebase Console에서 발급한 키로 교체
 
+/* ── 알림 전송 공통 함수 ── */
+async function showNotification(title, body, tag='cal') {
+  try {
+    const opts = {
+      body,
+      icon:     _SW_ICON,
+      badge:    _SW_ICON,
+      tag,
+      renotify: true,
+      silent:   false,          /* OS 기본 알림음 사용 */
+      vibrate:  [300, 100, 300, 100, 300],  /* Android 진동 패턴 */
+      requireInteraction: false,
+      timestamp: Date.now(),
+    };
+
+    /* SW가 있으면 registration.showNotification 사용
+       → Windows 토스트, Android/iOS 알림 센터 모두 지원
+       → SW 없이 Notification() 만 쓰면 iOS에서 소리 안 남 */
+    const reg = _swReg
+      || (navigator.serviceWorker.controller ? await navigator.serviceWorker.ready : null);
+    if (reg) {
+      await reg.showNotification(title, opts);
+    } else {
+      new Notification(title, opts);
+    }
+
+    /* PC: 브라우저가 소리를 막는 경우 Web Audio API로 알림음 직접 재생 */
+    try {
+      const ctx  = new (window.AudioContext || window.webkitAudioContext)();
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.setValueAtTime(660, ctx.currentTime + 0.15);
+      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.30);
+      gain.gain.setValueAtTime(0.25, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.5);
+    } catch(_) {}
+
+  } catch(e) {
+    console.warn('showNotification 실패:', e);
+  }
+}
+
+/* 인라인 SVG를 data URL로 변환한 아이콘 (별도 파일 불필요) */
+const _SW_ICON = './icon-192.png';
+let _swReg = null;
+
 async function initFCM() {
   try {
+    /* 1. 알림 권한 요청 */
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
       console.log('알림 권한 거부됨');
       return;
     }
-    /* Service Worker 등록 */
-    const reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-    /* FCM 토큰 발급 */
-    const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
-    if (token) {
-      /* 토큰을 Firestore fcm_tokens 컬렉션에 저장 */
-      await setDoc(doc(db, 'fcm_tokens', token), {
-        token,
-        createdAt: serverTimestamp(),
-        ua: navigator.userAgent.slice(0, 200)
-      });
-      console.log('FCM 토큰 등록 완료');
+    console.log('알림 권한 허용됨');
+
+    /* 2. Service Worker 등록 */
+    try {
+      _swReg = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
+      console.log('Service Worker 등록 완료:', _swReg.scope);
+    } catch(swErr) {
+      console.warn('SW 등록 실패 (firebase-messaging-sw.js 파일 없을 수 있음):', swErr.message);
+      /* SW 없이도 포그라운드 알림은 동작 */
     }
-    /* 포그라운드 메시지 수신 */
+
+    /* 3. FCM 토큰 발급 및 저장 */
+    try {
+      const swReady = _swReg || await navigator.serviceWorker.ready;
+      const token = await getToken(messaging, {
+        vapidKey: VAPID_KEY,
+        serviceWorkerRegistration: swReady
+      });
+      if (token) {
+        await setDoc(doc(db, 'fcm_tokens', token), {
+          token,
+          createdAt: serverTimestamp(),
+          ua: navigator.userAgent.slice(0, 200)
+        });
+        console.log('FCM 토큰 등록 완료');
+      }
+    } catch(tokenErr) {
+      console.warn('FCM 토큰 발급 실패:', tokenErr.message);
+    }
+
+    /* 4. 포그라운드 메시지 수신 */
     onMessage(messaging, payload => {
-      const { title, body } = payload.notification || {};
-      if (title) new Notification(title, { body, icon: '/icon-192.png' });
+      console.log('포그라운드 메시지 수신:', payload);
+      const title = payload.notification?.title || payload.data?.title || '📅 일정 알림';
+      const body  = payload.notification?.body  || payload.data?.body  || '';
+      const tag   = payload.data?.eventId || 'cal';
+      showNotification(title, body, tag);
     });
+
   } catch(e) {
     console.warn('FCM 초기화 실패:', e.message);
   }
 }
 
+/* ── 앱 열려있을 때 자체 알림 체크 (Service Worker / Cloud Functions 없이도 동작) ── */
+let _lastNotifCheck = '';
+async function checkNotificationsNow() {
+  if (Notification.permission !== 'granted') return;
+  const now   = new Date();
+  const pad   = n => String(n).padStart(2,'0');
+  const hhmm  = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  const today = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+  const checkKey = `${today}_${hhmm}`;
+  if (checkKey === _lastNotifCheck) return;   /* 같은 분 중복 방지 */
+  _lastNotifCheck = checkKey;
+
+  events.forEach(ev => {
+    if (!ev.notifMinutes) return;
+    let notifTime = null;
+
+    if (ev.allDay || ev.notifMinutes === 'allday') {
+      /* 종일 → 당일 09:00 */
+      if (ev.startDate === today) notifTime = '09:00';
+    } else {
+      const mins = parseInt(ev.notifMinutes, 10);
+      if (isNaN(mins)) return;
+      if (!ev.startDate) return;
+      /* 알림 발송 시각 계산 */
+      const [h, m] = (ev.startTime || '09:00').split(':').map(Number);
+      const base   = new Date(`${ev.startDate}T${pad(h)}:${pad(m)}:00`);
+      const notifAt = new Date(base.getTime() - mins * 60000);
+      if (notifAt.toDateString() !== now.toDateString()) return;
+      notifTime = `${pad(notifAt.getHours())}:${pad(notifAt.getMinutes())}`;
+    }
+
+    if (notifTime !== hhmm) return;
+
+    /* 중복 방지: sessionStorage에 기록 */
+    const sentKey = `notif_sent_${ev._id}_${today}_${hhmm}`;
+    if (sessionStorage.getItem(sentKey)) return;
+    sessionStorage.setItem(sentKey, '1');
+
+    const title = `📅 ${ev.title || '(제목 없음)'}`;
+    let body = '';
+    if (ev.allDay || ev.notifMinutes === 'allday') {
+      body = `오늘 종일 일정입니다`;
+    } else {
+      const mins = parseInt(ev.notifMinutes, 10);
+      body = `${ev.startTime || ''} ${
+        mins === 0 ? '지금 시작합니다' :
+        mins < 60  ? `${mins}분 후 시작` :
+        mins === 60  ? '1시간 후 시작' :
+        mins === 120 ? '2시간 후 시작' : '내일 일정'
+      }${ev.location ? ' · ' + ev.location : ''}`;
+    }
+    showNotification(title, body, ev._id || 'cal');
+    console.log(`알림 발송: ${title} / ${body}`);
+  });
+}
+
+/* 매 30초마다 체크 (분 경계를 놓치지 않기 위해) */
+setInterval(checkNotificationsNow, 30000);
+
 /* 브라우저 지원 확인 후 초기화 */
 if ('Notification' in window && 'serviceWorker' in navigator) {
   initFCM();
+} else if ('Notification' in window) {
+  /* serviceWorker 미지원 환경에서도 권한 요청 */
+  Notification.requestPermission().then(p => console.log('알림 권한:', p));
 }
 
 const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
@@ -1940,6 +2083,19 @@ document.getElementById('startDate').addEventListener('change',()=>{
 });
 
 async function saveEvent(){
+  /* 날짜+시간 유효성 검사 */
+  if (!isAllDay) {
+    const sd = document.getElementById('startDate').value;
+    const ed = document.getElementById('endDate').value || sd;
+    const st = document.getElementById('startTime').value || '00:00';
+    const et = document.getElementById('endTime').value   || '00:00';
+    const startDT = new Date(`${sd}T${st}:00`);
+    const endDT   = new Date(`${ed}T${et}:00`);
+    if (endDT <= startDT) {
+      alert('일정 종료시간이 시작시간보다 빠릅니다.');
+      return;
+    }
+  }
   setSaving(true);
   try {
     const sd=document.getElementById('startDate').value;
@@ -3090,5 +3246,45 @@ function slideAnimate(el,toLeft,callback){
   },130);
 }
 </script>
+
+<!-- iOS PWA 설치 안내 팝업 -->
+<div id="iosInstallBanner" style="
+  display:none; position:fixed; bottom:0; left:0; right:0; z-index:9999;
+  background:#1e1810; border-top:1px solid rgba(200,176,138,0.3);
+  padding:16px 20px 32px; box-shadow:0 -4px 20px rgba(0,0,0,0.5);
+  font-family:var(--font-main);
+">
+  <button onclick="document.getElementById('iosInstallBanner').style.display='none'"
+    style="position:absolute;top:10px;right:14px;background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;">✕</button>
+  <div style="font-size:14px;font-weight:700;color:var(--accent);margin-bottom:8px;">📲 홈 화면에 추가하면 알림을 받을 수 있어요</div>
+  <div style="font-size:12px;color:var(--text-muted);line-height:1.7;">
+    1. 하단 <strong style="color:var(--text);">공유 버튼</strong> (□↑) 탭<br>
+    2. <strong style="color:var(--text);">"홈 화면에 추가"</strong> 선택<br>
+    3. 홈에서 앱처럼 실행 후 알림 허용
+  </div>
+</div>
+
+<script>
+/* iOS Safari 감지 → 홈 화면 추가 안내 */
+(function() {
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone === true;
+  if (isIOS && isSafari && !isStandalone) {
+    const dismissed = localStorage.getItem('ios_banner_dismissed');
+    if (!dismissed) {
+      setTimeout(() => {
+        document.getElementById('iosInstallBanner').style.display = 'block';
+      }, 3000);
+    }
+  }
+  document.getElementById('iosInstallBanner')
+    .querySelector('button')
+    .addEventListener('click', () => {
+      localStorage.setItem('ios_banner_dismissed', '1');
+    });
+})();
+</script>
+
 </body>
 </html>
