@@ -530,6 +530,55 @@
   .dt-row:hover { background:transparent; }
   .dt-label { font-family:var(--font-mono); font-size:10px; letter-spacing:0.12em; color:var(--text-muted); text-transform:uppercase; }
   .dt-input { background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:9px 12px; color:var(--text); font-family:var(--font-mono); font-size:14px; outline:none; transition:border-color 0.2s; width:100%; color-scheme:dark; cursor:pointer; } html.light .dt-input { color-scheme:light; }
+  /* 커스텀 time picker */
+  .time-picker-trigger {
+    cursor:pointer; user-select:none; text-align:center;
+    font-family:var(--font-mono); font-size:14px;
+    display:flex; align-items:center; justify-content:center;
+    letter-spacing:0.05em; width:auto;
+  }
+  .time-picker-trigger:hover { border-color:var(--accent); }
+  .time-picker-trigger.disabled { opacity:0.3; pointer-events:none; }
+
+  .time-picker-popup {
+    position:fixed; z-index:9999;
+    background:var(--surface2); border:1px solid var(--border);
+    border-radius:12px; overflow:hidden;
+    box-shadow:0 8px 32px rgba(0,0,0,0.5);
+    display:flex; flex-direction:column;
+    user-select:none; min-width:130px;
+  }
+  .tp-header {
+    display:flex; border-bottom:1px solid var(--border);
+    flex-shrink:0;
+  }
+  .tp-col-label {
+    flex:1; font-size:10px; font-family:var(--font-mono);
+    color:var(--text-muted); text-align:center;
+    padding:7px 0 6px; letter-spacing:0.12em;
+    background:var(--surface2);
+  }
+  .tp-col-label.divider-space { width:1px; flex:none; background:var(--border); }
+  .tp-body { display:flex; }
+  .tp-col {
+    display:flex; flex-direction:column;
+    flex:1; max-height:210px; overflow-y:auto;
+    scroll-snap-type:y mandatory;
+    scrollbar-width:none; padding:4px 0;
+  }
+  .tp-col::-webkit-scrollbar { display:none; }
+  .tp-item {
+    padding:8px 0; text-align:center;
+    font-family:var(--font-mono); font-size:15px;
+    color:var(--text-muted); border-radius:6px;
+    cursor:pointer; scroll-snap-align:start;
+    transition:all 0.12s; flex-shrink:0; margin:0 4px;
+  }
+  .tp-item:hover { background:var(--surface3,rgba(255,255,255,0.06)); color:var(--text); }
+  .tp-item.selected { background:rgba(200,176,138,0.2); color:var(--accent); font-weight:700; }
+  .tp-divider {
+    width:1px; background:var(--border); flex-shrink:0; align-self:stretch;
+  }
   .dt-input:focus { border-color:var(--accent); }
   .dt-input:disabled { opacity:0.3; cursor:not-allowed; }
 
@@ -1012,12 +1061,23 @@
         <div class="dt-row">
           <span class="dt-label">시작</span>
           <input class="dt-input" type="date" id="startDate" />
-          <input class="dt-input" type="time" id="startTime" value="09:00" />
+          <input type="hidden" id="startTime" value="09:00" />
+          <div class="time-picker-trigger dt-input" id="startTimeTrigger" data-target="startTime">09:00</div>
         </div>
         <div class="dt-row">
           <span class="dt-label">종료</span>
           <input class="dt-input" type="date" id="endDate" />
-          <input class="dt-input" type="time" id="endTime" value="10:00" />
+          <input type="hidden" id="endTime" value="10:00" />
+          <div class="time-picker-trigger dt-input" id="endTimeTrigger" data-target="endTime">10:00</div>
+        </div>
+        <!-- 개인의뢰 전용 한줄 날짜+시간 -->
+        <div id="goldDtRow" style="display:none;align-items:center;gap:6px;flex-wrap:nowrap;width:100%;">
+          <input class="dt-input" type="date" id="goldStartDate" style="flex:2;min-width:0;" />
+          <input type="hidden" id="goldStartTime" value="09:00" />
+          <div class="time-picker-trigger dt-input" id="goldStartTimeTrigger" data-target="goldStartTime" style="flex:1;min-width:0;">09:00</div>
+          <span style="color:var(--text-muted);font-size:13px;flex-shrink:0;">~</span>
+          <input type="hidden" id="goldEndTime" value="10:00" />
+          <div class="time-picker-trigger dt-input" id="goldEndTimeTrigger" data-target="goldEndTime" style="flex:1;min-width:0;">10:00</div>
         </div>
       </div>
 
@@ -1053,11 +1113,11 @@
       <div class="field-group">
         <div class="field-label">의뢰 유형 / 색상</div>
         <div class="color-row" id="colorRow">
-          <div class="color-dot active" data-color="gold">개인의뢰</div>
-          <div class="color-dot"        data-color="blue">사내업무</div>
-          <div class="color-dot"        data-color="red">휴가관련</div>
-          <div class="color-dot"        data-color="green">촬영관련</div>
-          <div class="color-dot"        data-color="purple">미팅/내방</div>
+          <div class="color-dot" data-color="gold">개인의뢰</div>
+          <div class="color-dot" data-color="blue">사내업무</div>
+          <div class="color-dot" data-color="red">휴가관련</div>
+          <div class="color-dot" data-color="green">촬영관련</div>
+          <div class="color-dot" data-color="purple">미팅/내방</div>
         </div>
       </div>
 
@@ -1150,6 +1210,19 @@
         </div>
         <div class="divider"></div>
         <div class="section-heading">결제 정보</div>
+        <div class="field-group" style="margin-bottom:12px;">
+          <label class="field-label" for="g_estimate_amount">견적 총액</label>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <input class="field-input" id="g_estimate_amount" placeholder="직접 입력하거나 아래 버튼으로 자동 추출" type="text" style="flex:1;" />
+            <button type="button" id="g_estimate_btn" onclick="runExtractEstimate()"
+              style="background:none;border:1px solid var(--border);color:var(--text-muted);border-radius:6px;padding:6px 10px;font-size:11px;cursor:pointer;white-space:nowrap;font-family:var(--font-main);transition:all 0.2s;"
+              onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+              onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">
+              🔍 금액 추출
+            </button>
+          </div>
+          <span id="g_estimate_status" style="font-size:11px;color:var(--text-muted);display:block;margin-top:4px;"></span>
+        </div>
         <div class="field-row">
           <div class="field-group">
             <div class="field-label">결제 여부</div>
@@ -1470,7 +1543,7 @@ function render() {
     return dateKey(realY, realM, cell.day);
   });
   const NUM_WEEKS = gridDates.length / 7;
-  const isSpanEv  = ev => ev.allDay !== false || ev.startDate !== (ev.endDate||ev.startDate);
+  const isSpanEv  = ev => ev.allDay !== false; /* 시간 일정은 날짜 넘어가도 단일 chip으로 표시 */
 
   const sorted = filteredEvents().map((ev,idx_)=>({ev,idx:events.indexOf(ev)})).sort((a,b) => {
     const aS=isSpanEv(a.ev), bS=isSpanEv(b.ev);
@@ -1673,8 +1746,11 @@ function setAllDay(val){
   if(val){ sel.style.display='none'; lbl.style.display=''; }
   else   { sel.style.display=''; lbl.style.display='none'; }
   document.getElementById('alldayTrack').classList.toggle('on',val);
-  document.getElementById('startTime').disabled=val||isLocked;
-  document.getElementById('endTime').disabled=val||isLocked;
+  /* hidden input은 disabled 불필요, trigger UI에 반영 */
+  ['startTimeTrigger','endTimeTrigger'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.classList.toggle('disabled', val||isLocked);
+  });
 }
 document.getElementById('alldayToggle').addEventListener('click',()=>{ if(isLocked) return; setAllDay(!isAllDay); });
 
@@ -1693,11 +1769,57 @@ function setColor(c){
   const badge=document.getElementById('typeBadge');
   badge.className='type-badge '+c;
   badge.textContent='● '+TYPE_LABELS[c];
-  const isGold=c==='gold';
-  document.getElementById('commonFields').style.display=isGold?'none':'flex';
+
+  const isGold   = c==='gold';
+  const isBlue   = c==='blue';
+  const isRed    = c==='red';
+
+  /* gold: goldTemplate 표시, 나머지: commonFields */
+  document.getElementById('commonFields').style.display  = isGold?'none':'flex';
   document.getElementById('commonFields').style.flexDirection='column';
-  document.getElementById('goldTemplate').style.display=isGold?'flex':'none';
-  document.getElementById('generalAttachSection').style.display=isGold?'none':'block';
+  document.getElementById('goldTemplate').style.display  = isGold?'flex':'none';
+  document.getElementById('generalAttachSection').style.display = isGold?'none':'block';
+
+  /* 사내업무(blue), 휴가관련(red): 일정관련옵션 + 특수옵션 숨김 */
+  const hideSchedSpecial = isBlue || isRed;
+  const schedFg = document.getElementById('scheduleOpts')?.closest('.field-group');
+  const spFg    = document.getElementById('specialOpts')?.closest('.field-group');
+  if (schedFg) schedFg.style.display = hideSchedSpecial ? 'none' : '';
+  if (spFg)    spFg.style.display    = hideSchedSpecial ? 'none' : '';
+
+  /* 사내업무(blue), 휴가관련(red): 이름/담당자 행 숨김 */
+  const nameFg = document.getElementById('modalName')?.closest('.field-group');
+  if (nameFg) nameFg.style.display = hideSchedSpecial ? 'none' : '';
+
+  /* 휴가관련(red): 주소(modalAddress) + 첨부파일 추가 숨김 */
+  const addrFg = document.getElementById('modalAddress')?.closest('.field-group');
+  if (addrFg) addrFg.style.display = isRed ? 'none' : '';
+  document.getElementById('generalAttachSection').style.display =
+    isGold ? 'none' : isRed ? 'none' : 'block';
+
+  /* 개인의뢰: 종일 숨기고 한줄 날짜+시간 레이아웃 */
+  updateDateTimeLayout(c);
+}
+
+function updateDateTimeLayout(c){
+  const isGold = c==='gold';
+  const alldayRow  = document.querySelector('.allday-row');
+  const dtRows     = document.querySelectorAll('.dt-row');
+  const goldDtRow  = document.getElementById('goldDtRow');
+  if (isGold){
+    /* 종일 토글 숨기기 */
+    if (alldayRow) alldayRow.style.display='none';
+    /* 기존 dt-row 숨기기 */
+    dtRows.forEach(r=>r.style.display='none');
+    /* 한줄 날짜+시간 row 표시 */
+    if (goldDtRow) goldDtRow.style.display='flex';
+    /* 종일 강제 해제 */
+    if (isAllDay) setAllDay(false);
+  } else {
+    if (alldayRow) alldayRow.style.display='';
+    dtRows.forEach(r=>r.style.display='');
+    if (goldDtRow) goldDtRow.style.display='none';
+  }
 }
 document.getElementById('colorRow').addEventListener('click',e=>{
   if (e.target.dataset.color&&!isLocked) setColor(e.target.dataset.color);
@@ -1776,9 +1898,10 @@ function setRadio(gid,val){
 })();
 
 function resetGoldFields(){
-  ['g_name','g_phone','g_platform','g_equipment','g_req_topic','g_req_detail','g_special','g_balance_amount'].forEach(id=>{
+  ['g_name','g_phone','g_platform','g_equipment','g_req_topic','g_req_detail','g_special','g_balance_amount','g_estimate_amount'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
+  const esEl=document.getElementById('g_estimate_status'); if(esEl) esEl.textContent='';
   const etcEl=document.getElementById('g_topic_etc'); if(etcEl) etcEl.value='';
   document.getElementById('g_topic_group').querySelectorAll('.radio-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('g_topic_etc_wrap').classList.remove('visible');
@@ -1792,7 +1915,8 @@ function loadGoldFields(ev){
   const g=ev.gold||{};
   const MAP={g_name:'name',g_phone:'phone',g_platform:'platform',
     g_equipment:'equipment',g_req_topic:'req_topic',g_req_detail:'req_detail',
-    g_special:'special',g_balance_amount:'balance_amount'};
+    g_special:'special',g_balance_amount:'balance_amount',
+    g_estimate_amount:'estimate_amount'};
   Object.entries(MAP).forEach(([id,key])=>{ const el=document.getElementById(id); if(el) el.value=g[key]||''; });
   /* 방송 주제 복원: 소통/먹방/게임/야외/기타 중 하나면 버튼 선택, 아니면 기타+입력란 */
   const TOPIC_VALS=['소통','먹방','게임','야외'];
@@ -1811,6 +1935,11 @@ function loadGoldFields(ev){
   setRadio('g_career_group',g.career||'처음'); setRadio('g_paid_group',g.paid||'미결제');
   setRadio('g_order_group',g.order||'X'); setRadio('g_balance_group',g.balance||'X');
   document.getElementById('g_balance_amount').value=g.balance_amount||'';
+  /* 견적 총액 + 상태 복원 */
+  const eaEl=document.getElementById('g_estimate_amount');
+  if(eaEl) eaEl.value=g.estimate_amount||'';
+  const esEl=document.getElementById('g_estimate_status');
+  if(esEl){ esEl.textContent=g.estimate_amount?'✅ 저장된 금액':''; esEl.style.color='#7ac87a'; }
   goldImgs={
     quote:(g.quoteImgs||[]).map(i=>({name:i.name,data:i.data})),
     ref:  (g.refImgs  ||[]).map(i=>({name:i.name,data:i.data})),
@@ -1828,6 +1957,7 @@ function collectGoldTextFields(){
     name:document.getElementById('g_name').value.trim(), phone:document.getElementById('g_phone').value.trim(),
     platform:document.getElementById('g_platform').value.trim(), topic,
     equipment:document.getElementById('g_equipment').value.trim(), req_topic:document.getElementById('g_req_topic').value.trim(),
+    estimate_amount:document.getElementById('g_estimate_amount')?.value.trim()||'',
     req_detail:document.getElementById('g_req_detail').value.trim(), special:document.getElementById('g_special').value.trim(),
     career:getRadio('g_career_group'), paid:getRadio('g_paid_group'), order:getRadio('g_order_group'),
     balance:getRadio('g_balance_group'), balance_amount:document.getElementById('g_balance_amount').value.trim(),
@@ -1846,6 +1976,16 @@ function openNewModal(dk){
   document.getElementById('endDate').value=dk;
   document.getElementById('startTime').value='09:00';
   document.getElementById('endTime').value='10:00';
+  /* goldDtRow 초기화 */
+  document.getElementById('goldStartDate').value=dk||'';
+  document.getElementById('goldStartTime').value='09:00';
+  document.getElementById('goldEndTime').value='10:00';
+  /* trigger 텍스트 초기화 */
+  ['startTimeTrigger','endTimeTrigger','goldStartTimeTrigger','goldEndTimeTrigger'].forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    const def={startTimeTrigger:'09:00',endTimeTrigger:'10:00',goldStartTimeTrigger:'09:00',goldEndTimeTrigger:'10:00'};
+    el.textContent=def[id]||'09:00';
+  });
   currentAttachments=[]; currentColor='gold'; isLocked=false;
   document.getElementById('notifSelect').value='';
   setColor('gold'); setAllDay(false); setSpecialOpts([],null);
@@ -1871,8 +2011,21 @@ function openModal(evIdx){
   document.getElementById('endDate').value=ev.endDate||ev.startDate||'';
   document.getElementById('startTime').value=ev.startTime||'09:00';
   document.getElementById('endTime').value=ev.endTime||'10:00';
+  /* goldDtRow 값 로드 */
+  document.getElementById('goldStartDate').value=ev.startDate||'';
+  document.getElementById('goldStartTime').value=ev.startTime||'09:00';
+  document.getElementById('goldEndTime').value=ev.endTime||'10:00';
+  /* trigger 텍스트 로드 */
+  const _st=ev.startTime||'09:00', _et=ev.endTime||'10:00';
+  ['startTimeTrigger','endTimeTrigger','goldStartTimeTrigger','goldEndTimeTrigger'].forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    el.textContent=id.includes('End')||id.includes('end') ? _et : _st;
+  });
   currentAttachments=ev.attachments?JSON.parse(JSON.stringify(ev.attachments)):[];
   currentColor=ev.color||'gold'; isLocked=ev.locked||false;
+  /* setColor 전에 goldTemplate/commonFields 초기화 (의뢰유형 버그 수정) */
+  document.getElementById('goldTemplate').style.display='none';
+  document.getElementById('commonFields').style.display='none';
   setColor(currentColor); setAllDay(ev.allDay!==false);
   if (currentColor==='gold') loadGoldFields(ev); else resetGoldFields();
   setSpecialOpts(ev.specialOpts||[], ev.schedOpt||null);
@@ -1907,6 +2060,18 @@ document.getElementById('startDate').addEventListener('change',()=>{
 });
 
 async function saveEvent(){
+  /* 개인의뢰(gold)이면 goldDtRow 값을 기본 필드에 반영 */
+  if (currentColor==='gold') {
+    const gsd = document.getElementById('goldStartDate').value;
+    const gst = document.getElementById('goldStartTime').value;
+    const get_ = document.getElementById('goldEndTime').value;
+    if (gsd) {
+      document.getElementById('startDate').value = gsd;
+      document.getElementById('endDate').value   = gsd;
+    }
+    if (gst) document.getElementById('startTime').value = gst;
+    if (get_) document.getElementById('endTime').value  = get_;
+  }
   /* 날짜+시간 유효성 검사 */
   if (!isAllDay) {
     const sd = document.getElementById('startDate').value;
@@ -1960,6 +2125,200 @@ async function deleteEvent(){
   closeModal();
 }
 
+
+/* ── 잠금 시 컴팩트 뷰 ── */
+/* ══════════════════════════════════════════
+   커스텀 Time Picker (10분 단위, 24시간 표기)
+   이벤트 위임 방식 - 중복 등록 없음
+══════════════════════════════════════════ */
+(function(){
+  let popup=null, currentTarget=null;
+
+  const fmt = (h,m) => String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+  const parseVal = v => { const [h,m]=(v||'09:00').split(':').map(Number); return [isNaN(h)?9:h, isNaN(m)?0:m]; };
+
+  function updateTrigger(targetId, h, m){
+    const t=document.getElementById(targetId+'Trigger');
+    if(t) t.textContent=fmt(h,m);
+    const inp=document.getElementById(targetId);
+    if(inp) inp.value=fmt(h,m);
+  }
+
+  window.closeTimePicker = function(){
+    if(popup){ popup.remove(); popup=null; currentTarget=null; }
+  };
+
+  function openPopup(trigger){
+    window.closeTimePicker();
+    const targetId = trigger.dataset.target;
+    currentTarget = targetId;
+    const inp = document.getElementById(targetId);
+    const [curH, curM] = parseVal(inp ? inp.value : '09:00');
+    const roundedM = Math.round(curM/10)*10 % 60;
+
+    popup = document.createElement('div');
+    popup.className = 'time-picker-popup';
+
+    /* ── 헤더 (레이블) - 스크롤 밖에 고정 ── */
+    const header = document.createElement('div'); header.className='tp-header';
+    const hLbl = document.createElement('div'); hLbl.className='tp-col-label'; hLbl.textContent='시';
+    const dLbl = document.createElement('div'); dLbl.className='tp-col-label divider-space';
+    const mLbl = document.createElement('div'); mLbl.className='tp-col-label'; mLbl.textContent='분';
+    header.appendChild(hLbl); header.appendChild(dLbl); header.appendChild(mLbl);
+
+    /* ── 바디 (스크롤 영역) ── */
+    const body = document.createElement('div'); body.className='tp-body';
+
+    /* 시 컬럼 */
+    const hCol = document.createElement('div'); hCol.className='tp-col';
+    for(let h=0;h<24;h++){
+      const item=document.createElement('div');
+      item.className='tp-item'+(h===curH?' selected':'');
+      item.textContent=String(h).padStart(2,'0');
+      item.dataset.h=h;
+      hCol.appendChild(item);
+    }
+
+    const divEl=document.createElement('div'); divEl.className='tp-divider';
+
+    /* 분 컬럼 */
+    const mCol = document.createElement('div'); mCol.className='tp-col';
+    [0,10,20,30,40,50].forEach(m=>{
+      const item=document.createElement('div');
+      item.className='tp-item'+(m===roundedM?' selected':'');
+      item.textContent=String(m).padStart(2,'0');
+      item.dataset.m=m;
+      mCol.appendChild(item);
+    });
+
+    /* 컬럼 클릭 이벤트 - 위임 */
+    hCol.addEventListener('click', e=>{
+      const item=e.target.closest('.tp-item'); if(!item) return;
+      hCol.querySelectorAll('.tp-item').forEach(i=>i.classList.remove('selected'));
+      item.classList.add('selected');
+      const mSel=mCol.querySelector('.tp-item.selected');
+      updateTrigger(targetId, parseInt(item.dataset.h), mSel?parseInt(mSel.dataset.m):0);
+    });
+    mCol.addEventListener('click', e=>{
+      const item=e.target.closest('.tp-item'); if(!item) return;
+      mCol.querySelectorAll('.tp-item').forEach(i=>i.classList.remove('selected'));
+      item.classList.add('selected');
+      const hSel=hCol.querySelector('.tp-item.selected');
+      updateTrigger(targetId, hSel?parseInt(hSel.dataset.h):0, parseInt(item.dataset.m));
+    });
+
+    body.appendChild(hCol); body.appendChild(divEl); body.appendChild(mCol);
+    popup.appendChild(header); popup.appendChild(body);
+    document.body.appendChild(popup);
+
+    /* 위치 계산 */
+    const rect=trigger.getBoundingClientRect();
+    let top=rect.bottom+6, left=rect.left;
+    const pw=popup.offsetWidth||130, ph=popup.offsetHeight||260;
+    if(top+ph>window.innerHeight-8) top=rect.top-ph-6;
+    if(left+pw>window.innerWidth-8) left=window.innerWidth-pw-8;
+    if(left<8) left=8;
+    popup.style.top=top+'px'; popup.style.left=left+'px';
+
+    /* 선택 항목 스크롤 */
+    requestAnimationFrame(()=>{
+      const selH=hCol.querySelector('.tp-item.selected');
+      if(selH) selH.scrollIntoView({block:'center',behavior:'instant'});
+    });
+  }
+
+  /* 이벤트 위임 - document에 한 번만 등록 */
+  document.addEventListener('click', e=>{
+    /* 팝업 내부 클릭은 무시 (각 컬럼에서 처리) */
+    if(popup && popup.contains(e.target)) return;
+    /* trigger 클릭 */
+    const trigger=e.target.closest('.time-picker-trigger');
+    if(trigger){
+      e.stopPropagation();
+      if(trigger.classList.contains('disabled')) return;
+      if(popup && currentTarget===trigger.dataset.target){ window.closeTimePicker(); return; }
+      openPopup(trigger);
+      return;
+    }
+    /* 외부 클릭 → 닫기 */
+    window.closeTimePicker();
+  }, true); /* capture 단계에서 처리 */
+
+  window.syncTimePicker = function(){};
+})();
+
+function _showLockedCompact(){
+  /* ── 1. datetime-section → 한줄 텍스트 ── */
+  const dtSec = document.querySelector('.datetime-section');
+  if (dtSec) dtSec.style.display='none';
+  let cdt = document.getElementById('_compactDt');
+  if (!cdt){ cdt=document.createElement('div'); cdt.id='_compactDt';
+    cdt.style.cssText='font-size:13px;color:var(--text);padding:6px 0 4px;font-family:var(--font-mono);'; }
+  const sd = document.getElementById('startDate').value||'';
+  const ed = document.getElementById('endDate').value||sd;
+  const st = document.getElementById('startTime').value||'';
+  const et = document.getElementById('endTime').value||'';
+  let timeText='';
+  if (isAllDay){ timeText = sd===ed ? `${sd}  종일` : `${sd} ~ ${ed}  종일`; }
+  else { timeText = sd===ed ? `${sd}  ${st} ~ ${et}` : `${sd} ${st}  ~  ${ed} ${et}`; }
+  cdt.textContent = '⏰  '+timeText;
+  dtSec.parentNode.insertBefore(cdt, dtSec.nextSibling);
+
+  /* ── 2. notifGroup 숨기기 ── */
+  const ng=document.getElementById('notifGroup'); if(ng) ng.style.display='none';
+
+  /* ── 3. 일정관련옵션 field-group 숨기기 ── */
+  const schedFg = document.getElementById('scheduleOpts')?.closest('.field-group');
+  if (schedFg) schedFg.style.display='none';
+
+  /* ── 4. 의뢰유형 field-group 숨기기 ── */
+  const colorFg = document.getElementById('colorRow')?.closest('.field-group');
+  if (colorFg) colorFg.style.display='none';
+
+  /* ── 5. 특수옵션 field-group 숨기기 ── */
+  const spFg = document.getElementById('specialOpts')?.closest('.field-group');
+  if (spFg) spFg.style.display='none';
+
+  /* ── 6. 세 항목을 한 줄 컴팩트 요약으로 합치기 ── */
+  const SCHED_ICONS={suggest:'💬제안',hope:'🙏희망',target:'🎯목표'};
+  const SP_LABELS={car:'🚗차량',brief:'💼제품',return:'←당김',group:'👥2인',urgent:'🚨긴급',ladder:'▤사다리'};
+
+  const parts=[];
+  /* 일정관련옵션 */
+  if (schedOpt) parts.push(SCHED_ICONS[schedOpt]||schedOpt);
+  /* 의뢰유형 (항상 표시) */
+  parts.push('📌'+(TYPE_LABELS[currentColor]||currentColor));
+  /* 특수옵션 */
+  const spActive=[...specialOpts].map(k=>SP_LABELS[k]||k);
+  if (spActive.length) parts.push(...spActive);
+
+  let cMeta = document.getElementById('_compactMeta');
+  if (!cMeta){ cMeta=document.createElement('div'); cMeta.id='_compactMeta';
+    cMeta.style.cssText='font-size:12px;color:var(--text-muted);padding:3px 0 6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;'; }
+  cMeta.innerHTML='';
+  parts.forEach(p=>{
+    const sp=document.createElement('span');
+    sp.style.cssText='background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:2px 8px;font-size:11px;white-space:nowrap;';
+    sp.textContent=p;
+    cMeta.appendChild(sp);
+  });
+  /* 삽입 위치: schedFg 또는 colorFg 중 앞쪽 기준 */
+  const insertAnchor = schedFg || colorFg || spFg;
+  if (insertAnchor) insertAnchor.parentNode.insertBefore(cMeta, insertAnchor);
+}
+
+function _hideLockedCompact(){
+  const dtSec = document.querySelector('.datetime-section');
+  if (dtSec) dtSec.style.display='';
+  ['_compactDt','_compactMeta'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.remove();
+  });
+  const ng=document.getElementById('notifGroup'); if(ng) ng.style.display='';
+  const colorFg=document.getElementById('colorRow')?.closest('.field-group'); if(colorFg) colorFg.style.display='';
+  /* 색상별 섹션 복원은 setColor가 처리 */
+  setColor(currentColor);
+}
+
 function applyLockState(){
   const modal=document.getElementById('modal');
   const lockBtn=document.getElementById('lockBtn');
@@ -1971,6 +2330,9 @@ function applyLockState(){
     lockBtn.textContent='🔒'; lockBtn.classList.add('locked'); lockBtn.title='고정 해제';
     banner.classList.add('visible'); modal.style.borderColor='rgba(200,176,138,0.35)';
     inputs.forEach(el=>el.disabled=true);
+    /* time trigger도 disabled */
+    document.querySelectorAll('.time-picker-trigger').forEach(t=>t.classList.add('disabled'));
+    if(window.closeTimePicker) window.closeTimePicker();
     document.getElementById('uploadZone').classList.add('locked-zone');
     document.querySelectorAll('.color-dot').forEach(d=>d.classList.add('locked-dot'));
     document.getElementById('alldayTrack').style.pointerEvents='none';
@@ -1980,10 +2342,14 @@ function applyLockState(){
     document.querySelectorAll('.radio-btn').forEach(b=>b.style.pointerEvents='none');
     document.getElementById('specialOpts').style.pointerEvents='none';
     document.getElementById('specialOpts').style.opacity='0.4';
+    /* 컴팩트 뷰 */
+    _showLockedCompact();
   } else {
     lockBtn.textContent='🔓'; lockBtn.classList.remove('locked'); lockBtn.title='내용 고정';
     banner.classList.remove('visible'); modal.style.borderColor='';
     inputs.forEach(el=>el.disabled=false); setAllDay(isAllDay);
+    /* time trigger disabled 해제 */
+    document.querySelectorAll('.time-picker-trigger').forEach(t=>t.classList.remove('disabled'));
     document.getElementById('uploadZone').classList.remove('locked-zone');
     document.querySelectorAll('.color-dot').forEach(d=>d.classList.remove('locked-dot'));
     document.getElementById('alldayTrack').style.pointerEvents='';
@@ -1994,6 +2360,8 @@ function applyLockState(){
     document.querySelectorAll('.radio-btn').forEach(b=>b.style.pointerEvents='');
     document.getElementById('specialOpts').style.pointerEvents='';
     document.getElementById('specialOpts').style.opacity='';
+    /* 컴팩트 뷰 해제 */
+    _hideLockedCompact();
   }
 }
 
@@ -2075,6 +2443,67 @@ function setupImgZone(zoneId,inputId,key){
 setupImgZone('quoteZone','quoteInput','quote');
 setupImgZone('refZone','refInput','ref');
 setupImgZone('roomZone','roomInput','room');
+
+/* ── 견적서 이미지 업로드 시 총액 자동 추출 ── */
+async function extractEstimateAmount(base64Data) {
+  const statusEl = document.getElementById('g_estimate_status');
+  const amountEl = document.getElementById('g_estimate_amount');
+  if (!statusEl || !amountEl) return;
+
+  const btn = document.getElementById('g_estimate_btn');
+  if (btn) btn.disabled = true;
+  statusEl.textContent = '🔍 분석 중...';
+  statusEl.style.color = 'var(--accent)';
+
+  try {
+    const mediaType = base64Data.split(';')[0].replace('data:', '') || 'image/jpeg';
+    const base64 = base64Data.split(',')[1];
+    if (!base64) throw new Error('이미지 데이터 없음');
+
+    /* Firebase Functions 프록시를 통해 호출 (API 키는 서버에 보관) */
+    const EXTRACT_URL = 'https://asia-northeast3-drgo-calender.cloudfunctions.net/extractEstimate';
+    const res = await fetch(EXTRACT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageBase64: base64, mediaType })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(`Functions 오류 ${res.status}: ${err.error || res.statusText}`);
+    }
+
+    const data = await res.json();
+    const text = data.amount?.trim() || '';
+
+    if (text && text !== '없음') {
+      amountEl.value = text;
+      statusEl.textContent = '✅ 추출 완료';
+      statusEl.style.color = '#7ac87a';
+    } else {
+      statusEl.textContent = '⚠️ 금액을 찾지 못했습니다';
+      statusEl.style.color = 'var(--text-muted)';
+    }
+  } catch(e) {
+    statusEl.textContent = '❌ ' + e.message;
+    statusEl.style.color = 'var(--red, #c87a7a)';
+    console.error('견적 추출 오류:', e);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+/* 🔍 금액 추출 버튼 클릭 시 실행 */
+window.runExtractEstimate = async function runExtractEstimate() {
+  const imgs = goldImgs?.quote || [];
+  if (!imgs.length) {
+    const statusEl = document.getElementById('g_estimate_status');
+    if (statusEl) { statusEl.textContent = '⚠️ 먼저 견적서 이미지를 업로드해주세요'; statusEl.style.color = 'var(--red, #c87a7a)'; }
+    return;
+  }
+  /* 가장 마지막 업로드 이미지 사용 */
+  await extractEstimateAmount(imgs[imgs.length - 1].data);
+}
 
 function handleFiles(files){
   Array.from(files).forEach(file=>{
@@ -2362,7 +2791,7 @@ document.getElementById('settingsResetBtn').addEventListener('click', () => {
 });
 
 /* ── Discord 테스트 알림 ── */
-const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1476134717832302777/1JOwl81U3ZDFEzm98g2FSqYVMcVOZjOB1EiLcCdRXXL_GnpgPDC_fv-cuwSKpOFq7SZ1';
+const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1476145856276074688/KojXiObA1sEw_qca-5HXaTTQpk_nNH4GMwrN85z0NLOcyX7sp_xKxEiIeYLM0ndTioPw';
 
 document.getElementById('discordTestBtn').addEventListener('click', async () => {
   const btn = document.getElementById('discordTestBtn');
@@ -2483,13 +2912,8 @@ const MONTH_KOR  = ['1월','2월','3월','4월','5월','6월','7월','8월','9�
 
 function switchPcView(view) {
   pcView = view;
-  document.getElementById('daysGrid').closest('.calendar-wrap').style.display = view==='month' ? '' : 'none';
-  document.getElementById('pcWeekView').style.display = view==='week' ? '' : 'none';
-  document.getElementById('pcDayView').style.display  = view==='day'  ? '' : 'none';
   document.querySelectorAll('.view-toggle-btn').forEach(btn=>btn.classList.toggle('active',btn.dataset.view===view));
-  if (view==='week') { if(!pcWeekStart) pcWeekStart=getPcWeekStart(); renderPcWeek(); }
-  else if (view==='day') { if(!pcDayDate) pcDayDate=todayStr; renderPcDay(); }
-  else render();
+  renderAll();
 }
 
 function getPcWeekStart() {
@@ -2504,8 +2928,11 @@ function addDaysPc(dk, n) {
 }
 
 function getEventsForDayPc(dk) {
-  return filteredEvents().filter(ev=>{ const sd=ev.startDate, ed=ev.endDate||sd; return sd<=dk&&ed>=dk; })
-    .sort((a,b)=>{ const aA=a.allDay!==false,bA=b.allDay!==false; if(aA&&!bA) return -1; if(!aA&&bA) return 1; return (a.startTime||'').localeCompare(b.startTime||''); });
+  return filteredEvents().filter(ev=>{
+    const sd=ev.startDate, ed=ev.endDate||sd;
+    if (ev.allDay !== false) return sd<=dk && ed>=dk;
+    return sd===dk;
+  }).sort((a,b)=>{ const aA=a.allDay!==false,bA=b.allDay!==false; if(aA&&!bA) return -1; if(!aA&&bA) return 1; return (a.startTime||'').localeCompare(b.startTime||''); });
 }
 
 function renderPcWeek() {
@@ -2518,7 +2945,7 @@ function renderPcWeek() {
 
   const wStart=pcWeekStart, wEnd=addDaysPc(wStart,6);
   const wDates=Array.from({length:7},(_,i)=>addDaysPc(wStart,i));
-  const isSpan=ev=>ev.allDay!==false||(ev.endDate&&ev.endDate!==ev.startDate);
+  const isSpan=ev=>ev.allDay!==false; /* 시간 일정은 날짜 넘어가도 단일 chip */
 
   const spanEvs=filteredEvents().map((ev)=>({ev,idx:events.indexOf(ev)}))
     .filter(({ev})=>isSpan(ev)&&ev.startDate<=wEnd&&(ev.endDate||ev.startDate)>=wStart)
@@ -2758,8 +3185,12 @@ function addDays(dk, n) { const d=new Date(dk+'T00:00:00'); d.setDate(d.getDate(
 function getWeekStart(dk) { const d=new Date(dk+'T00:00:00'); d.setDate(d.getDate()-d.getDay()); return fmtDate(d); }
 
 function getEventsForDate(dk) {
-  return filteredEvents().filter(ev=>{ const sd=ev.startDate, ed=ev.endDate||sd; return sd<=dk&&ed>=dk; })
-    .sort((a,b)=>{ if(a.allDay!==false&&b.allDay===false)return -1; if(a.allDay===false&&b.allDay!==false)return 1; return (a.startTime||'').localeCompare(b.startTime||''); });
+  return filteredEvents().filter(ev=>{
+    const sd=ev.startDate, ed=ev.endDate||sd;
+    /* 종일 일정만 날짜 범위로 표시, 시간 일정은 시작날짜에만 표시 */
+    if (ev.allDay !== false) return sd<=dk && ed>=dk;
+    return sd===dk;
+  }).sort((a,b)=>{ if(a.allDay!==false&&b.allDay===false)return -1; if(a.allDay===false&&b.allDay!==false)return 1; return (a.startTime||'').localeCompare(b.startTime||''); });
 }
 
 function renderMvEventCard(ev, evIdx, container) {
@@ -3057,11 +3488,20 @@ loadFilterState();
 applyFilterUI();
 
 function renderAll() {
-  if (isMobile()) {
+  const mobile = isMobile();
+  /* mobile/pc 뷰 전환 */
+  document.getElementById('mobileView').style.display  = mobile ? '' : 'none';
+  /* PC 뷰들: mobile이면 전부 숨김 */
+  const calWrap = document.getElementById('daysGrid')?.closest('.calendar-wrap');
+  if (calWrap) calWrap.style.display = (!mobile && pcView==='month') ? '' : (mobile ? 'none' : 'none');
+  document.getElementById('pcWeekView').style.display  = (!mobile && pcView==='week') ? '' : 'none';
+  document.getElementById('pcDayView').style.display   = (!mobile && pcView==='day')  ? '' : 'none';
+
+  if (mobile) {
     if (!mvWeekStart) mvWeekStart=getWeekStart(mvSelDate);
     if (mvMode==='month') renderMvMonth(); else if (mvMode==='week') renderMvWeek(); else { renderMvDay(); updateMvNav(); }
   } else {
-    if (pcView==='month') render();
+    if (pcView==='month') { if(calWrap) calWrap.style.display=''; render(); }
     else if (pcView==='week') { if(!pcWeekStart) pcWeekStart=getPcWeekStart(); renderPcWeek(); }
     else { if(!pcDayDate) pcDayDate=todayStr; renderPcDay(); }
   }

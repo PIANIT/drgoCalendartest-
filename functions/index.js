@@ -3,6 +3,7 @@
  * 매분 실행 → 알림 시각이 된 일정 → Discord로 메시지 전송
  */
 const { onSchedule }    = require('firebase-functions/v2/scheduler');
+const { onRequest }     = require('firebase-functions/v2/https');
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore, Timestamp } = require('firebase-admin/firestore');
 const https = require('https');
@@ -11,7 +12,7 @@ initializeApp();
 const db = getFirestore();
 
 /* ── Discord 웹훅 URL ── */
-const DISCORD_WEBHOOK = 'https://discord.com/api/webhooks/1476134717832302777/1JOwl81U3ZDFEzm98g2FSqYVMcVOZjOB1EiLcCdRXXL_GnpgPDC_fv-cuwSKpOFq7SZ1';
+const DISCORD_WEBHOOK = 'https://discord.com/api/webhooks/1476145856276074688/KojXiObA1sEw_qca-5HXaTTQpk_nNH4GMwrN85z0NLOcyX7sp_xKxEiIeYLM0ndTioPw';
 
 /* ── 유틸 ── */
 const KST = 9 * 60;
@@ -110,7 +111,9 @@ function buildMessage(ev) {
   if (ev.address)   fields.push({ name: '🏠 주소',  value: ev.address,   inline: false });
   if (ev.desc)      fields.push({ name: '📝 메모',  value: ev.desc.slice(0, 200), inline: false });
 
+  /* content용 변수는 이미 위에서 계산된 timeStr, typeLabel 재사용 */
   return {
+    content: `@everyone\n📅 **${ev.title || '(제목 없음)'}** | ${timeStr} | ${typeLabel}`,
     username:   '📅 캘린더 알림',
     avatar_url: 'https://cdn.discordapp.com/embed/avatars/0.png',
     embeds: [{
@@ -174,5 +177,90 @@ exports.sendScheduledNotifications = onSchedule(
     await Promise.all(jobs);
     await batch.commit();
     console.log(`완료: ${jobs.length}건`);
+  }
+);
+
+/* ══════════════════════════════════════════
+   견적서 이미지 → 총 금액 추출 (Gemini API 프록시)
+   무료 티어: 하루 1,500회
+══════════════════════════════════════════ */
+exports.extractEstimate = onRequest(
+  {
+    region: 'asia-northeast3',
+    memory: '256MiB',
+    cors: true,
+    secrets: ['GEMINI_API_KEY'],
+  },
+  async (req, res) => {
+    if (req.method === 'OPTIONS') { res.status(204).send(''); return; }
+    if (req.method !== 'POST')    { res.status(405).send('Method Not Allowed'); return; }
+
+    try {
+      console.log('extractEstimate 시작, method:', req.method);
+
+      const { imageBase64, mediaType } = req.body || {};
+      if (!imageBase64 || !mediaType) {
+        res.status(400).json({ error: 'imageBase64, mediaType 필드가 필요합니다.' });
+        return;
+      }
+      console.log('mediaType:', mediaType, '| base64 길이:', imageBase64.length);
+
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        console.error('GEMINI_API_KEY 없음');
+        res.status(500).json({ error: 'GEMINI_API_KEY가 설정되지 않았습니다.' });
+        return;
+      }
+      console.log('API 키 확인됨, 길이:', apiKey.length);
+
+      const body = JSON.stringify({
+        contents: [{
+          parts: [
+            { inline_data: { mime_type: mediaType, data: imageBase64 } },
+            { text: '이 이미지에서 총 견적 금액(최종 합계 금액)만 숫자와 "원" 단위로 추출해줘. 예: 2,966,100원. 금액만 답해줘. 견적서가 아니거나 금액이 없으면 "없음"이라고만 답해.' }
+          ]
+        }],
+        generationConfig: { maxOutputTokens: 100, temperature: 0 }
+      });
+
+      const apiPath = `/v1/models/gemini-2.0-flash-001:generateContent?key=${apiKey}`;
+      console.log('Gemini 요청 시작');
+
+      const response = await new Promise((resolve, reject) => {
+        const reqAI = https.request({
+          hostname: 'generativelanguage.googleapis.com',
+          path: apiPath,
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(body),
+          }
+        }, (r) => {
+          let data = '';
+          r.on('data', chunk => data += chunk);
+          r.on('end', () => resolve({ status: r.statusCode, body: data }));
+        });
+        reqAI.on('error', (e) => { console.error('https 요청 에러:', e); reject(e); });
+        reqAI.write(body);
+        reqAI.end();
+      });
+
+      console.log('Gemini 응답 status:', response.status);
+      console.log('Gemini 응답 body:', response.body.slice(0, 500));
+
+      if (response.status !== 200) {
+        res.status(500).json({ error: `Gemini API 오류: ${response.status}`, detail: response.body });
+        return;
+      }
+
+      const result = JSON.parse(response.body);
+      const text = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '없음';
+      console.log('추출 결과:', text);
+      res.json({ amount: text });
+
+    } catch (e) {
+      console.error('extractEstimate 예외:', e.message, e.stack);
+      res.status(500).json({ error: e.message });
+    }
   }
 );
