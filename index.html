@@ -1017,6 +1017,68 @@
     <button class="settings-reset-btn" id="settingsResetBtn">↺ 기본 색상으로 초기화</button>
 
     <div style="border-top:1px solid var(--border); padding-top:14px; margin-top:4px;">
+      <div class="settings-section-title">🌙 다크 테마 색상</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+        <div class="color-setting-row">
+          <span class="color-setting-label">메인 컬러 (포인트)</span>
+          <div class="color-setting-swatch" id="swatch-dark-accent">
+            <input type="color" id="colorPicker-dark-accent" />
+          </div>
+        </div>
+        <div class="color-setting-row">
+          <span class="color-setting-label">배경색 (가장 어두운)</span>
+          <div class="color-setting-swatch" id="swatch-dark-bg">
+            <input type="color" id="colorPicker-dark-bg" />
+          </div>
+        </div>
+        <div class="color-setting-row">
+          <span class="color-setting-label">카드/모달 색상</span>
+          <div class="color-setting-swatch" id="swatch-dark-surface">
+            <input type="color" id="colorPicker-dark-surface" />
+          </div>
+        </div>
+        <div class="color-setting-row">
+          <span class="color-setting-label">보조 배경색</span>
+          <div class="color-setting-swatch" id="swatch-dark-surface2">
+            <input type="color" id="colorPicker-dark-surface2" />
+          </div>
+        </div>
+      </div>
+      <button class="settings-reset-btn" id="resetDarkBtn" style="margin-top:8px;">↺ 다크 테마 초기화</button>
+    </div>
+
+    <div style="border-top:1px solid var(--border); padding-top:14px; margin-top:4px;">
+      <div class="settings-section-title">☀️ 라이트 테마 색상</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+        <div class="color-setting-row">
+          <span class="color-setting-label">메인 컬러 (포인트)</span>
+          <div class="color-setting-swatch" id="swatch-light-accent">
+            <input type="color" id="colorPicker-light-accent" />
+          </div>
+        </div>
+        <div class="color-setting-row">
+          <span class="color-setting-label">배경색 (가장 밝은)</span>
+          <div class="color-setting-swatch" id="swatch-light-bg">
+            <input type="color" id="colorPicker-light-bg" />
+          </div>
+        </div>
+        <div class="color-setting-row">
+          <span class="color-setting-label">카드/모달 색상</span>
+          <div class="color-setting-swatch" id="swatch-light-surface">
+            <input type="color" id="colorPicker-light-surface" />
+          </div>
+        </div>
+        <div class="color-setting-row">
+          <span class="color-setting-label">보조 배경색</span>
+          <div class="color-setting-swatch" id="swatch-light-surface2">
+            <input type="color" id="colorPicker-light-surface2" />
+          </div>
+        </div>
+      </div>
+      <button class="settings-reset-btn" id="resetLightBtn" style="margin-top:8px;">↺ 라이트 테마 초기화</button>
+    </div>
+
+    <div style="border-top:1px solid var(--border); padding-top:14px; margin-top:4px;">
       <div class="settings-section-title">Discord 알림</div>
       <button class="settings-reset-btn" id="discordTestBtn"
         style="border-color:rgba(88,101,242,0.4); color:#8891f2; margin-top:6px;">
@@ -2766,7 +2828,21 @@ document.getElementById('themeBtn').addEventListener('click',()=>{
 /* ══════════════════════════════════════
    색상 설정 패널
 ══════════════════════════════════════ */
-const COLOR_STORAGE_KEY = 'cal_custom_colors';
+const COLOR_STORAGE_KEY      = 'cal_custom_colors';
+const THEME_STORAGE_KEY      = 'cal_theme_colors';
+
+const DEFAULT_DARK_THEME = {
+  accent:   '#d4bc96',
+  bg:       '#111111',
+  surface:  '#1c1c1c',
+  surface2: '#272727',
+};
+const DEFAULT_LIGHT_THEME = {
+  accent:   '#9c7d48',
+  bg:       '#f7f4f0',
+  surface:  '#ffffff',
+  surface2: '#efebe4',
+};
 
 const DEFAULT_COLORS = {
   gold:   '#c8a870',
@@ -2851,6 +2927,109 @@ function resetAllColors() {
   Object.keys(DEFAULT_COLORS).forEach(key => applyColorToCss(key, DEFAULT_COLORS[key]));
 }
 
+/* ── 테마 배경색 적용 ── */
+function applyThemeColors(darkColors, lightColors) {
+  const root = document.documentElement;
+  /* 다크 테마: :root에 직접 적용 */
+  root.style.setProperty('--bg',       darkColors.bg);
+  root.style.setProperty('--surface',  darkColors.surface);
+  root.style.setProperty('--surface2', darkColors.surface2);
+  /* 라이트 테마: CSS 변수 override (html.light일 때 동적 적용) */
+  applyLightThemeVars(lightColors);
+}
+
+function applyLightThemeVars(lightColors) {
+  /* style 태그를 동적으로 주입해서 html.light 변수 오버라이드 */
+  let styleEl = document.getElementById('_light-theme-override');
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = '_light-theme-override';
+    document.head.appendChild(styleEl);
+  }
+  styleEl.textContent = `html.light {
+    --bg: ${lightColors.bg} !important;
+    --surface: ${lightColors.surface} !important;
+    --surface2: ${lightColors.surface2} !important;
+    ${lightColors.accent ? `--accent: ${lightColors.accent} !important;` : ''}
+  }`;
+}
+
+function applyDarkThemeVars(darkColors) {
+  const root = document.documentElement;
+  /* 현재 다크 모드면 즉시 반영, 아니면 :root 변수만 업데이트 */
+  const isDark = !document.documentElement.classList.contains('light');
+  if (isDark) {
+    root.style.setProperty('--bg',       darkColors.bg);
+    root.style.setProperty('--surface',  darkColors.surface);
+    root.style.setProperty('--surface2', darkColors.surface2);
+    if (darkColors.accent) root.style.setProperty('--accent', darkColors.accent);
+  }
+  /* :root 오버라이드 style 태그 */
+  let styleEl = document.getElementById('_dark-theme-override');
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = '_dark-theme-override';
+    document.head.appendChild(styleEl);
+  }
+  styleEl.textContent = `:root:not(.light) {
+    --bg: ${darkColors.bg} !important;
+    --surface: ${darkColors.surface} !important;
+    --surface2: ${darkColors.surface2} !important;
+    ${darkColors.accent ? `--accent: ${darkColors.accent} !important;` : ''}
+  }`;
+}
+
+function loadAndApplyThemeColors() {
+  const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || '{}');
+  const dark  = { ...DEFAULT_DARK_THEME,  ...(saved.dark  || {}) };
+  const light = { ...DEFAULT_LIGHT_THEME, ...(saved.light || {}) };
+  applyDarkThemeVars(dark);
+  applyLightThemeVars(light);
+  /* 설정 패널 picker 값 반영 */
+  const dp = { bg:'dark-bg', surface:'dark-surface', surface2:'dark-surface2' };
+  const lp = { bg:'light-bg', surface:'light-surface', surface2:'light-surface2' };
+  Object.entries(dp).forEach(([k, id]) => {
+    const el = document.getElementById(`colorPicker-${id}`);
+    const sw = document.getElementById(`swatch-${id}`);
+    if (el) el.value = dark[k];
+    if (sw) sw.style.background = dark[k];
+  });
+  Object.entries(lp).forEach(([k, id]) => {
+    const el = document.getElementById(`colorPicker-${id}`);
+    const sw = document.getElementById(`swatch-${id}`);
+    if (el) el.value = light[k];
+    if (sw) sw.style.background = light[k];
+  });
+}
+
+function saveThemeColor(theme, key, hex) {
+  const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || '{}');
+  if (!saved[theme]) saved[theme] = {};
+  saved[theme][key] = hex;
+  localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(saved));
+  const cur = { ...DEFAULT_DARK_THEME,  ...(saved.dark  || {}) };
+  const curl = { ...DEFAULT_LIGHT_THEME, ...(saved.light || {}) };
+  if (theme === 'dark')  applyDarkThemeVars(cur);
+  if (theme === 'light') applyLightThemeVars(curl);
+  const sw = document.getElementById(`swatch-${theme === 'dark' ? 'dark' : 'light'}-${key === 'surface2' ? 'surface2' : key}`);
+  if (sw) sw.style.background = hex;
+}
+
+function resetDarkTheme() {
+  const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || '{}');
+  delete saved.dark;
+  localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(saved));
+  applyDarkThemeVars(DEFAULT_DARK_THEME);
+  loadAndApplyThemeColors();
+}
+function resetLightTheme() {
+  const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || '{}');
+  delete saved.light;
+  localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(saved));
+  applyLightThemeVars(DEFAULT_LIGHT_THEME);
+  loadAndApplyThemeColors();
+}
+
 /* 패널 열기/닫기 */
 const settingsOverlay = document.getElementById('settingsOverlay');
 const settingsPanel   = document.getElementById('settingsPanel');
@@ -2867,6 +3046,19 @@ function openSettings() {
     if (picker) picker.value = hex;
     if (swatch) swatch.style.background = hex;
   });
+  /* 테마 색상 picker 반영 */
+  const savedTheme = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || '{}');
+  const darkT  = { ...DEFAULT_DARK_THEME,  ...(savedTheme.dark  || {}) };
+  const lightT = { ...DEFAULT_LIGHT_THEME, ...(savedTheme.light || {}) };
+  [['dark-accent', darkT.accent], ['dark-bg', darkT.bg], ['dark-surface', darkT.surface], ['dark-surface2', darkT.surface2],
+   ['light-accent', lightT.accent], ['light-bg', lightT.bg], ['light-surface', lightT.surface], ['light-surface2', lightT.surface2],
+  ].forEach(([key, hex]) => {
+    const picker = document.getElementById(`colorPicker-${key}`);
+    const swatch = document.getElementById(`swatch-${key}`);
+    if (picker && hex) picker.value = hex;
+    if (swatch && hex) swatch.style.background = hex;
+  });
+  loadAndApplyThemeColors();
 }
 function closeSettings() {
   settingsOverlay.classList.remove('open');
@@ -2876,6 +3068,40 @@ function closeSettings() {
 document.getElementById('settingsBtn').addEventListener('click', openSettings);
 document.getElementById('settingsCloseBtn').addEventListener('click', closeSettings);
 settingsOverlay.addEventListener('click', closeSettings);
+
+/* 다크 테마 picker 이벤트 */
+[
+  ['colorPicker-dark-accent',   'dark', 'accent'],
+  ['colorPicker-dark-bg',       'dark', 'bg'],
+  ['colorPicker-dark-surface',  'dark', 'surface'],
+  ['colorPicker-dark-surface2', 'dark', 'surface2'],
+].forEach(([id, theme, key]) => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', e => {
+    const sw = document.getElementById(`swatch-${theme}-${key}`);
+    if (sw) sw.style.background = e.target.value;
+    saveThemeColor(theme, key, e.target.value);
+  });
+});
+
+/* 라이트 테마 picker 이벤트 */
+[
+  ['colorPicker-light-accent',   'light', 'accent'],
+  ['colorPicker-light-bg',       'light', 'bg'],
+  ['colorPicker-light-surface',  'light', 'surface'],
+  ['colorPicker-light-surface2', 'light', 'surface2'],
+].forEach(([id, theme, key]) => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', e => {
+    const sw = document.getElementById(`swatch-${theme}-${key}`);
+    if (sw) sw.style.background = e.target.value;
+    saveThemeColor(theme, key, e.target.value);
+  });
+});
+
+document.getElementById('resetDarkBtn').addEventListener('click', resetDarkTheme);
+document.getElementById('resetLightBtn').addEventListener('click', resetLightTheme);
+
 document.getElementById('settingsResetBtn').addEventListener('click', () => {
   resetAllColors();
   /* picker 값도 초기화 */
@@ -3583,6 +3809,7 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
 /* 초기 로드 */
 loadFilterState();
 applyFilterUI();
+loadAndApplyThemeColors();
 
 function renderAll() {
   const mobile = isMobile();
