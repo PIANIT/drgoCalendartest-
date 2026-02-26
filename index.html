@@ -1210,20 +1210,8 @@
         </div>
         <div class="divider"></div>
         <div class="section-heading">결제 정보</div>
-        <div class="field-group" style="margin-bottom:12px;">
-          <label class="field-label" for="g_estimate_amount">견적 총액</label>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <input class="field-input" id="g_estimate_amount" placeholder="금액 입력" type="text" style="width:130px;flex:none;" />
-            <button type="button" id="g_estimate_btn" onclick="runExtractEstimate()"
-              style="background:none;border:1px solid var(--border);color:var(--text-muted);border-radius:6px;padding:6px 10px;font-size:11px;cursor:pointer;white-space:nowrap;font-family:var(--font-main);transition:all 0.2s;"
-              onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
-              onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">
-              🔍 금액 추출
-            </button>
-            <span id="g_estimate_status" style="font-size:11px;color:var(--text-muted);"></span>
-          </div>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start;margin-bottom:10px;">
+        <!-- 1행: 결제 여부 + 견적 총액 -->
+        <div style="display:flex;align-items:flex-end;gap:12px;margin-bottom:10px;flex-wrap:wrap;">
           <div class="field-group" style="flex:none;">
             <div class="field-label">결제 여부</div>
             <div class="radio-group" id="g_paid_group">
@@ -1231,6 +1219,20 @@
               <div class="radio-btn" data-val="결제완료">결제완료</div>
             </div>
           </div>
+          <div class="field-group" style="flex:1;min-width:0;">
+            <label class="field-label" for="g_estimate_amount">견적 총액</label>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <input class="field-input" id="g_estimate_amount" placeholder="금액 입력" type="text" style="flex:1;min-width:0;" />
+              <button type="button" id="g_estimate_btn" onclick="runExtractEstimate()"
+                style="background:none;border:1px solid var(--border);color:var(--text-muted);border-radius:6px;padding:6px 8px;font-size:11px;cursor:pointer;white-space:nowrap;font-family:var(--font-main);transition:all 0.2s;flex-shrink:0;"
+                onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+                onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">🔍 추출</button>
+              <span id="g_estimate_status" style="font-size:11px;color:var(--text-muted);white-space:nowrap;"></span>
+            </div>
+          </div>
+        </div>
+        <!-- 2행: 주문제품 + 배송완료 + 잔금여부 + 잔금금액 -->
+        <div style="display:flex;align-items:flex-end;gap:12px;margin-bottom:10px;flex-wrap:wrap;">
           <div class="field-group" style="flex:none;">
             <div class="field-label">주문 제품</div>
             <div class="radio-group" id="g_order_group">
@@ -1245,16 +1247,14 @@
               <div class="radio-btn" data-val="O">O</div>
             </div>
           </div>
-        </div>
-        <div class="field-row">
-          <div class="field-group">
+          <div class="field-group" style="flex:none;">
             <div class="field-label">잔금 여부</div>
             <div class="radio-group" id="g_balance_group">
               <div class="radio-btn active" data-val="X">X</div>
               <div class="radio-btn" data-val="O">O</div>
             </div>
           </div>
-          <div class="field-group">
+          <div class="field-group" id="g_balance_amount_outer" style="flex:1;min-width:0;">
             <div class="conditional-field" id="g_balance_amount_wrap">
               <label class="field-label" for="g_balance_amount">잔금 금액</label>
               <input class="field-input" id="g_balance_amount" placeholder="잔금 금액 (원)" type="text" />
