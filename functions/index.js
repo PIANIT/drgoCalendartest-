@@ -220,10 +220,11 @@ exports.extractEstimate = onRequest(
             { text: '이 이미지에서 총 견적 금액(최종 합계 금액)만 숫자와 "원" 단위로 추출해줘. 예: 2,966,100원. 금액만 답해줘. 견적서가 아니거나 금액이 없으면 "없음"이라고만 답해.' }
           ]
         }],
-        generationConfig: { maxOutputTokens: 100, temperature: 0 }
+        generationConfig: { maxOutputTokens: 256, temperature: 0 },
+        thinkingConfig: { thinkingBudget: 0 }
       });
 
-      const apiPath = `/v1/models/gemini-2.0-flash-001:generateContent?key=${apiKey}`;
+      const apiPath = `/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
       console.log('Gemini 요청 시작');
 
       const response = await new Promise((resolve, reject) => {
