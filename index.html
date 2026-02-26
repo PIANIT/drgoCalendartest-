@@ -1045,6 +1045,10 @@
       </div>
     </div>
     <div class="locked-banner" id="lockedBanner">🔒&nbsp; 이 일정은 고정되어 있습니다 — 수정하려면 자물쇠를 해제하세요</div>
+    <div id="balanceBanner" style="display:none;align-items:center;gap:8px;background:rgba(200,80,80,0.1);border:1px solid rgba(200,80,80,0.35);border-radius:8px;padding:8px 14px;font-family:var(--font-mono);font-size:12px;letter-spacing:0.05em;color:#e07070;margin:10px 28px 0;">
+      <span style="font-size:15px;">💰</span>
+      <span id="balanceBannerText">잔금 있음</span>
+    </div>
 
     <div class="modal-body">
       <div class="field-group">
@@ -1885,10 +1889,31 @@ function setRadio(gid,val){
     b.classList.remove('active','active-red','active-green');
     if (b.dataset.val===val) b.classList.add('active');
   });
-  if (gid==='g_balance_group')
+  if (gid==='g_balance_group') {
     document.getElementById('g_balance_amount_wrap').classList.toggle('visible',val==='O');
+    updateBalanceBanner();
+  }
 }
 ['g_career_group','g_paid_group','g_order_group','g_balance_group','g_topic_group','g_delivery_group'].forEach(initRadioGroup);
+
+/* 잔금 배너 업데이트 */
+function updateBalanceBanner() {
+  const banner = document.getElementById('balanceBanner');
+  const textEl = document.getElementById('balanceBannerText');
+  if (!banner || !textEl) return;
+  const isGold = currentColor === 'gold';
+  const amount = document.getElementById('g_balance_amount')?.value?.trim();
+  const balanceOn = getRadio('g_balance_group') === 'O';
+  if (isGold && balanceOn && amount) {
+    textEl.textContent = `잔금 ${amount} 있음`;
+    banner.style.display = 'flex';
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+/* 잔금 금액 입력 시 실시간 반영 */
+document.getElementById('g_balance_amount').addEventListener('input', updateBalanceBanner);
 
 /* 주문 제품 O/X → 배송완료 표시/숨김 */
 document.getElementById('g_order_group').addEventListener('click', e => {
@@ -1923,6 +1948,7 @@ function resetGoldFields(){
   setRadio('g_career_group','처음'); setRadio('g_paid_group','미결제');
   setRadio('g_order_group','X'); setRadio('g_balance_group','X'); setRadio('g_delivery_group','X');
   const dw=document.getElementById('g_delivery_wrap'); if(dw) dw.style.display='none';
+  const bb=document.getElementById('balanceBanner'); if(bb) bb.style.display='none';
   goldImgs={quote:[],ref:[],room:[]};
   renderImgGrid('quote'); renderImgGrid('ref'); renderImgGrid('room');
 }
@@ -1959,6 +1985,7 @@ function loadGoldFields(ev){
   if(eaEl) eaEl.value=g.estimate_amount||'';
   const esEl=document.getElementById('g_estimate_status');
   if(esEl){ esEl.textContent=g.estimate_amount?'✅ 저장된 금액':''; esEl.style.color='#7ac87a'; }
+  if(typeof updateBalanceBanner==='function') updateBalanceBanner();
   goldImgs={
     quote:(g.quoteImgs||[]).map(i=>({name:i.name,data:i.data})),
     ref:  (g.refImgs  ||[]).map(i=>({name:i.name,data:i.data})),
@@ -2466,26 +2493,32 @@ setupImgZone('roomZone','roomInput','room');
 /* ── 견적서 이미지 업로드 시 총액 자동 추출 ── */
 /* 이미지 1장 → 숫자(원) 반환. 실패 시 null */
 async function extractAmountFromImage(base64Data) {
+  if (!base64Data) return null;
   const mediaType = base64Data.split(';')[0].replace('data:', '') || 'image/jpeg';
   const base64 = base64Data.split(',')[1];
   if (!base64) return null;
 
   const EXTRACT_URL = 'https://asia-northeast3-drgo-calender.cloudfunctions.net/extractEstimate';
-  const res = await fetch(EXTRACT_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ imageBase64: base64, mediaType })
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(`Functions 오류 ${res.status}: ${err.error || res.statusText}`);
+  try {
+    const res = await fetch(EXTRACT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageBase64: base64, mediaType })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      console.warn('이미지 분석 실패:', err);
+      return null; /* 실패한 장은 건너뛰고 계속 진행 */
+    }
+    const data = await res.json();
+    const text = data.amount?.trim() || '';
+    if (!text || text === '없음') return null;
+    const num = parseInt(text.replace(/[^0-9]/g, ''), 10);
+    return isNaN(num) ? null : num;
+  } catch(e) {
+    console.warn('이미지 분석 오류:', e);
+    return null; /* 네트워크 오류도 건너뛰기 */
   }
-  const data = await res.json();
-  const text = data.amount?.trim() || '';
-  if (!text || text === '없음') return null;
-  /* "2,966,100원" → 숫자 추출 */
-  const num = parseInt(text.replace(/[^0-9]/g, ''), 10);
-  return isNaN(num) ? null : num;
 }
 
 /* 모든 견적서 이미지 합산 */
@@ -2625,7 +2658,8 @@ function _takeSnapshot() {
   const ids = ['modalTitle','modalLocation','modalName','modalAddress','modalDesc',
     'startDate','endDate','startTime','endTime',
     'g_name','g_phone','g_platform','g_topic_etc','g_equipment',
-    'g_req_topic','g_req_detail','g_special','g_balance_amount'];
+    'g_req_topic','g_req_detail','g_special','g_balance_amount',
+    'g_estimate_amount','goldStartDate'];
   const snap = {};
   ids.forEach(id => {
     const el = document.getElementById(id);
@@ -2650,7 +2684,8 @@ function _isDirty() {
   const ids = ['modalTitle','modalLocation','modalName','modalAddress','modalDesc',
     'startDate','endDate','startTime','endTime',
     'g_name','g_phone','g_platform','g_topic_etc','g_equipment',
-    'g_req_topic','g_req_detail','g_special','g_balance_amount'];
+    'g_req_topic','g_req_detail','g_special','g_balance_amount',
+    'g_estimate_amount','goldStartDate'];
   const snap = {};
   ids.forEach(id => {
     const el = document.getElementById(id);
@@ -2664,6 +2699,7 @@ function _isDirty() {
   snap._career = getRadio('g_career_group');
   snap._paid = getRadio('g_paid_group');
   snap._order = getRadio('g_order_group');
+  snap._delivery = getRadio('g_delivery_group');
   snap._balance = getRadio('g_balance_group');
   return JSON.stringify(snap) !== _modalSnapshot;
 }
