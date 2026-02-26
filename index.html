@@ -2464,45 +2464,64 @@ setupImgZone('refZone','refInput','ref');
 setupImgZone('roomZone','roomInput','room');
 
 /* ── 견적서 이미지 업로드 시 총액 자동 추출 ── */
-async function extractEstimateAmount(base64Data) {
+/* 이미지 1장 → 숫자(원) 반환. 실패 시 null */
+async function extractAmountFromImage(base64Data) {
+  const mediaType = base64Data.split(';')[0].replace('data:', '') || 'image/jpeg';
+  const base64 = base64Data.split(',')[1];
+  if (!base64) return null;
+
+  const EXTRACT_URL = 'https://asia-northeast3-drgo-calender.cloudfunctions.net/extractEstimate';
+  const res = await fetch(EXTRACT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ imageBase64: base64, mediaType })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(`Functions 오류 ${res.status}: ${err.error || res.statusText}`);
+  }
+  const data = await res.json();
+  const text = data.amount?.trim() || '';
+  if (!text || text === '없음') return null;
+  /* "2,966,100원" → 숫자 추출 */
+  const num = parseInt(text.replace(/[^0-9]/g, ''), 10);
+  return isNaN(num) ? null : num;
+}
+
+/* 모든 견적서 이미지 합산 */
+async function extractEstimateAmount(imgs) {
   const statusEl = document.getElementById('g_estimate_status');
   const amountEl = document.getElementById('g_estimate_amount');
-  if (!statusEl || !amountEl) return;
-
   const btn = document.getElementById('g_estimate_btn');
   if (btn) btn.disabled = true;
-  statusEl.textContent = '🔍 분석 중...';
-  statusEl.style.color = 'var(--accent)';
 
   try {
-    const mediaType = base64Data.split(';')[0].replace('data:', '') || 'image/jpeg';
-    const base64 = base64Data.split(',')[1];
-    if (!base64) throw new Error('이미지 데이터 없음');
-
-    /* Firebase Functions 프록시를 통해 호출 (API 키는 서버에 보관) */
-    const EXTRACT_URL = 'https://asia-northeast3-drgo-calender.cloudfunctions.net/extractEstimate';
-    const res = await fetch(EXTRACT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ imageBase64: base64, mediaType })
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(`Functions 오류 ${res.status}: ${err.error || res.statusText}`);
+    let total = 0;
+    let found = 0;
+    for (let i = 0; i < imgs.length; i++) {
+      statusEl.textContent = `🔍 분석 중... (${i+1}/${imgs.length})`;
+      statusEl.style.color = 'var(--accent)';
+      const num = await extractAmountFromImage(imgs[i].data);
+      if (num !== null) { total += num; found++; }
     }
 
-    const data = await res.json();
-    const text = data.amount?.trim() || '';
-
-    if (text && text !== '없음') {
-      amountEl.value = text;
-      statusEl.textContent = '✅ 추출 완료';
-      statusEl.style.color = '#7ac87a';
-    } else {
+    if (found === 0) {
       statusEl.textContent = '⚠️ 금액을 찾지 못했습니다';
       statusEl.style.color = 'var(--text-muted)';
+      return;
     }
+
+    /* 합산 금액 포맷 "2,966,100원" */
+    const formatted = total.toLocaleString('ko-KR') + '원';
+    amountEl.value = formatted;
+
+    if (imgs.length > 1 && found > 1) {
+      statusEl.textContent = `✅ ${found}장 합산: ${formatted}`;
+    } else {
+      statusEl.textContent = '✅ 추출 완료';
+    }
+    statusEl.style.color = '#7ac87a';
+
   } catch(e) {
     statusEl.textContent = '❌ ' + e.message;
     statusEl.style.color = 'var(--red, #c87a7a)';
@@ -2543,7 +2562,7 @@ window.runExtractEstimate = async function runExtractEstimate() {
     overlay.querySelector('#_extract_cancel').onclick  = () => { document.body.removeChild(overlay); resolve(false); };
   });
   if (!confirmed) return;
-  await extractEstimateAmount(imgs[imgs.length - 1].data);
+  await extractEstimateAmount(imgs); /* 전체 이미지 합산 */
 }
 
 function handleFiles(files){
