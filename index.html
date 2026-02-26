@@ -3019,6 +3019,9 @@ function resetDarkTheme() {
   const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || '{}');
   delete saved.dark;
   localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(saved));
+  /* style 태그 완전 제거 후 기본값으로 재생성 */
+  const el = document.getElementById('_dark-theme-override');
+  if (el) el.remove();
   applyDarkThemeVars(DEFAULT_DARK_THEME);
   loadAndApplyThemeColors();
 }
@@ -3026,6 +3029,9 @@ function resetLightTheme() {
   const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || '{}');
   delete saved.light;
   localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(saved));
+  /* style 태그 완전 제거 후 기본값으로 재생성 */
+  const el = document.getElementById('_light-theme-override');
+  if (el) el.remove();
   applyLightThemeVars(DEFAULT_LIGHT_THEME);
   loadAndApplyThemeColors();
 }
