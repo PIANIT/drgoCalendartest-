@@ -327,6 +327,67 @@ html.light .date-range-input { color-scheme:light; }
 .import-preview { background:var(--surface2); border-radius:8px; padding:14px; font-family:var(--font-mono); font-size:12px; color:var(--text-muted); margin-bottom:16px; }
 .import-btn-row { display:flex; gap:10px; justify-content:flex-end; }
 
+/* ── USER MANAGEMENT ── */
+.user-mgmt-wrap {
+  padding:24px 32px; border-bottom:1px solid var(--border);
+  background:var(--surface);
+}
+.user-mgmt-header {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:16px;
+}
+.user-mgmt-title {
+  font-family:var(--font-mono); font-size:12px; letter-spacing:0.2em;
+  text-transform:uppercase; color:var(--accent); display:flex; align-items:center; gap:8px;
+}
+.user-mgmt-toggle {
+  background:none; border:1px solid var(--border); color:var(--text-muted);
+  padding:6px 14px; border-radius:7px; font-size:12px; cursor:pointer;
+  font-family:var(--font-main); transition:all 0.15s;
+}
+.user-mgmt-toggle:hover { border-color:var(--accent); color:var(--accent); }
+.user-mgmt-body { display:none; }
+.user-mgmt-body.open { display:block; }
+.user-create-form {
+  display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; margin-bottom:18px;
+  padding:16px; background:var(--surface2); border-radius:10px; border:1px solid var(--border);
+}
+.user-form-field { display:flex; flex-direction:column; gap:5px; }
+.user-form-label { font-family:var(--font-mono); font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color:var(--text-muted); }
+.user-form-input {
+  padding:9px 13px; font-size:13px;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:8px; color:var(--text); font-family:var(--font-main);
+  outline:none; transition:border-color 0.2s; min-width:160px;
+}
+.user-form-input:focus { border-color:var(--accent); }
+.user-form-input.error { border-color:var(--red); }
+.user-create-btn {
+  padding:9px 18px; border-radius:8px; border:none;
+  background:var(--accent); color:#1a1207; font-size:13px; font-weight:700;
+  cursor:pointer; font-family:var(--font-main); transition:all 0.15s;
+  white-space:nowrap; align-self:flex-end;
+}
+.user-create-btn:hover { background:#e0cc9e; }
+.user-list { display:flex; flex-direction:column; gap:6px; }
+.user-list-empty { text-align:center; padding:20px; color:var(--text-muted); font-size:13px; }
+.user-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 14px; background:var(--surface2); border-radius:8px;
+  border:1px solid var(--border); gap:12px;
+}
+.user-row-id {
+  font-family:var(--font-mono); font-size:13px; color:var(--text);
+  font-weight:600; flex:1;
+}
+.user-row-meta { font-size:11px; color:var(--text-muted); }
+.user-row-del {
+  background:none; border:1px solid rgba(212,136,136,0.3); color:var(--red);
+  padding:5px 11px; border-radius:6px; font-size:11px; cursor:pointer;
+  font-family:var(--font-main); transition:all 0.15s;
+}
+.user-row-del:hover { background:rgba(212,136,136,0.12); border-color:var(--red); }
+
 /* ── CONFIRM DIALOG ── */
 .confirm-overlay {
   display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:200;
@@ -443,6 +504,32 @@ html.light .date-range-input { color-scheme:light; }
   <div class="stat-card">
     <div class="stat-label">미팅/내방</div>
     <div class="stat-value purple" id="st-purple">—</div>
+  </div>
+</div>
+
+<!-- ═══ USER MANAGEMENT ═══ -->
+<div class="user-mgmt-wrap" id="userMgmtWrap" style="display:none;">
+  <div class="user-mgmt-header">
+    <div class="user-mgmt-title">👤 캘린더 접속 계정 관리</div>
+    <button class="user-mgmt-toggle" id="userMgmtToggle">펼치기 ▾</button>
+  </div>
+  <div class="user-mgmt-body" id="userMgmtBody">
+    <!-- 계정 생성 폼 -->
+    <div class="user-create-form">
+      <div class="user-form-field">
+        <label class="user-form-label">아이디</label>
+        <input class="user-form-input" id="newUserId" placeholder="예: hong" maxlength="30" autocomplete="off" />
+      </div>
+      <div class="user-form-field">
+        <label class="user-form-label">비밀번호</label>
+        <input class="user-form-input" id="newUserPw" type="password" placeholder="비밀번호 입력" maxlength="32" autocomplete="new-password" />
+      </div>
+      <button class="user-create-btn" id="userCreateBtn">➕ 계정 추가</button>
+    </div>
+    <!-- 계정 목록 -->
+    <div class="user-list" id="userList">
+      <div class="user-list-empty">로딩 중…</div>
+    </div>
   </div>
 </div>
 
@@ -573,7 +660,7 @@ html.light .date-range-input { color-scheme:light; }
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getFirestore, collection, doc, deleteDoc, setDoc, onSnapshot, serverTimestamp }
+import { getFirestore, collection, doc, deleteDoc, setDoc, getDoc, getDocs, onSnapshot, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 /* ══════════════════════════════
@@ -692,6 +779,9 @@ function initApp() {
   const app = initializeApp(firebaseConfig);
   const db  = getFirestore(app);
   const col = collection(db, 'events');
+
+  /* ── 계정 관리 섹션 초기화 ── */
+  initUserMgmt(db);
 
   /* -- Theme -- */
   const saved = localStorage.getItem('cal_theme');
@@ -1202,8 +1292,101 @@ function showConfirm(title, text, cb, okLabel='삭제', type='delete') {
   document.getElementById('confirmOverlay').classList.add('open');
 }
 
-let toastTimer;
-function showToast(msg, type='info') {
+/* ══════════════════════════════
+   USER MANAGEMENT
+══════════════════════════════ */
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function initUserMgmt(db) {
+  const wrap   = document.getElementById('userMgmtWrap');
+  const body   = document.getElementById('userMgmtBody');
+  const toggle = document.getElementById('userMgmtToggle');
+  wrap.style.display = '';
+
+  toggle.addEventListener('click', () => {
+    const isOpen = body.classList.toggle('open');
+    toggle.textContent = isOpen ? '접기 ▴' : '펼치기 ▾';
+    if (isOpen) loadUserList(db);
+  });
+
+  document.getElementById('userCreateBtn').addEventListener('click', () => createUser(db));
+  document.getElementById('newUserPw').addEventListener('keydown', e => { if (e.key === 'Enter') createUser(db); });
+}
+
+async function loadUserList(db) {
+  const listEl = document.getElementById('userList');
+  listEl.innerHTML = '<div class="user-list-empty">로딩 중…</div>';
+  try {
+    const snap = await getDocs(collection(db, 'users'));
+    if (snap.empty) {
+      listEl.innerHTML = '<div class="user-list-empty">등록된 계정이 없습니다</div>';
+      return;
+    }
+    listEl.innerHTML = '';
+    snap.docs.forEach(d => {
+      const data = d.data();
+      const row = document.createElement('div');
+      row.className = 'user-row';
+      const createdAt = data.createdAt?.toDate ? data.createdAt.toDate().toLocaleDateString('ko-KR') : '—';
+      row.innerHTML = `
+        <span class="user-row-id">🔑 ${d.id}</span>
+        <span class="user-row-meta">생성: ${createdAt}</span>
+        <button class="user-row-del" data-uid="${d.id}">삭제</button>`;
+      row.querySelector('.user-row-del').addEventListener('click', () => {
+        showConfirm(`계정 삭제`, `"${d.id}" 계정을 삭제하시겠습니까?\n삭제 후에는 캘린더에 접속할 수 없습니다.`, async () => {
+          await deleteDoc(doc(db, 'users', d.id));
+          showToast(`계정 "${d.id}" 삭제됨`, 'success');
+          loadUserList(db);
+        }, '삭제', 'delete');
+      });
+      listEl.appendChild(row);
+    });
+  } catch(err) {
+    listEl.innerHTML = '<div class="user-list-empty">오류: ' + err.message + '</div>';
+  }
+}
+
+async function createUser(db) {
+  const idEl = document.getElementById('newUserId');
+  const pwEl = document.getElementById('newUserPw');
+  const userId = idEl.value.trim();
+  const userPw = pwEl.value;
+
+  idEl.classList.remove('error');
+  pwEl.classList.remove('error');
+
+  if (!userId) { idEl.classList.add('error'); idEl.focus(); showToast('아이디를 입력하세요', 'error'); return; }
+  if (!userPw) { pwEl.classList.add('error'); pwEl.focus(); showToast('비밀번호를 입력하세요', 'error'); return; }
+  if (!/^[a-zA-Z0-9_\-가-힣]+$/.test(userId)) {
+    idEl.classList.add('error'); idEl.focus();
+    showToast('아이디는 영문, 숫자, _, - 또는 한글만 가능합니다', 'error'); return;
+  }
+
+  try {
+    const existing = await getDoc(doc(db, 'users', userId));
+    if (existing.exists()) {
+      idEl.classList.add('error'); idEl.focus();
+      showToast(`"${userId}" 아이디는 이미 존재합니다`, 'error'); return;
+    }
+
+    const pwHash = await sha256(userPw);
+    await setDoc(doc(db, 'users', userId), {
+      passwordHash: pwHash,
+      createdAt: serverTimestamp()
+    });
+
+    idEl.value = ''; pwEl.value = '';
+    showToast(`계정 "${userId}" 추가 완료`, 'success');
+    loadUserList(db);
+  } catch(err) {
+    showToast('계정 생성 실패: ' + err.message, 'error');
+  }
+}
+
+
   const t = document.getElementById('toast');
   t.textContent = type==='success' ? '✓ '+msg : type==='error' ? '✕ '+msg : 'ℹ '+msg;
   t.className   = 'toast show ' + type;
