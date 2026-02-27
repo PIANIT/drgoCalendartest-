@@ -4,8 +4,8 @@
    Firebase Firestore는 온라인 필수 (캐시 제외)
 ═══════════════════════════════════════════ */
 
-const CACHE_NAME    = 'drgo-cal-v1';
-const RUNTIME_CACHE = 'drgo-cal-runtime-v1';
+const CACHE_NAME    = 'drgo-cal-v2';
+const RUNTIME_CACHE = 'drgo-cal-runtime-v2';
 
 /* 설치 시 즉시 캐시할 핵심 파일 */
 const PRECACHE_URLS = [
@@ -16,14 +16,13 @@ const PRECACHE_URLS = [
   './icons/apple-touch-icon.png',
 ];
 
-/* 캐시하지 않을 도메인 패턴 (Firebase, Google APIs 등) */
+/* 캐시하지 않을 도메인 패턴 (Firebase, Google APIs) */
 const NO_CACHE_PATTERNS = [
   /firestore\.googleapis\.com/,
   /firebase\.googleapis\.com/,
   /firebasestorage\.googleapis\.com/,
   /googleapis\.com\/identitytoolkit/,
   /gstatic\.com\/firebasejs/,
-  /discord\.com\/api/,
 ];
 
 /* ── Install ── */
@@ -76,17 +75,15 @@ self.addEventListener('fetch', event => {
     caches.match(request).then(cached => {
       if (cached) return cached;
       return fetch(request).then(res => {
-        /* 유효한 응답만 캐시 */
         if (!res || res.status !== 200 || res.type === 'opaque') return res;
         caches.open(RUNTIME_CACHE).then(cache => cache.put(request, res.clone()));
         return res;
       });
     }).catch(() => {
-      /* 완전 오프라인 시 index.html 반환 */
       if (request.destination === 'document') return caches.match('./index.html');
     })
   );
 });
 
-/* ── Push (미래 확장용 빈 핸들러) ── */
+/* 빈 push 핸들러 (미래 확장용) */
 self.addEventListener('push', () => {});
