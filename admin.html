@@ -691,15 +691,7 @@ function initApp() {
     if (!importData) return;
     showConfirm('📥 데이터 복원', `${importData.length}개 일정을 복원하시겠습니까?\n동일 ID의 일정은 덮어쓰기 됩니다.`, async () => {
       closeImport();
-      let ok = 0, fail = 0;
-      for (const ev of importData) {
-        try {
-          const { _id, ...data } = ev;
-          await setDoc(doc(db, 'events', _id), { ...data, updatedAt: serverTimestamp() });
-          ok++;
-        } catch { fail++; }
-      }
-      showToast(`복원 완료: ${ok}개 성공${fail > 0 ? `, ${fail}개 실패` : ''}`, ok > 0 ? 'success' : 'error');
+      await runImport(importData, db);
     }, '복원 실행', 'import');
   });
 
@@ -950,6 +942,61 @@ function makeSection(title, fields) {
   return sec;
 }
 
+async function runImport(data, db) {
+  const total = data.length;
+  let ok = 0, fail = 0, skip = 0;
+
+  // Show progress overlay
+  const overlay = document.getElementById('progressOverlay');
+  const bar     = document.getElementById('progressBar');
+  const txt     = document.getElementById('progressText');
+  const title   = document.getElementById('progressTitle');
+  overlay.style.display = 'flex';
+  title.textContent = `복원 중… (총 ${total}개)`;
+  bar.style.width = '0%';
+  txt.textContent = `0 / ${total}`;
+
+  for (let i = 0; i < data.length; i++) {
+    const ev = data[i];
+    try {
+      const id = ev._id || ev.id;
+      if (!id) { skip++; continue; }
+
+      // Deep-clone and sanitize: remove Firestore timestamp objects & _id
+      const { _id, id: _id2, updatedAt, createdAt, ...cleanData } = ev;
+
+      // Sanitize nested objects: remove any Firestore-specific fields
+      const sanitized = JSON.parse(JSON.stringify(cleanData));
+
+      await setDoc(doc(db, 'events', id), {
+        ...sanitized,
+        updatedAt: serverTimestamp()
+      });
+      ok++;
+    } catch(e) {
+      console.error('복원 실패:', ev._id, e);
+      fail++;
+    }
+
+    // Update progress
+    const pct = Math.round(((i + 1) / total) * 100);
+    bar.style.width = pct + '%';
+    txt.textContent = `${i + 1} / ${total}`;
+    title.textContent = `복원 중… ${pct}%`;
+
+    // Yield to UI thread every 5 items
+    if (i % 5 === 0) await new Promise(r => setTimeout(r, 0));
+  }
+
+  // Done
+  overlay.style.display = 'none';
+
+  const msg = `복원 완료: ${ok}개 성공` +
+    (fail > 0 ? `, ${fail}개 실패` : '') +
+    (skip > 0 ? `, ${skip}개 건너뜀 (ID 없음)` : '');
+  showToast(msg, ok > 0 ? 'success' : 'error');
+}
+
 function exportJSON() {
   const toExport = filteredEvents.map(ev => {
     const clean = { ...ev };
@@ -1010,5 +1057,17 @@ function showToast(msg, type='info') {
   toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
 }
 </script>
+<!-- ═══ PROGRESS OVERLAY ═══ -->
+<div id="progressOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:9998;backdrop-filter:blur(6px);align-items:center;justify-content:center;flex-direction:column;gap:20px;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:36px 40px;min-width:320px;text-align:center;">
+    <div style="font-size:32px;margin-bottom:12px;">📥</div>
+    <div style="font-family:var(--font-mono);font-size:13px;letter-spacing:0.12em;color:var(--accent);margin-bottom:18px;" id="progressTitle">복원 중…</div>
+    <div style="background:var(--surface2);border-radius:999px;height:8px;overflow:hidden;margin-bottom:14px;">
+      <div id="progressBar" style="height:100%;background:var(--accent);border-radius:999px;width:0%;transition:width 0.2s ease;"></div>
+    </div>
+    <div style="font-family:var(--font-mono);font-size:12px;color:var(--text-muted);" id="progressText">0 / 0</div>
+  </div>
+</div>
+
 </body>
 </html>
