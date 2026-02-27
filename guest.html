@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>DRGO Calendar — Guest</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --font-main: "Malgun Gothic","맑은 고딕",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+    --font-mono: 'DM Mono',"Malgun Gothic","맑은 고딕",monospace;
+  }
+</style>
+<style>
+  /* ── DARK (default) ── */
+  :root {
+    --bg:#111111; --surface:#1c1c1c; --surface2:#272727; --border:#3a3a3a;
+    --accent:#d4bc96; --accent2:#90bcd4; --text:#f0ebe2; --text-muted:#a09890;
+    --red:#d48888; --green:#88d488;
+    --chip-gold-bg:#c8a870;  --chip-gold-text:#1a1207;
+    --chip-blue-bg:#7aaec8;  --chip-blue-text:#061825;
+    --chip-red-bg:#c87070;   --chip-red-text:#200808;
+    --chip-green-bg:#70c870; --chip-green-text:#08200a;
+    --chip-purple-bg:#9b70c8;--chip-purple-text:#f0eaff;
+    --chip-single-bg:#303030;
+  }
+  html.light {
+    --bg:#f7f4f0; --surface:#ffffff; --surface2:#efebe4; --border:#d8d0c4;
+    --accent:#9c7d48; --accent2:#3a7a9a; --text:#1e1812; --text-muted:#7a6e60;
+    --red:#a84444; --green:#3a8a3a;
+    --chip-gold-bg:#b89558;  --chip-gold-text:#ffffff;
+    --chip-blue-bg:#5898ba;  --chip-blue-text:#ffffff;
+    --chip-red-bg:#b85858;   --chip-red-text:#ffffff;
+    --chip-green-bg:#58b058; --chip-green-text:#ffffff;
+    --chip-purple-bg:#7b50a8;--chip-purple-text:#ffffff;
+    --chip-single-bg:#e8e2d8;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:var(--font-main); min-height:100vh; overflow-x:hidden; transition:background 0.25s,color 0.25s; }
+
+  /* ── GUEST BANNER ── */
+  .guest-banner {
+    background:rgba(144,188,212,0.10);
+    border-bottom:1px solid rgba(144,188,212,0.25);
+    padding:8px 32px;
+    display:flex; align-items:center; gap:10px;
+    font-family:var(--font-mono); font-size:11px; letter-spacing:0.14em;
+    color:var(--accent2); text-transform:uppercase; justify-content:center;
+  }
+  .guest-banner-icon { font-size:14px; }
+
+  /* ── HEADER ── */
+  header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 32px; border-bottom:1px solid var(--border);
+    position:sticky; top:0; z-index:10; background:var(--bg);
+  }
+  .header-left { display:flex; align-items:center; gap:14px; }
+  .app-title { font-family:var(--font-mono); font-size:13px; letter-spacing:0.2em; color:var(--accent); text-transform:uppercase; }
+  .nav-btn {
+    background:none; border:1px solid var(--border); color:var(--text-muted);
+    cursor:pointer; width:32px; height:32px; border-radius:6px; font-size:16px;
+    display:flex; align-items:center; justify-content:center; transition:all 0.2s;
+  }
+  .nav-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .month-label { font-size:18px; font-weight:500; letter-spacing:0.05em; min-width:180px; text-align:center; }
+  .theme-btn {
+    background:none; border:1px solid var(--border); color:var(--text-muted);
+    cursor:pointer; width:32px; height:32px; border-radius:6px; font-size:16px;
+    display:flex; align-items:center; justify-content:center; transition:all 0.2s;
+  }
+  .theme-btn:hover { border-color:var(--accent); transform:rotate(20deg); }
+
+  /* view toggle */
+  .view-toggle-group {
+    display:flex; gap:2px; background:var(--surface2);
+    border:1px solid var(--border); border-radius:9px; padding:3px;
+  }
+  .view-toggle-btn {
+    padding:5px 13px; border-radius:6px; border:none;
+    background:transparent; color:var(--text-muted);
+    font-family:var(--font-main); font-size:12px; font-weight:500;
+    cursor:pointer; transition:all 0.15s; white-space:nowrap;
+  }
+  .view-toggle-btn.active { background:rgba(200,176,138,0.2); color:var(--accent); font-weight:700; }
+
+  /* ── CALENDAR ── */
+  .calendar-wrap { padding:20px 32px; }
+  .weekdays { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; margin-bottom:4px; }
+  .weekday { text-align:center; font-family:var(--font-mono); font-size:13px; letter-spacing:0.12em; color:var(--text-muted); padding:8px 0; }
+  .weekday:first-child { color:var(--red); }
+  .weekday:last-child  { color:var(--accent2); }
+
+  .days-grid {
+    border:1px solid var(--border); border-radius:12px; overflow:hidden;
+    display:flex; flex-direction:column; gap:1px; background:var(--border);
+  }
+  .week-row {
+    display:grid; grid-template-columns:repeat(7,1fr);
+    gap:1px; position:relative; background:var(--border); min-height:110px;
+  }
+  .day-cell {
+    background:var(--surface); padding:6px; position:relative;
+    transition:background 0.15s; overflow:hidden; cursor:default;
+  }
+  .day-cell.other-month { background:#111; }
+  html.light .day-cell.other-month { background:#eee8e0; }
+  .day-cell.today .day-num { background:var(--accent); color:#1a1207 !important; font-weight:700; border-radius:50%; }
+  .day-num-row { display:flex; align-items:center; gap:4px; margin-bottom:2px; }
+  .day-num {
+    font-family:var(--font-mono); font-size:13px; color:var(--text-muted);
+    width:24px; height:24px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .day-num.sun { color:var(--red); }
+  .day-num.sat { color:var(--accent2); }
+  .day-num.holiday { color:var(--red) !important; }
+  .holiday-label {
+    font-family:var(--font-mono); font-size:11px; color:var(--red);
+    opacity:0.85; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    min-width:0; letter-spacing:0.02em; line-height:1;
+  }
+  .lane-spacer { height:24px; margin-bottom:2px; flex-shrink:0; }
+  .events-list { display:flex; flex-direction:column; gap:2px; }
+
+  /* ── CHIP (guest: 시간만 표기, 제목 없음) ── */
+  .event-chip {
+    border-radius:4px; padding:3px 6px; font-size:12px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    cursor:default; transition:filter 0.15s;
+    display:flex; align-items:center; height:22px; box-sizing:border-box; min-width:0;
+  }
+  .event-chip.single { background:var(--chip-single-bg); color:var(--text-muted); border-left:3px solid var(--accent); }
+  .event-chip.single.color-gold   { background:rgba(200,176,138,0.18); border-left-color:var(--chip-gold-bg);   color:var(--text-muted); }
+  .event-chip.single.color-blue   { background:rgba(138,180,200,0.18); border-left-color:var(--chip-blue-bg);   color:var(--text-muted); }
+  .event-chip.single.color-red    { background:rgba(200,122,122,0.18); border-left-color:var(--chip-red-bg);    color:var(--text-muted); }
+  .event-chip.single.color-green  { background:rgba(122,200,122,0.18); border-left-color:var(--chip-green-bg);  color:var(--text-muted); }
+  .event-chip.single.color-purple { background:rgba(155,112,200,0.18); border-left-color:var(--chip-purple-bg); color:var(--text-muted); }
+
+  .span-chip-overlay { position:absolute; top:0; left:0; right:0; pointer-events:none; z-index:2; }
+  .span-chip {
+    position:absolute; height:22px; font-size:12px; font-weight:600;
+    display:flex; align-items:center; overflow:hidden; white-space:nowrap;
+    cursor:default; pointer-events:none;
+    box-sizing:border-box; padding:0 7px; transition:filter 0.15s; min-width:0;
+  }
+  .span-chip.color-gold   { background:var(--chip-gold-bg);   color:var(--chip-gold-text); }
+  .span-chip.color-blue   { background:var(--chip-blue-bg);   color:var(--chip-blue-text); }
+  .span-chip.color-red    { background:var(--chip-red-bg);    color:var(--chip-red-text); }
+  .span-chip.color-green  { background:var(--chip-green-bg);  color:var(--chip-green-text); }
+  .span-chip.color-purple { background:var(--chip-purple-bg); color:var(--chip-purple-text); }
+  .span-chip.is-start { border-radius:4px 0 0 4px; }
+  .span-chip.is-end   { border-radius:0 4px 4px 0; }
+  .span-chip.is-solo  { border-radius:4px; }
+
+  .chip-time { font-family:var(--font-mono); font-size:11px; flex-shrink:0; }
+  .more-badge {
+    font-size:12px; color:var(--text-muted); font-family:var(--font-mono);
+    padding:1px 6px; border-radius:3px;
+  }
+
+  /* ── PC WEEK VIEW ── */
+  .pc-week-row {
+    display:grid; grid-template-columns:repeat(7,1fr);
+    gap:1px; border-bottom:1px solid var(--border);
+    position:relative; overflow:hidden;
+  }
+  .pc-week-overlay { position:absolute; top:0; left:0; right:0; pointer-events:none; z-index:2; }
+  .pc-span-chip {
+    position:absolute; height:22px; font-size:12px; font-weight:600;
+    display:flex; align-items:center; overflow:hidden; white-space:nowrap;
+    cursor:default; pointer-events:none;
+    box-sizing:border-box; padding:0 8px; transition:filter 0.15s; min-width:0;
+  }
+  .pc-span-chip.color-gold   { background:var(--chip-gold-bg);   color:var(--chip-gold-text); }
+  .pc-span-chip.color-blue   { background:var(--chip-blue-bg);   color:var(--chip-blue-text); }
+  .pc-span-chip.color-red    { background:var(--chip-red-bg);    color:var(--chip-red-text); }
+  .pc-span-chip.color-green  { background:var(--chip-green-bg);  color:var(--chip-green-text); }
+  .pc-span-chip.color-purple { background:var(--chip-purple-bg); color:var(--chip-purple-text); }
+  .pc-span-chip.is-start { border-radius:4px 0 0 4px; }
+  .pc-span-chip.is-end   { border-radius:0 4px 4px 0; }
+  .pc-span-chip.is-solo  { border-radius:4px; }
+  .pc-week-cell {
+    min-height:140px; padding:8px 6px 6px;
+    background:var(--surface); position:relative;
+    border-right:1px solid var(--border); cursor:default;
+    transition:background 0.12s; overflow:hidden; min-width:0;
+  }
+  .pc-week-cell:last-child { border-right:none; }
+  .pc-week-cell.today { background:rgba(200,176,138,0.06); }
+  .pc-week-num {
+    font-size:13px; font-weight:600; width:26px; height:26px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; margin-bottom:4px;
+  }
+  .pc-week-num.today-num { background:var(--accent); color:#1a1207; }
+  .pc-week-num.sun { color:var(--red); }
+  .pc-week-num.sat { color:#8ab4c8; }
+  .pc-week-num.holiday { color:var(--red); }
+  .pc-week-holiday { font-size:10px; color:var(--red); margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  /* ── PC DAY VIEW ── */
+  .pc-day-wrap { padding:0 32px 40px; max-width:900px; margin:0 auto; }
+  .pc-day-header { display:flex; align-items:baseline; gap:12px; padding:20px 0 16px; border-bottom:1px solid var(--border); margin-bottom:16px; }
+  .pc-day-title { font-size:26px; font-weight:700; color:var(--text); }
+  .pc-day-sub { font-size:13px; color:var(--text-muted); }
+  .pc-day-holiday { font-size:13px; color:var(--red); }
+  .pc-day-list { display:flex; flex-direction:column; gap:8px; }
+  .pc-day-card {
+    display:flex; gap:14px; align-items:flex-start;
+    padding:14px 18px; border-radius:12px;
+    background:var(--surface2); border:1px solid var(--border);
+    border-left:4px solid transparent; cursor:default; transition:all 0.15s;
+  }
+  .pc-day-card.color-gold   { border-left-color:var(--chip-gold-bg); }
+  .pc-day-card.color-blue   { border-left-color:var(--chip-blue-bg); }
+  .pc-day-card.color-red    { border-left-color:var(--chip-red-bg); }
+  .pc-day-card.color-green  { border-left-color:var(--chip-green-bg); }
+  .pc-day-card.color-purple { border-left-color:var(--chip-purple-bg); }
+  .pc-day-time { min-width:72px; font-family:var(--font-mono); font-size:12px; color:var(--text-muted); padding-top:2px; flex-shrink:0; }
+  .pc-day-body { flex:1; min-width:0; }
+  .pc-day-card-title { font-size:15px; font-weight:600; color:var(--text-muted); font-style:italic; }
+  .pc-day-empty { text-align:center; padding:60px 0; color:var(--text-muted); font-size:14px; }
+
+  /* ── MOBILE ── */
+  #mobileView { display:none; }
+  @media (max-width:600px) {
+    .calendar-wrap { display:none !important; }
+    #mobileView { display:block; }
+    header { padding:10px 14px; flex-wrap:wrap; gap:8px; }
+    .month-label { font-size:14px; min-width:120px; }
+    .app-title { font-size:11px; }
+    .view-toggle-group { display:none; }
+    .guest-banner { padding:7px 14px; font-size:10px; }
+    .mv-wrap { padding:0 0 60px; }
+    .mv-nav { display:flex; align-items:center; justify-content:space-between; padding:8px 14px 6px; gap:8px; }
+    .mv-nav-label { font-size:13px; font-weight:600; color:var(--text); text-align:center; flex:1; }
+    .mv-nav-btn { background:var(--surface2); border:1px solid var(--border); color:var(--text); width:34px; height:34px; border-radius:8px; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+    .mv-view-toggle { display:flex; gap:6px; padding:0 14px 8px; }
+    .mv-view-btn { flex:1; padding:6px; border-radius:8px; font-size:12px; border:1px solid var(--border); background:var(--surface2); color:var(--text-muted); cursor:pointer; transition:all 0.15s; font-family:var(--font-main); }
+    .mv-view-btn.active { background:rgba(200,176,138,0.2); border-color:var(--accent); color:var(--accent); font-weight:600; }
+    .mv-week-header { display:grid; grid-template-columns:repeat(7,1fr); padding:0 8px; gap:3px; margin-bottom:4px; }
+    .mv-week-day { text-align:center; font-size:11px; color:var(--text-muted); font-family:var(--font-mono); padding:4px 0 2px; }
+    .mv-week-dates { display:grid; grid-template-columns:repeat(7,1fr); padding:0 8px; gap:3px; margin-bottom:10px; }
+    .mv-date-cell { display:flex; flex-direction:column; align-items:center; gap:2px; padding:4px 2px 6px; border-radius:8px; cursor:pointer; transition:background 0.12s; min-height:52px; }
+    .mv-date-cell.today .mv-date-num { background:var(--accent); color:#1a1207; }
+    .mv-date-num { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; }
+    .mv-date-num.sun { color:var(--red); }
+    .mv-date-num.sat { color:#8ab4c8; }
+    .mv-date-num.holiday { color:var(--red); }
+    .mv-date-dot-row { display:flex; gap:2px; flex-wrap:wrap; justify-content:center; min-height:6px; }
+    .mv-date-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+    .mv-date-dot.gold   { background:var(--chip-gold-bg); }
+    .mv-date-dot.blue   { background:var(--chip-blue-bg); }
+    .mv-date-dot.red    { background:var(--chip-red-bg); }
+    .mv-date-dot.green  { background:var(--chip-green-bg); }
+    .mv-date-dot.purple { background:var(--chip-purple-bg); }
+    .mv-date-cell.selected .mv-date-num { background:rgba(200,176,138,0.25); box-shadow:0 0 0 2px var(--accent); }
+    .mv-month-grid-header { display:grid; grid-template-columns:repeat(7,1fr); padding:4px 8px 2px; gap:2px; }
+    .mv-month-grid { display:grid; grid-template-columns:repeat(7,1fr); padding:0 8px; gap:2px; }
+    .mv-month-cell { display:flex; flex-direction:column; align-items:center; gap:1px; padding:3px 1px 4px; border-radius:7px; cursor:pointer; transition:background 0.12s; min-height:50px; }
+    .mv-month-cell.other-month { opacity:0.3; }
+    .mv-month-cell.today .mv-month-num { background:var(--accent); color:#1a1207; border-radius:50%; }
+    .mv-month-cell.selected .mv-month-num { background:rgba(200,176,138,0.28); box-shadow:0 0 0 2px var(--accent); border-radius:50%; }
+    .mv-month-num { width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; flex-shrink:0; }
+    .mv-month-num.sun { color:var(--red); }
+    .mv-month-num.sat { color:#8ab4c8; }
+    .mv-month-num.holiday { color:var(--red); }
+    .mv-month-sel-bar { padding:10px 14px 4px; font-size:13px; font-weight:700; color:var(--text); border-top:1px solid var(--border); margin-top:6px; display:flex; align-items:center; }
+    .mv-month-sel-date { font-size:13px; font-weight:700; color:var(--text); }
+    .mv-month-sel-holiday { font-size:11px; color:var(--red); margin-left:8px; }
+    .mv-day-section { padding:0 10px; }
+    .mv-day-title { font-size:13px; font-weight:700; color:var(--text); padding:10px 4px 6px; border-bottom:1px solid var(--border); margin-bottom:6px; display:flex; align-items:center; gap:8px; }
+    .mv-day-title-holiday { font-size:11px; color:var(--red); font-weight:400; flex:1; }
+    .mv-empty { text-align:center; padding:24px 0 16px; color:var(--text-muted); font-size:13px; }
+    /* 게스트용 모바일 일정 카드 - 시간만 표시 */
+    .mv-event-card {
+      display:flex; align-items:center; gap:10px; padding:9px 12px; margin-bottom:5px;
+      border-radius:10px; border-left:4px solid transparent;
+      background:var(--surface2); border:1px solid var(--border); cursor:default;
+    }
+    .mv-event-card.color-gold   { border-left-color:var(--chip-gold-bg); }
+    .mv-event-card.color-blue   { border-left-color:var(--chip-blue-bg); }
+    .mv-event-card.color-red    { border-left-color:var(--chip-red-bg); }
+    .mv-event-card.color-green  { border-left-color:var(--chip-green-bg); }
+    .mv-event-card.color-purple { border-left-color:var(--chip-purple-bg); }
+    .mv-event-time { font-family:var(--font-mono); font-size:12px; color:var(--text-muted); }
+    .mv-event-badge { font-size:10px; padding:2px 7px; border-radius:4px; font-family:var(--font-mono); font-weight:700; flex-shrink:0; }
+    .mv-event-badge.gold   { background:rgba(200,176,138,0.2); color:var(--chip-gold-bg); }
+    .mv-event-badge.blue   { background:rgba(138,180,200,0.2); color:var(--chip-blue-bg); }
+    .mv-event-badge.red    { background:rgba(200,122,122,0.2); color:var(--chip-red-bg); }
+    .mv-event-badge.green  { background:rgba(122,200,122,0.2); color:var(--chip-green-bg); }
+    .mv-event-badge.purple { background:rgba(155,112,200,0.2); color:var(--chip-purple-bg); }
+    .mv-day-nav { display:flex; align-items:center; justify-content:space-between; padding:8px 14px; gap:8px; }
+    .mv-day-nav-label { font-size:16px; font-weight:700; color:var(--text); text-align:center; }
+    .mv-day-nav-sub { font-size:11px; color:var(--text-muted); text-align:center; }
+  }
+
+  /* ── LOADING ── */
+  @keyframes spin { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- 게스트 배너 -->
+<div class="guest-banner">
+  <span class="guest-banner-icon">👁️</span>
+  <span>Guest View — 읽기 전용 캘린더 · 상세 내용은 표시되지 않습니다</span>
+</div>
+
+<!-- 헤더 -->
+<header>
+  <div class="header-left">
+    <span class="app-title">Calendar</span>
+    <button class="nav-btn" id="prevBtn">‹</button>
+    <div class="month-label" id="monthLabel"></div>
+    <button class="nav-btn" id="nextBtn">›</button>
+    <button class="nav-btn" id="todayBtn" style="font-size:11px;letter-spacing:0.05em;width:auto;padding:0 10px;font-family:var(--font-mono);">TODAY</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="view-toggle-group">
+      <button class="view-toggle-btn active" data-view="month">월간</button>
+      <button class="view-toggle-btn" data-view="week">주간</button>
+      <button class="view-toggle-btn" data-view="day">일간</button>
+    </div>
+    <button class="theme-btn" id="themeBtn" title="테마 전환">🌙</button>
+  </div>
+</header>
+
+<!-- PC 월간 -->
+<div class="calendar-wrap" id="pcMonthWrap">
+  <div class="weekdays">
+    <div class="weekday">SUN</div><div class="weekday">MON</div><div class="weekday">TUE</div>
+    <div class="weekday">WED</div><div class="weekday">THU</div><div class="weekday">FRI</div>
+    <div class="weekday">SAT</div>
+  </div>
+  <div class="days-grid" id="daysGrid"></div>
+</div>
+
+<!-- PC 주간 -->
+<div id="pcWeekView" style="display:none;">
+  <div class="calendar-wrap" style="padding-top:8px;">
+    <div class="weekdays" id="pcWeekDays"></div>
+    <div id="pcWeekGrid"></div>
+  </div>
+</div>
+
+<!-- PC 일간 -->
+<div id="pcDayView" style="display:none;">
+  <div class="pc-day-wrap">
+    <div class="pc-day-header" id="pcDayHeader"></div>
+    <div class="pc-day-list" id="pcDayList"></div>
+  </div>
+</div>
+
+<!-- 모바일 -->
+<div id="mobileView">
+  <div class="mv-view-toggle">
+    <button class="mv-view-btn" id="mvMonthBtn">월간</button>
+    <button class="mv-view-btn active" id="mvWeekBtn">주간</button>
+    <button class="mv-view-btn" id="mvDayBtn">일간</button>
+  </div>
+  <div id="mvMonthPanel" style="display:none;">
+    <div class="mv-month-grid-header" id="mvMonthGridHeader"></div>
+    <div class="mv-month-grid" id="mvMonthGrid"></div>
+    <div class="mv-month-sel-bar" id="mvMonthSelBar"></div>
+    <div class="mv-day-section" id="mvMonthDayList"></div>
+  </div>
+  <div id="mvWeekPanel">
+    <div class="mv-week-header" id="mvWeekHeader"></div>
+    <div class="mv-week-dates" id="mvWeekDates"></div>
+    <div class="mv-day-section" id="mvDayList"></div>
+  </div>
+  <div id="mvDayPanel" style="display:none;">
+    <div class="mv-day-nav">
+      <button class="mv-nav-btn" id="mvDayPrev">‹</button>
+      <div style="text-align:center;">
+        <div class="mv-day-nav-label" id="mvDayNavLabel"></div>
+        <div class="mv-day-nav-sub" id="mvDayNavSub"></div>
+      </div>
+      <button class="mv-nav-btn" id="mvDayNext">›</button>
+    </div>
+    <div class="mv-day-section" id="mvDayPanelList"></div>
+  </div>
+</div>
+
+<!-- 로딩 -->
+<div id="loadingOverlay" style="display:flex;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:16px;backdrop-filter:blur(4px);">
+  <div style="width:36px;height:36px;border:3px solid rgba(200,176,138,0.25);border-top-color:#c8b08a;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+  <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.15em;color:#c8b08a;opacity:0.8;">LOADING</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getFirestore, collection, onSnapshot }
+  from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyDnEOATYmwq0WJr6pCl-86-Q3ZEQjrrfeY",
+  authDomain:        "drgo-calender.firebaseapp.com",
+  projectId:         "drgo-calender",
+  storageBucket:     "drgo-calender.firebasestorage.app",
+  messagingSenderId: "163730741115",
+  appId:             "1:163730741115:web:73a06d5b1cf1a477734fde"
+};
+const app       = initializeApp(firebaseConfig);
+const db        = getFirestore(app);
+const eventsCol = collection(db, 'events');
+
+/* ══════════════════
+   상수 / 상태
+══════════════════ */
+const MONTHS   = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+const DOW_KOR  = ['일','월','화','수','목','금','토'];
+const TYPE_LABELS = { gold:'방문의뢰', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방' };
+
+const KR_HOLIDAYS = {
+  '2024-01-01':'1월 1일','2024-02-09':'설날 전날','2024-02-10':'설날','2024-02-11':'설날 다음 날','2024-02-12':'대체공휴일(설날)',
+  '2024-03-01':'3·1절','2024-05-05':'어린이날','2024-05-06':'대체공휴일(어린이날)',
+  '2024-05-15':'부처님 오신 날','2024-06-06':'현충일','2024-08-15':'광복절',
+  '2024-09-16':'추석 전날','2024-09-17':'추석','2024-09-18':'추석 다음 날',
+  '2024-10-01':'임시공휴일','2024-10-03':'개천절','2024-10-09':'한글날','2024-12-25':'기독탄신일',
+  '2025-01-01':'1월 1일','2025-01-27':'임시공휴일','2025-01-28':'설날 전날','2025-01-29':'설날',
+  '2025-01-30':'설날 다음 날','2025-03-01':'3·1절','2025-03-03':'대체공휴일(3·1절)',
+  '2025-05-05':'어린이날·부처님 오신 날','2025-05-06':'대체공휴일(부처님 오신 날)',
+  '2025-06-03':'임시공휴일(대통령선거)','2025-06-06':'현충일','2025-08-15':'광복절',
+  '2025-10-03':'개천절','2025-10-05':'추석 전날','2025-10-06':'추석','2025-10-07':'추석 다음 날',
+  '2025-10-08':'대체공휴일(추석)','2025-10-09':'한글날','2025-12-25':'기독탄신일',
+  '2026-01-01':'1월 1일','2026-02-16':'설날 전날','2026-02-17':'설날','2026-02-18':'설날 다음 날',
+  '2026-03-01':'3·1절','2026-03-02':'대체공휴일(3·1절)','2026-05-05':'어린이날',
+  '2026-05-24':'부처님 오신 날','2026-05-25':'대체공휴일(부처님 오신 날)',
+  '2026-06-03':'전국동시지방선거','2026-06-06':'현충일','2026-08-15':'광복절',
+  '2026-08-17':'대체공휴일(광복절)','2026-09-24':'추석 전날','2026-09-25':'추석',
+  '2026-09-26':'추석 다음 날','2026-10-03':'개천절','2026-10-05':'대체공휴일(개천절)',
+  '2026-10-09':'한글날','2026-12-25':'기독탄신일',
+  '2027-01-01':'1월 1일','2027-03-01':'3·1절','2027-05-05':'어린이날','2027-06-06':'현충일',
+  '2027-08-15':'광복절','2027-10-03':'개천절','2027-10-09':'한글날','2027-12-25':'기독탄신일',
+};
+function getHoliday(dk) { return KR_HOLIDAYS[dk] || null; }
+
+let events = [];
+let currentYear  = new Date().getFullYear();
+let currentMonth = new Date().getMonth();
+let pcView = 'month';
+let pcWeekStart = null;
+let pcDayDate   = null;
+const today    = new Date();
+const todayStr = fmtDate(today);
+
+function fmtDate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function dateKey(y,m,d) { return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+function addDaysPc(dk, n) { const d=new Date(dk+'T00:00:00'); d.setDate(d.getDate()+n); return fmtDate(d); }
+function getPcWeekStart() {
+  const d=new Date(todayStr+'T00:00:00'); d.setDate(d.getDate()-d.getDay()); return fmtDate(d);
+}
+function dateDiff(d1,d2){ return (new Date(d2+'T00:00:00')-new Date(d1+'T00:00:00'))/86400000; }
+
+/* 게스트: 모든 일정 표시 (필터 없음) */
+function allEvents() { return events; }
+
+/* ── 일정 표시 텍스트: 시간만 ── */
+function guestChipText(ev) {
+  if (ev.allDay !== false) return '종일';
+  const st = ev.startTime || '';
+  const et = ev.endTime   || '';
+  if (st && et) return `${st} ~ ${et}`;
+  if (st) return st;
+  return '일정';
+}
+
+/* ── Firebase 로드 ── */
+function setLoading(on) { document.getElementById('loadingOverlay').style.display = on ? 'flex' : 'none'; }
+setLoading(true);
+const loadingTimeout = setTimeout(() => setLoading(false), 10000);
+
+onSnapshot(eventsCol, snap => {
+  clearTimeout(loadingTimeout);
+  events = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+  setLoading(false);
+  renderAll();
+}, err => {
+  clearTimeout(loadingTimeout);
+  setLoading(false);
+  console.error('Firestore 오류:', err);
+});
+
+/* ══════════════════
+   PC 월간 뷰
+══════════════════ */
+function render() {
+  document.getElementById('monthLabel').textContent = `${currentYear}년 ${MONTHS[currentMonth]}`;
+  const grid = document.getElementById('daysGrid');
+  grid.innerHTML = '';
+
+  const firstDay    = new Date(currentYear, currentMonth, 1).getDay();
+  const daysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
+  const prevDays    = new Date(currentYear, currentMonth, 0).getDate();
+
+  const cells = [];
+  for (let i=firstDay-1;i>=0;i--) cells.push({day:prevDays-i,cur:false,y:currentYear,m:currentMonth-1});
+  for (let d=1;d<=daysInMonth;d++) cells.push({day:d,cur:true,y:currentYear,m:currentMonth});
+  let nx=1; while(cells.length%7!==0) cells.push({day:nx++,cur:false,y:currentYear,m:currentMonth+1});
+
+  const gridDates = cells.map(cell => {
+    const realY = cell.m<0?cell.y-1:cell.m>11?cell.y+1:cell.y;
+    const realM = ((cell.m%12)+12)%12;
+    return dateKey(realY,realM,cell.day);
+  });
+  const NUM_WEEKS = gridDates.length/7;
+  const isSpanEv  = ev => ev.allDay !== false;
+
+  const sorted = allEvents().map((ev,i)=>({ev,idx:i})).sort((a,b)=>{
+    if(isSpanEv(a.ev)&&!isSpanEv(b.ev)) return -1;
+    if(!isSpanEv(a.ev)&&isSpanEv(b.ev)) return 1;
+    if(a.ev.startDate<b.ev.startDate) return -1;
+    if(a.ev.startDate>b.ev.startDate) return 1;
+    return dateDiff(a.ev.startDate,a.ev.endDate||a.ev.startDate)<dateDiff(b.ev.startDate,b.ev.endDate||b.ev.startDate)?1:-1;
+  });
+
+  /* lane 계산 */
+  const laneMap={};
+  for(let w=0;w<NUM_WEEKS;w++){
+    const wDates=gridDates.slice(w*7,w*7+7);
+    const wStart=wDates[0],wEnd=wDates[6];
+    const wSpans=sorted.filter(({ev})=>isSpanEv(ev)&&ev.startDate<=wEnd&&(ev.endDate||ev.startDate)>=wStart);
+    const laneEnd=[];
+    wSpans.forEach(({ev,idx})=>{
+      const cS=ev.startDate>wStart?ev.startDate:wStart;
+      const cE=(ev.endDate||ev.startDate)<wEnd?(ev.endDate||ev.startDate):wEnd;
+      let lane=0; while(laneEnd[lane]!==undefined&&laneEnd[lane]>=cS) lane++;
+      laneEnd[lane]=cE; laneMap[idx]=laneMap[idx]===undefined?lane:Math.max(laneMap[idx],lane);
+    });
+  }
+  const cellMax={};
+  gridDates.forEach(dk=>{cellMax[dk]=-1;});
+  sorted.forEach(({ev,idx})=>{
+    if(!isSpanEv(ev)) return;
+    let cur=new Date(ev.startDate+'T00:00:00');
+    const end=new Date((ev.endDate||ev.startDate)+'T00:00:00');
+    while(cur<=end){ const dk=fmtDate(cur); if(cellMax[dk]!==undefined) cellMax[dk]=Math.max(cellMax[dk],laneMap[idx]||0); cur.setDate(cur.getDate()+1); }
+  });
+  const singleMap={};
+  sorted.forEach(({ev,idx})=>{
+    if(isSpanEv(ev)) return;
+    (singleMap[ev.startDate]=singleMap[ev.startDate]||[]).push({evIdx:idx,ev});
+  });
+
+  const CELL_PAD=6, DAY_H=26, LANE_H=24;
+
+  for(let w=0;w<NUM_WEEKS;w++){
+    const wDates=gridDates.slice(w*7,w*7+7);
+    const wStart=wDates[0],wEnd=wDates[6];
+    const weekEl=document.createElement('div'); weekEl.className='week-row';
+
+    for(let d=0;d<7;d++){
+      const cell=cells[w*7+d], dk=wDates[d];
+      const realY=cell.m<0?cell.y-1:cell.m>11?cell.y+1:cell.y;
+      const realM=((cell.m%12)+12)%12;
+      const lanes=cellMax[dk]+1;
+
+      const div=document.createElement('div');
+      div.className='day-cell'+(cell.cur?'':' other-month');
+      if(dk===todayStr) div.classList.add('today');
+
+      const numRow=document.createElement('div'); numRow.className='day-num-row';
+      const numSpan=document.createElement('span'); numSpan.className='day-num';
+      const dow=new Date(realY,realM,cell.day).getDay();
+      if(dow===0) numSpan.classList.add('sun');
+      if(dow===6) numSpan.classList.add('sat');
+      const holiday=getHoliday(dk);
+      if(holiday) numSpan.classList.add('holiday');
+      numSpan.textContent=cell.day;
+      numRow.appendChild(numSpan);
+      if(holiday){ const hl=document.createElement('span'); hl.className='holiday-label'; hl.textContent=holiday; numRow.appendChild(hl); }
+      div.appendChild(numRow);
+
+      for(let l=0;l<lanes;l++){ const sp=document.createElement('div'); sp.className='lane-spacer'; div.appendChild(sp); }
+
+      const evList=document.createElement('div'); evList.className='events-list';
+      const dayEvs=singleMap[dk]||[];
+      dayEvs.slice(0,3).forEach(({ev})=>{
+        const chip=document.createElement('div');
+        chip.className=`event-chip single color-${ev.color||'gold'}`;
+        chip.innerHTML=`<span class="chip-time">${guestChipText(ev)}</span>`;
+        evList.appendChild(chip);
+      });
+      if(dayEvs.length>3){
+        const more=document.createElement('div'); more.className='more-badge';
+        more.textContent=`+${dayEvs.length-3}`;
+        evList.appendChild(more);
+      }
+      div.appendChild(evList);
+      weekEl.appendChild(div);
+    }
+
+    /* span chips */
+    const overlay=document.createElement('div'); overlay.className='span-chip-overlay'; overlay.style.pointerEvents='none';
+    sorted.filter(({ev})=>isSpanEv(ev)&&ev.startDate<=wEnd&&(ev.endDate||ev.startDate)>=wStart)
+    .forEach(({ev,idx})=>{
+      const lane=laneMap[idx]||0;
+      const sd=ev.startDate,ed=ev.endDate||ev.startDate;
+      const chipStart=sd>wStart?sd:wStart, chipEnd=ed<wEnd?ed:wEnd;
+      const colStart=wDates.findIndex(dk=>dk===chipStart);
+      const colEnd=wDates.findIndex(dk=>dk===chipEnd);
+      if(colStart<0) return;
+      const aCE=colEnd<0?6:colEnd;
+      if(aCE<colStart) return;
+      const visS=sd>=wStart, visE=ed<=wEnd;
+
+      const chip=document.createElement('div');
+      chip.className=`span-chip color-${ev.color||'gold'}`;
+      if(visS&&visE) chip.classList.add('is-solo');
+      else if(visS) chip.classList.add('is-start');
+      else if(visE) chip.classList.add('is-end');
+
+      const topPx=CELL_PAD+DAY_H+lane*LANE_H;
+      const colSpan=aCE-colStart+1;
+      const leftPx=visS?1:0, rightPx=visE?1:0;
+      chip.style.top=topPx+'px'; chip.style.height='22px';
+      chip.style.left=`calc(${(colStart/7*100).toFixed(4)}% + ${leftPx}px)`;
+      chip.style.width=`calc(${(colSpan/7*100).toFixed(4)}% - ${leftPx+rightPx}px)`;
+      /* span 이벤트: 시작일에만 시간 표시 */
+      if(visS||colStart===0) chip.innerHTML=`<span style="overflow:hidden;text-overflow:ellipsis;flex:1">${guestChipText(ev)}</span>`;
+      else chip.innerHTML='&nbsp;';
+      overlay.appendChild(chip);
+    });
+    weekEl.appendChild(overlay);
+    grid.appendChild(weekEl);
+  }
+}
+
+/* ══════════════════
+   PC 주간 뷰
+══════════════════ */
+function renderPcWeek() {
+  if(!pcWeekStart) pcWeekStart=getPcWeekStart();
+  const grid=document.getElementById('pcWeekGrid');
+  const daysEl=document.getElementById('pcWeekDays');
+  grid.innerHTML=''; daysEl.innerHTML='';
+
+  const wDates=[];
+  for(let i=0;i<7;i++) wDates.push(addDaysPc(pcWeekStart,i));
+  const wStart=wDates[0], wEnd=wDates[6];
+
+  /* 요일 헤더 */
+  wDates.forEach(dk=>{
+    const [y,m,d]=dk.split('-').map(Number);
+    const dow=new Date(y,m-1,d).getDay();
+    const isToday=dk===todayStr;
+    const el=document.createElement('div');
+    el.className='weekday'; el.style.cssText='text-align:center;padding:6px 0 4px;';
+    el.innerHTML=`<span style="font-size:11px;display:block;margin-bottom:2px;">${DOW_KOR[dow]}</span><span style="font-size:15px;font-weight:700;${isToday?'background:var(--accent);color:#1a1207;border-radius:50%;padding:2px 5px;':''}">${d}</span>`;
+    daysEl.appendChild(el);
+  });
+
+  const isSpanEv=ev=>ev.allDay!==false;
+  const sorted=allEvents().map((ev,i)=>({ev,idx:i})).sort((a,b)=>{
+    if(isSpanEv(a.ev)&&!isSpanEv(b.ev)) return -1;
+    if(!isSpanEv(a.ev)&&isSpanEv(b.ev)) return 1;
+    return 0;
+  });
+  const spanEvs=sorted.filter(({ev})=>isSpanEv(ev)&&ev.startDate<=wEnd&&(ev.endDate||ev.startDate)>=wStart);
+  const singleMap={};
+  sorted.filter(({ev})=>!isSpanEv(ev)&&wDates.includes(ev.startDate)).forEach(({ev,idx})=>{
+    (singleMap[ev.startDate]=singleMap[ev.startDate]||[]).push({ev,idx});
+  });
+
+  const laneMap={};
+  const laneEnd=[];
+  spanEvs.forEach(({ev,idx})=>{
+    const cS=ev.startDate>wStart?ev.startDate:wStart;
+    const cE=(ev.endDate||ev.startDate)<wEnd?(ev.endDate||ev.startDate):wEnd;
+    let lane=0; while(laneEnd[lane]!==undefined&&laneEnd[lane]>=cS) lane++;
+    laneEnd[lane]=cE; laneMap[idx]=lane;
+  });
+  const maxLaneArr={}; wDates.forEach(dk=>{ maxLaneArr[dk]=-1; });
+  spanEvs.forEach(({ev,idx})=>{
+    let cur=new Date((ev.startDate>wStart?ev.startDate:wStart)+'T00:00:00');
+    const end=new Date(((ev.endDate||ev.startDate)<wEnd?(ev.endDate||ev.startDate):wEnd)+'T00:00:00');
+    while(cur<=end){ const dk=fmtDate(cur); if(maxLaneArr[dk]!==undefined) maxLaneArr[dk]=Math.max(maxLaneArr[dk],laneMap[idx]||0); cur.setDate(cur.getDate()+1); }
+  });
+
+  const CELL_PAD=8, NUM_H=30, LANE_H=26;
+  const row=document.createElement('div'); row.className='pc-week-row';
+
+  wDates.forEach(dk=>{
+    const [y,m,d]=dk.split('-').map(Number);
+    const dow=new Date(y,m-1,d).getDay();
+    const isToday=dk===todayStr;
+    const holiday=getHoliday(dk);
+    const maxLane=maxLaneArr[dk];
+
+    const cell=document.createElement('div');
+    cell.className='pc-week-cell'+(isToday?' today':'');
+    cell.style.paddingTop=CELL_PAD+'px';
+
+    const numEl=document.createElement('div');
+    numEl.className='pc-week-num'+(isToday?' today-num':'')+(holiday?' holiday':dow===0?' sun':dow===6?' sat':'');
+    numEl.textContent=d;
+    cell.appendChild(numEl);
+    if(holiday){ const hl=document.createElement('div'); hl.className='pc-week-holiday'; hl.textContent=holiday; cell.appendChild(hl); }
+    if(maxLane>0){ const sp=document.createElement('div'); sp.style.height=(maxLane*LANE_H)+'px'; sp.style.flexShrink='0'; cell.appendChild(sp); }
+
+    const MAX_SHOW=4;
+    const dayEvs=singleMap[dk]||[];
+    dayEvs.slice(0,MAX_SHOW).forEach(({ev})=>{
+      const chip=document.createElement('div');
+      chip.className=`event-chip single color-${ev.color||'gold'}`;
+      chip.innerHTML=`<span class="chip-time">${guestChipText(ev)}</span>`;
+      cell.appendChild(chip);
+    });
+    if(dayEvs.length>MAX_SHOW){
+      const more=document.createElement('div'); more.className='more-badge';
+      more.textContent=`+${dayEvs.length-MAX_SHOW}`;
+      cell.appendChild(more);
+    }
+    row.appendChild(cell);
+  });
+
+  const overlay=document.createElement('div'); overlay.className='pc-week-overlay';
+  spanEvs.forEach(({ev,idx})=>{
+    const lane=laneMap[idx]||0;
+    const sd=ev.startDate, ed=ev.endDate||ev.startDate;
+    const colStart=wDates.findIndex(dk=>dk===(sd>wStart?sd:wStart));
+    const colEnd=wDates.findIndex(dk=>dk===(ed<wEnd?ed:wEnd));
+    if(colStart<0) return;
+    const aCE=colEnd<0?6:colEnd;
+    const visS=sd>=wStart, visE=ed<=wEnd;
+
+    const chip=document.createElement('div');
+    chip.className=`pc-span-chip color-${ev.color||'gold'}`;
+    if(visS&&visE) chip.classList.add('is-solo');
+    else if(visS) chip.classList.add('is-start');
+    else if(visE) chip.classList.add('is-end');
+
+    const topPx=CELL_PAD+NUM_H+lane*LANE_H;
+    const colSpan=aCE-colStart+1;
+    const insetL=visS?1:0, insetR=visE?1:0;
+    chip.style.top=topPx+'px'; chip.style.height='22px';
+    chip.style.left=`calc(${colStart}*(100%+1px)/7+${insetL}px)`;
+    chip.style.width=`calc(${colSpan}*(100%+1px)/7-1px-${insetL+insetR}px)`;
+    chip.innerHTML=`<span style="overflow:hidden;text-overflow:ellipsis;flex:1">${guestChipText(ev)}</span>`;
+    overlay.appendChild(chip);
+  });
+  row.appendChild(overlay);
+  grid.appendChild(row);
+
+  const [y1,m1,d1]=wStart.split('-').map(Number);
+  const [y2,m2,d2]=wEnd.split('-').map(Number);
+  const MK=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  document.getElementById('monthLabel').textContent=
+    y1===y2?`${y1}년 ${MK[m1-1]} ${d1}일 — ${MK[m2-1]} ${d2}일`
+           :`${y1}년 ${MK[m1-1]} ${d1}일 — ${y2}년 ${MK[m2-1]} ${d2}일`;
+}
+
+/* ══════════════════
+   PC 일간 뷰
+══════════════════ */
+function renderPcDay() {
+  const dk=pcDayDate||todayStr;
+  const [y,m,d]=dk.split('-').map(Number);
+  const dow=new Date(y,m-1,d).getDay();
+  const holiday=getHoliday(dk);
+
+  document.getElementById('pcDayHeader').innerHTML=
+    `<span class="pc-day-title">${y}년 ${m}월 ${d}일</span>
+     <span class="pc-day-sub">${DOW_KOR[dow]}요일</span>
+     ${holiday?`<span class="pc-day-holiday">${holiday}</span>`:''}`;
+
+  const list=document.getElementById('pcDayList');
+  list.innerHTML='';
+  const dayEvs=allEvents().filter(ev=>{
+    const sd=ev.startDate, ed=ev.endDate||sd;
+    if(ev.allDay!==false) return sd<=dk&&ed>=dk;
+    return sd===dk;
+  }).sort((a,b)=>{
+    if(a.allDay!==false&&b.allDay===false) return -1;
+    if(a.allDay===false&&b.allDay!==false) return 1;
+    return (a.startTime||'').localeCompare(b.startTime||'');
+  });
+
+  if(dayEvs.length===0){
+    list.innerHTML='<div class="pc-day-empty">등록된 일정이 없습니다</div>';
+  } else {
+    dayEvs.forEach(ev=>{
+      const card=document.createElement('div');
+      card.className=`pc-day-card color-${ev.color||'gold'}`;
+      const timeStr=guestChipText(ev);
+      const spanStr=(ev.endDate&&ev.endDate!==ev.startDate)?`<span style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono);">${ev.startDate} ~ ${ev.endDate}</span>`:'';
+      card.innerHTML=`
+        <div class="pc-day-time">${timeStr}</div>
+        <div class="pc-day-body">
+          <div class="pc-day-card-title">일정 있음</div>
+          ${spanStr?`<div style="margin-top:4px;">${spanStr}</div>`:''}
+        </div>`;
+      list.appendChild(card);
+    });
+  }
+  document.getElementById('monthLabel').textContent=`${y}년 ${m}월 ${d}일 (${DOW_KOR[dow]})`;
+}
+
+/* ══════════════════
+   PC 뷰 전환
+══════════════════ */
+let _pcView='month';
+function switchPcView(v) {
+  _pcView=v;
+  document.getElementById('pcMonthWrap').style.display=v==='month'?'':'none';
+  document.getElementById('pcWeekView').style.display=v==='week'?'':'none';
+  document.getElementById('pcDayView').style.display=v==='day'?'':'none';
+  document.querySelectorAll('.view-toggle-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===v));
+  if(v==='month') render();
+  else if(v==='week') renderPcWeek();
+  else renderPcDay();
+}
+
+document.querySelectorAll('.view-toggle-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{ if(!isMobile()) switchPcView(btn.dataset.view); });
+});
+
+/* ══════════════════
+   MOBILE 뷰
+══════════════════ */
+const isMobile=()=>window.innerWidth<=600;
+let mvMode='week', mvSelDate=todayStr, mvWeekStart=null;
+let mvMonthYear=new Date().getFullYear(), mvMonthMonth=new Date().getMonth();
+
+function addDays(dk,n){ const d=new Date(dk+'T00:00:00'); d.setDate(d.getDate()+n); return fmtDate(d); }
+function getWeekStart(dk){ const d=new Date(dk+'T00:00:00'); d.setDate(d.getDate()-d.getDay()); return fmtDate(d); }
+
+function getEventsForDate(dk){
+  return allEvents().filter(ev=>{
+    const sd=ev.startDate, ed=ev.endDate||sd;
+    if(ev.allDay!==false) return sd<=dk&&ed>=dk;
+    return sd===dk;
+  }).sort((a,b)=>{
+    if(a.allDay!==false&&b.allDay===false) return -1;
+    if(a.allDay===false&&b.allDay!==false) return 1;
+    return (a.startTime||'').localeCompare(b.startTime||'');
+  });
+}
+
+function renderMvEventCard(ev, container) {
+  const card=document.createElement('div');
+  card.className=`mv-event-card color-${ev.color||'gold'}`;
+  const timeStr=guestChipText(ev);
+  card.innerHTML=`
+    <span class="mv-event-badge ${ev.color||'gold'}">${TYPE_LABELS[ev.color||'gold']}</span>
+    <span class="mv-event-time">${timeStr}</span>`;
+  container.appendChild(card);
+}
+
+function renderMvDayList(dk, container, hideTitle=false){
+  container.innerHTML='';
+  const evs=getEventsForDate(dk);
+  const [y,m,d]=dk.split('-').map(Number);
+  const dow=DOW_KOR[new Date(y,m-1,d).getDay()];
+  const holiday=getHoliday(dk);
+  if(!hideTitle){
+    const title=document.createElement('div'); title.className='mv-day-title';
+    title.innerHTML=`<span>${m}월 ${d}일 (${dow})</span>${holiday?`<span class="mv-day-title-holiday">${holiday}</span>`:''}`;
+    container.appendChild(title);
+  }
+  if(evs.length===0){
+    const empty=document.createElement('div'); empty.className='mv-empty'; empty.textContent='등록된 일정이 없습니다'; container.appendChild(empty);
+  } else {
+    evs.forEach(ev=>renderMvEventCard(ev,container));
+  }
+}
+
+function renderMvMonth(){
+  const hdrEl=document.getElementById('mvMonthGridHeader'); hdrEl.innerHTML='';
+  DOW_KOR.forEach(d=>{ const el=document.createElement('div'); el.style.cssText='text-align:center;font-size:11px;color:var(--text-muted);font-family:var(--font-mono);padding:4px 0 2px;'; el.textContent=d; hdrEl.appendChild(el); });
+
+  const grid=document.getElementById('mvMonthGrid'); grid.innerHTML='';
+  const y=mvMonthYear, m=mvMonthMonth;
+  const firstDay=new Date(y,m,1).getDay(), daysInMonth=new Date(y,m+1,0).getDate(), prevDays=new Date(y,m,0).getDate();
+  const cells=[];
+  for(let i=firstDay-1;i>=0;i--) cells.push({d:prevDays-i,cur:false,y:m===0?y-1:y,mo:m===0?11:m-1});
+  for(let d=1;d<=daysInMonth;d++) cells.push({d,cur:true,y,mo:m});
+  while(cells.length%7!==0){ const e=cells.length-daysInMonth-firstDay+1; cells.push({d:e,cur:false,y:m===11?y+1:y,mo:m===11?0:m+1}); }
+
+  cells.forEach(({d,cur,y:cy,mo:cmo})=>{
+    const dk=`${cy}-${String(cmo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dow=new Date(cy,cmo,d).getDay(), holiday=getHoliday(dk), evs=getEventsForDate(dk);
+    const cell=document.createElement('div');
+    cell.className='mv-month-cell'+(cur?'':' other-month')+(dk===todayStr?' today':'')+(dk===mvSelDate?' selected':'');
+    const numEl=document.createElement('div');
+    numEl.className='mv-month-num'+(holiday?' holiday':'')+(dow===0?' sun':dow===6?' sat':'');
+    numEl.textContent=d; cell.appendChild(numEl);
+    if(evs.length>0){
+      const colorCount={};
+      evs.forEach(ev=>{ const c=ev.color||'gold'; colorCount[c]=(colorCount[c]||0)+1; });
+      const dotsRow=document.createElement('div'); dotsRow.style.cssText='display:flex;gap:3px;flex-wrap:wrap;justify-content:center;margin-top:1px;';
+      ['gold','blue','red','green','purple'].forEach(c=>{
+        if(!colorCount[c]) return;
+        const wrap=document.createElement('div'); wrap.style.cssText='display:flex;flex-direction:column;align-items:center;gap:1px;';
+        const dot=document.createElement('div'); dot.className=`mv-date-dot ${c}`;
+        const cnt=document.createElement('div'); cnt.style.cssText=`font-size:9px;font-family:var(--font-mono);line-height:1;color:var(--chip-${c}-bg);font-weight:700;`; cnt.textContent=colorCount[c];
+        wrap.appendChild(dot); wrap.appendChild(cnt); dotsRow.appendChild(wrap);
+      });
+      cell.appendChild(dotsRow);
+    }
+    cell.addEventListener('click',()=>{ mvSelDate=dk; renderMvMonth(); });
+    grid.appendChild(cell);
+  });
+
+  const [sy,sm,sd]=mvSelDate.split('-').map(Number);
+  const sdow=DOW_KOR[new Date(sy,sm-1,sd).getDay()], holiday=getHoliday(mvSelDate);
+  const selBar=document.getElementById('mvMonthSelBar');
+  selBar.innerHTML=`<span class="mv-month-sel-date">${sm}월 ${sd}일 (${sdow})</span>${holiday?`<span class="mv-month-sel-holiday">${holiday}</span>`:''}`;
+  renderMvDayList(mvSelDate,document.getElementById('mvMonthDayList'),true);
+  document.getElementById('monthLabel').textContent=`${y}년 ${MONTHS[m]}`;
+}
+
+function renderMvWeek(){
+  if(!mvWeekStart) mvWeekStart=getWeekStart(mvSelDate);
+  const hdr=document.getElementById('mvWeekHeader'); hdr.innerHTML='';
+  DOW_KOR.forEach(d=>{ const el=document.createElement('div'); el.className='mv-week-day'; el.textContent=d; hdr.appendChild(el); });
+  const datesEl=document.getElementById('mvWeekDates'); datesEl.innerHTML='';
+  for(let i=0;i<7;i++){
+    const dk=addDays(mvWeekStart,i);
+    const [y,m,d]=dk.split('-').map(Number);
+    const dow=new Date(y,m-1,d).getDay(), evs=getEventsForDate(dk), holiday=getHoliday(dk);
+    const cell=document.createElement('div');
+    cell.className='mv-date-cell'+(dk===todayStr?' today':'')+(dk===mvSelDate?' selected':'');
+    const numEl=document.createElement('div');
+    numEl.className='mv-date-num'+(holiday?' holiday':'')+(dow===0?' sun':dow===6?' sat':'');
+    numEl.textContent=d; cell.appendChild(numEl);
+    const dotRow=document.createElement('div'); dotRow.className='mv-date-dot-row';
+    const colors=[...new Set(evs.map(e=>e.color||'gold'))].slice(0,3);
+    colors.forEach(c=>{ const dot=document.createElement('div'); dot.className=`mv-date-dot ${c}`; dotRow.appendChild(dot); });
+    cell.appendChild(dotRow);
+    cell.addEventListener('click',()=>{ mvSelDate=dk; renderMvWeek(); });
+    datesEl.appendChild(cell);
+  }
+  renderMvDayList(mvSelDate,document.getElementById('mvDayList'));
+
+  const [y1,m1,d1]=mvWeekStart.split('-').map(Number);
+  const wEnd=addDays(mvWeekStart,6); const [y2,m2,d2]=wEnd.split('-').map(Number);
+  document.getElementById('monthLabel').textContent=`${y1}년 ${MONTHS[m1-1]} ${d1}일 — ${MONTHS[m2-1]} ${d2}일`;
+}
+
+function renderMvDay(){
+  renderMvDayList(mvSelDate,document.getElementById('mvDayPanelList'));
+  const [y,m,d]=mvSelDate.split('-').map(Number);
+  const dow=DOW_KOR[new Date(y,m-1,d).getDay()];
+  document.getElementById('mvDayNavLabel').textContent=`${m}월 ${d}일`;
+  document.getElementById('mvDayNavSub').textContent=`${y}년 ${dow}요일`;
+  document.getElementById('monthLabel').textContent=`${y}년 ${m}월 ${d}일`;
+}
+
+function switchMvMode(mode){
+  mvMode=mode;
+  ['mvMonthBtn','mvWeekBtn','mvDayBtn'].forEach(id=>{ const el=document.getElementById(id); if(el) el.classList.remove('active'); });
+  ['mvMonthPanel','mvWeekPanel','mvDayPanel'].forEach(id=>{ document.getElementById(id).style.display='none'; });
+  if(mode==='month'){ document.getElementById('mvMonthBtn').classList.add('active'); document.getElementById('mvMonthPanel').style.display=''; const [y,m]=mvSelDate.split('-').map(Number); mvMonthYear=y; mvMonthMonth=m-1; renderMvMonth(); }
+  else if(mode==='week'){ document.getElementById('mvWeekBtn').classList.add('active'); document.getElementById('mvWeekPanel').style.display=''; renderMvWeek(); }
+  else { document.getElementById('mvDayBtn').classList.add('active'); document.getElementById('mvDayPanel').style.display=''; renderMvDay(); }
+}
+
+document.getElementById('mvMonthBtn').addEventListener('click',()=>switchMvMode('month'));
+document.getElementById('mvWeekBtn').addEventListener('click',()=>switchMvMode('week'));
+document.getElementById('mvDayBtn').addEventListener('click',()=>switchMvMode('day'));
+document.getElementById('mvDayPrev').addEventListener('click',()=>{ mvSelDate=addDays(mvSelDate,-1); renderMvDay(); });
+document.getElementById('mvDayNext').addEventListener('click',()=>{ mvSelDate=addDays(mvSelDate,1);  renderMvDay(); });
+
+/* ══════════════════
+   renderAll
+══════════════════ */
+function renderAll(){
+  const mobile=isMobile();
+  document.getElementById('mobileView').style.display=mobile?'':'none';
+  if(!mobile){
+    if(_pcView==='month'){ document.getElementById('pcMonthWrap').style.display=''; document.getElementById('pcWeekView').style.display='none'; document.getElementById('pcDayView').style.display='none'; render(); }
+    else if(_pcView==='week') renderPcWeek();
+    else renderPcDay();
+  } else {
+    if(!mvWeekStart) mvWeekStart=getWeekStart(mvSelDate);
+    if(mvMode==='month') renderMvMonth(); else if(mvMode==='week') renderMvWeek(); else renderMvDay();
+  }
+}
+window.addEventListener('resize',renderAll);
+
+/* ══════════════════
+   네비게이션
+══════════════════ */
+document.getElementById('prevBtn').addEventListener('click',()=>{
+  if(isMobile()){
+    if(mvMode==='month'){ mvMonthMonth--; if(mvMonthMonth<0){mvMonthMonth=11;mvMonthYear--;} mvSelDate=`${mvMonthYear}-${String(mvMonthMonth+1).padStart(2,'0')}-01`; renderMvMonth(); }
+    else if(mvMode==='week'){ mvWeekStart=addDays(mvWeekStart,-7); mvSelDate=mvWeekStart; renderMvWeek(); }
+    else { mvSelDate=addDays(mvSelDate,-1); renderMvDay(); }
+    return;
+  }
+  if(_pcView==='month'){ currentMonth--; if(currentMonth<0){currentMonth=11;currentYear--;} render(); }
+  else if(_pcView==='week'){ pcWeekStart=addDaysPc(pcWeekStart,-7); renderPcWeek(); }
+  else { pcDayDate=addDaysPc(pcDayDate||todayStr,-1); renderPcDay(); }
+});
+document.getElementById('nextBtn').addEventListener('click',()=>{
+  if(isMobile()){
+    if(mvMode==='month'){ mvMonthMonth++; if(mvMonthMonth>11){mvMonthMonth=0;mvMonthYear++;} mvSelDate=`${mvMonthYear}-${String(mvMonthMonth+1).padStart(2,'0')}-01`; renderMvMonth(); }
+    else if(mvMode==='week'){ mvWeekStart=addDays(mvWeekStart,7); mvSelDate=mvWeekStart; renderMvWeek(); }
+    else { mvSelDate=addDays(mvSelDate,1); renderMvDay(); }
+    return;
+  }
+  if(_pcView==='month'){ currentMonth++; if(currentMonth>11){currentMonth=0;currentYear++;} render(); }
+  else if(_pcView==='week'){ pcWeekStart=addDaysPc(pcWeekStart,7); renderPcWeek(); }
+  else { pcDayDate=addDaysPc(pcDayDate||todayStr,1); renderPcDay(); }
+});
+document.getElementById('todayBtn').addEventListener('click',()=>{
+  if(isMobile()){
+    mvSelDate=todayStr; mvWeekStart=getWeekStart(todayStr);
+    const td=new Date(); mvMonthYear=td.getFullYear(); mvMonthMonth=td.getMonth();
+    if(mvMode==='month') renderMvMonth(); else if(mvMode==='week') renderMvWeek(); else renderMvDay();
+    return;
+  }
+  pcDayDate=todayStr; pcWeekStart=getPcWeekStart();
+  if(_pcView==='month'){ currentYear=today.getFullYear(); currentMonth=today.getMonth(); render(); }
+  else if(_pcView==='week') renderPcWeek();
+  else renderPcDay();
+});
+
+/* ══════════════════
+   테마
+══════════════════ */
+(function(){
+  const saved=localStorage.getItem('cal_theme');
+  if(saved==='light') document.documentElement.classList.add('light');
+  document.getElementById('themeBtn').textContent=document.documentElement.classList.contains('light')?'☀️':'🌙';
+})();
+document.getElementById('themeBtn').addEventListener('click',()=>{
+  const isL=document.documentElement.classList.toggle('light');
+  localStorage.setItem('cal_theme',isL?'light':'dark');
+  document.getElementById('themeBtn').textContent=isL?'☀️':'🌙';
+});
+
+/* ══════════════════
+   스와이프 (모바일)
+══════════════════ */
+(function(){
+  const SWIPE_MIN=50, SWIPE_MAX_Y=80;
+  let tsX=0, tsY=0, swiping=false;
+  document.body.addEventListener('touchstart',e=>{ tsX=e.touches[0].clientX; tsY=e.touches[0].clientY; swiping=true; },{passive:true});
+  document.body.addEventListener('touchmove',e=>{ if(!swiping) return; const dy=Math.abs(e.touches[0].clientY-tsY),dx=Math.abs(e.touches[0].clientX-tsX); if(dy>SWIPE_MAX_Y&&dy>dx) swiping=false; },{passive:true});
+  document.body.addEventListener('touchend',e=>{
+    if(!swiping){swiping=false;return;} swiping=false;
+    const dx=e.changedTouches[0].clientX-tsX, dy=e.changedTouches[0].clientY-tsY;
+    if(Math.abs(dx)<SWIPE_MIN||Math.abs(dy)>SWIPE_MAX_Y||!isMobile()) return;
+    const goNext=dx<0;
+    if(mvMode==='week'){mvWeekStart=addDays(mvWeekStart,goNext?7:-7);mvSelDate=mvWeekStart;renderMvWeek();}
+    else if(mvMode==='day'){mvSelDate=addDays(mvSelDate,goNext?1:-1);renderMvDay();}
+  },{passive:true});
+})();
+
+</script>
+</body>
+</html>
