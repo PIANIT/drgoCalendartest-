@@ -162,6 +162,30 @@ header {
 .action-btn.primary { background:var(--accent); color:#1a1207; border-color:var(--accent); }
 .action-btn.primary:hover { background:#e0cc9e; }
 
+/* ── DATE RANGE FILTER ── */
+.date-range-wrap {
+  display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+}
+.date-range-label {
+  font-family:var(--font-mono); font-size:10px; letter-spacing:0.15em;
+  text-transform:uppercase; color:var(--text-muted); white-space:nowrap;
+}
+.date-range-input {
+  padding:7px 10px; font-size:12px; font-family:var(--font-mono);
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:7px; color:var(--text); outline:none;
+  transition:border-color 0.2s; cursor:pointer; color-scheme:dark;
+}
+html.light .date-range-input { color-scheme:light; }
+.date-range-input:focus { border-color:var(--accent); }
+.date-range-sep { color:var(--text-muted); font-size:12px; }
+.date-range-clear {
+  background:none; border:1px solid var(--border); color:var(--text-muted);
+  padding:6px 10px; border-radius:7px; font-size:11px; cursor:pointer;
+  font-family:var(--font-mono); transition:all 0.15s; white-space:nowrap;
+}
+.date-range-clear:hover { border-color:var(--red); color:var(--red); }
+
 /* ── SORT BAR ── */
 .sort-bar {
   display:grid; align-items:center; padding:10px 32px;
@@ -415,6 +439,13 @@ header {
     <button class="filter-btn f-red"  data-filter="red" ><span class="color-dot cd-red"></span>휴가관련</button>
     <button class="filter-btn f-green" data-filter="green"><span class="color-dot cd-green"></span>촬영관련</button>
   </div>
+  <div class="date-range-wrap" id="dateRangeWrap">
+    <span class="date-range-label">기간</span>
+    <input class="date-range-input" type="date" id="dateFrom" />
+    <span class="date-range-sep">—</span>
+    <input class="date-range-input" type="date" id="dateTo" />
+    <button class="date-range-clear" id="dateRangeClear" style="display:none;">✕ 초기화</button>
+  </div>
   <div class="toolbar-right">
     <button class="action-btn" id="exportBtn">📤 백업 (JSON)</button>
     <button class="action-btn" id="importBtn">📥 복원 (JSON)</button>
@@ -540,7 +571,7 @@ const MAX_TRIES   = 5;
 const LOCK_MS     = 120000;
 
 const TYPE_LABELS    = { gold:'개인의뢰', blue:'사내업무', red:'휴가관련', green:'촬영관련' };
-const SPECIAL_LABELS = { car:'🚗차량', brief:'💼제품', return:'←당김', group:'👥2인', urgent:'🚨긴급', ladder:'🪜사다리' };
+const SPECIAL_LABELS = { car:'🚗차량', brief:'💼제품', return:'←', group:'👥2인', urgent:'🚨긴급', ladder:'🪜사다리' };
 const SCHED_LABELS   = { suggest:'💬제안', hope:'🙏희망', target:'🎯목표' };
 
 /* ══════════════════════════════
@@ -557,6 +588,8 @@ let currentPage    = 1;
 const PAGE_SIZE    = 25;
 let confirmCallback = null;
 let importData      = null;
+let dateFrom        = '';
+let dateTo          = '';
 
 /* ══════════════════════════════
    AUTH
@@ -664,6 +697,28 @@ function initApp() {
   /* -- 검색 -- */
   document.getElementById('searchInput').addEventListener('input', e => {
     searchQuery = e.target.value.toLowerCase();
+    currentPage = 1;
+    applyFilters();
+  });
+
+  /* -- 날짜 범위 -- */
+  document.getElementById('dateFrom').addEventListener('change', e => {
+    dateFrom = e.target.value;
+    updateDateClearBtn();
+    currentPage = 1;
+    applyFilters();
+  });
+  document.getElementById('dateTo').addEventListener('change', e => {
+    dateTo = e.target.value;
+    updateDateClearBtn();
+    currentPage = 1;
+    applyFilters();
+  });
+  document.getElementById('dateRangeClear').addEventListener('click', () => {
+    dateFrom = ''; dateTo = '';
+    document.getElementById('dateFrom').value = '';
+    document.getElementById('dateTo').value   = '';
+    updateDateClearBtn();
     currentPage = 1;
     applyFilters();
   });
@@ -802,6 +857,10 @@ function initApp() {
 /* ══════════════════════════════
    FILTER / SORT / RENDER
 ══════════════════════════════ */
+function updateDateClearBtn() {
+  document.getElementById('dateRangeClear').style.display = (dateFrom || dateTo) ? '' : 'none';
+}
+
 function applyFilters() {
   let evs = [...allEvents];
   if (currentFilter !== 'all') evs = evs.filter(e => (e.color||'gold') === currentFilter);
@@ -811,6 +870,8 @@ function applyFilters() {
     (e.address||'').toLowerCase().includes(searchQuery) ||
     (e.gold?.name||'').toLowerCase().includes(searchQuery)
   );
+  if (dateFrom) evs = evs.filter(e => (e.endDate||e.startDate) >= dateFrom);
+  if (dateTo)   evs = evs.filter(e => e.startDate <= dateTo);
   evs.sort((a, b) => {
     let av = a[sortKey]||'', bv = b[sortKey]||'';
     if (sortKey === 'color') { av = TYPE_LABELS[av]||''; bv = TYPE_LABELS[bv]||''; }
