@@ -1149,10 +1149,45 @@
 
     <div style="border-top:1px solid var(--border); padding-top:14px; margin-top:4px;">
       <div class="settings-section-title">계정</div>
+      <button class="settings-reset-btn" id="changePwBtn"
+        style="border-color:rgba(144,188,212,0.4); color:var(--accent2); margin-top:6px;">
+        🔑 비밀번호 변경
+      </button>
       <button class="settings-reset-btn" id="logoutBtn"
-        style="border-color:rgba(212,136,136,0.4); color:var(--red); margin-top:6px;">
+        style="border-color:rgba(212,136,136,0.4); color:var(--red); margin-top:8px;">
         🚪 로그아웃
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 비밀번호 변경 모달 ═══ -->
+<div class="confirm-overlay" id="changePwOverlay">
+  <div class="confirm-box" style="max-width:380px;">
+    <div class="confirm-title">🔑 비밀번호 변경</div>
+    <div class="confirm-desc" id="changePwDesc" style="margin-bottom:16px;">현재 사용자: <strong id="changePwUser"></strong></div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+      <div>
+        <div style="font-size:11px;font-family:var(--font-mono);letter-spacing:0.1em;color:var(--text-muted);text-transform:uppercase;margin-bottom:5px;">현재 비밀번호</div>
+        <input class="auth-input" type="password" id="pwCurrent" placeholder="현재 비밀번호"
+          style="width:100%;padding:10px 14px;font-size:14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);outline:none;font-family:var(--font-main);" />
+      </div>
+      <div>
+        <div style="font-size:11px;font-family:var(--font-mono);letter-spacing:0.1em;color:var(--text-muted);text-transform:uppercase;margin-bottom:5px;">새 비밀번호</div>
+        <input class="auth-input" type="password" id="pwNew" placeholder="새 비밀번호 (6자 이상)"
+          style="width:100%;padding:10px 14px;font-size:14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);outline:none;font-family:var(--font-main);" />
+      </div>
+      <div>
+        <div style="font-size:11px;font-family:var(--font-mono);letter-spacing:0.1em;color:var(--text-muted);text-transform:uppercase;margin-bottom:5px;">새 비밀번호 확인</div>
+        <input class="auth-input" type="password" id="pwConfirm" placeholder="새 비밀번호 재입력"
+          style="width:100%;padding:10px 14px;font-size:14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);outline:none;font-family:var(--font-main);" />
+      </div>
+      <div class="auth-error" id="changePwError" style="font-size:12px;min-height:18px;color:var(--red);"></div>
+    </div>
+    <div class="confirm-btns">
+      <button class="confirm-btn-cancel" id="changePwCancel">취소</button>
+      <button class="confirm-btn-leave" id="changePwSubmit"
+        style="background:var(--accent2);color:#06151e;">변경</button>
     </div>
   </div>
 </div>
@@ -3612,6 +3647,80 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
   localStorage.removeItem('cal_auth_uid');
   localStorage.removeItem('cal_auth_exp');
   location.reload();
+});
+
+/* ── 비밀번호 변경 ── */
+document.getElementById('changePwBtn').addEventListener('click', () => {
+  const uid = localStorage.getItem('cal_auth_uid') || '';
+  document.getElementById('changePwUser').textContent = uid;
+  document.getElementById('pwCurrent').value = '';
+  document.getElementById('pwNew').value = '';
+  document.getElementById('pwConfirm').value = '';
+  document.getElementById('changePwError').textContent = '';
+  document.getElementById('changePwOverlay').classList.add('open');
+  closeSettings();
+  setTimeout(() => document.getElementById('pwCurrent').focus(), 120);
+});
+document.getElementById('changePwCancel').addEventListener('click', () => {
+  document.getElementById('changePwOverlay').classList.remove('open');
+});
+document.getElementById('changePwOverlay').addEventListener('click', e => {
+  if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
+});
+
+document.getElementById('changePwSubmit').addEventListener('click', async () => {
+  const uid      = localStorage.getItem('cal_auth_uid') || '';
+  const curPw    = document.getElementById('pwCurrent').value;
+  const newPw    = document.getElementById('pwNew').value;
+  const confPw   = document.getElementById('pwConfirm').value;
+  const errorEl  = document.getElementById('changePwError');
+  const submitBtn = document.getElementById('changePwSubmit');
+
+  errorEl.textContent = '';
+
+  if (!curPw)            { errorEl.textContent = '현재 비밀번호를 입력하세요.'; return; }
+  if (!newPw)            { errorEl.textContent = '새 비밀번호를 입력하세요.'; return; }
+  if (newPw.length < 6)  { errorEl.textContent = '새 비밀번호는 6자 이상이어야 합니다.'; return; }
+  if (newPw !== confPw)  { errorEl.textContent = '새 비밀번호가 일치하지 않습니다.'; return; }
+  if (curPw === newPw)   { errorEl.textContent = '현재 비밀번호와 동일합니다.'; return; }
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = '변경 중…';
+
+  try {
+    const curHash = await sha256(curPw);
+    const userDoc = await getDoc(doc(db, 'users', uid));
+
+    if (!userDoc.exists() || userDoc.data().passwordHash !== curHash) {
+      errorEl.textContent = '현재 비밀번호가 올바르지 않습니다.';
+      submitBtn.disabled = false; submitBtn.textContent = '변경';
+      return;
+    }
+
+    const newHash = await sha256(newPw);
+    await setDoc(doc(db, 'users', uid), { ...userDoc.data(), passwordHash: newHash });
+
+    document.getElementById('changePwOverlay').classList.remove('open');
+    /* 변경 후 재로그인 유도 */
+    localStorage.removeItem('cal_auth_ok');
+    localStorage.removeItem('cal_auth_uid');
+    localStorage.removeItem('cal_auth_exp');
+    alert('비밀번호가 변경되었습니다. 새 비밀번호로 다시 로그인해주세요.');
+    location.reload();
+  } catch(err) {
+    errorEl.textContent = '오류: ' + err.message;
+    submitBtn.disabled = false; submitBtn.textContent = '변경';
+  }
+});
+
+/* Enter 키 지원 */
+['pwCurrent','pwNew','pwConfirm'].forEach((id, i, arr) => {
+  document.getElementById(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      if (i < arr.length - 1) document.getElementById(arr[i+1]).focus();
+      else document.getElementById('changePwSubmit').click();
+    }
+  });
 });
 
 /* color-dot active 상태 변경 시 border 색도 업데이트 */
