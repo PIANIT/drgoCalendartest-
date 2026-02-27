@@ -194,11 +194,11 @@
   .settings-btn:hover { border-color:var(--accent); color:var(--accent); }
   .settings-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:150; backdrop-filter:blur(3px); }
   .settings-overlay.open { display:block; }
-  .settings-panel { position:fixed; top:0; right:0; bottom:0; width:320px; max-width:92vw; background:var(--surface); border-left:1px solid var(--border); z-index:151; display:flex; flex-direction:column; transform:translateX(100%); transition:transform 0.28s cubic-bezier(.4,0,.2,1); overflow-y:auto; }
+  .settings-panel { position:fixed; top:0; right:0; bottom:0; width:320px; max-width:92vw; background:var(--surface); border-left:1px solid var(--border); z-index:151; display:flex; flex-direction:column; transform:translateX(100%); transition:transform 0.28s cubic-bezier(.4,0,.2,1); overflow:hidden; }
   .settings-panel.open { transform:translateX(0); }
   .settings-panel-header { display:flex; align-items:center; justify-content:space-between; padding:20px 20px 16px; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--surface); z-index:1; }
   .settings-panel-title { font-size:15px; font-weight:700; letter-spacing:0.04em; color:var(--text); }
-  .settings-panel-body { padding:20px; display:flex; flex-direction:column; gap:16px; }
+  .settings-panel-body { padding:20px; display:flex; flex-direction:column; gap:16px; flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; }
   .settings-section-title { font-size:11px; font-family:var(--font-mono); letter-spacing:0.12em; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px; }
   .color-setting-row { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-radius:8px; background:var(--surface2); border:1px solid var(--border); gap:10px; }
   .color-setting-label { font-size:13px; font-weight:500; color:var(--text); flex:1; }
@@ -208,11 +208,18 @@
   .settings-reset-btn { padding:10px; border-radius:8px; border:1px solid var(--border); background:none; color:var(--text-muted); font-family:var(--font-main); font-size:13px; cursor:pointer; transition:all 0.15s; width:100%; }
   .settings-reset-btn:hover { border-color:var(--red); color:var(--red); background:rgba(200,100,100,0.07); }
   @media (max-width:600px) {
-    .settings-panel { width:100%; border-left:none; top:auto; bottom:0; max-height:85vh; border-radius:20px 20px 0 0; transform:translateY(100%); overflow-y:auto; -webkit-overflow-scrolling:touch; }
+    .settings-panel { width:100%; border-left:none; top:auto; bottom:0; max-height:85vh; border-radius:20px 20px 0 0; transform:translateY(100%); }
     .settings-panel.open { transform:translateY(0); }
-    .settings-panel-body { padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 20px); }
+    .settings-panel-body { padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 32px); }
   }
   .month-label { font-size:18px; font-weight:500; letter-spacing:0.05em; min-width:180px; text-align:center; }
+  .list-view-btn {
+    background:none; border:1px solid var(--border); color:var(--text-muted);
+    padding:5px 12px; border-radius:6px; font-family:var(--font-main); font-size:12px;
+    cursor:pointer; transition:all 0.2s; white-space:nowrap;
+  }
+  .list-view-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .list-view-btn.active { background:rgba(200,176,138,0.18); border-color:var(--accent); color:var(--accent); font-weight:700; }
   .add-btn { background:var(--accent); color:#1a1207; border:none; padding:8px 20px; border-radius:6px; font-family:var(--font-main); font-size:13px; cursor:pointer; transition:all 0.2s; font-weight:500; }
   .add-btn:hover { background:#d4c09a; transform:translateY(-1px); }
 
@@ -1016,8 +1023,8 @@
       <button class="view-toggle-btn active" data-view="month">월간</button>
       <button class="view-toggle-btn" data-view="week">주간</button>
       <button class="view-toggle-btn" data-view="day">일간</button>
-      <button class="view-toggle-btn" data-view="list">리스트</button>
     </div>
+    <button class="view-toggle-btn list-view-btn" id="listViewBtn" data-view="list">☰ 리스트</button>
     <button class="settings-btn" id="settingsBtn" title="색상 설정">⚙️</button>
     <button class="theme-btn" id="themeBtn" title="테마 전환">🌙</button>
     <a href="admin.html" class="admin-link-btn" title="관리자 페이지">🔐</a>
@@ -3114,17 +3121,32 @@ function applyLightThemeVars(lightColors) {
     --surface2: ${lightColors.surface2} !important;
     ${lightColors.accent ? `--accent: ${lightColors.accent} !important;` : ''}
   }`;
+  /* 현재 라이트 모드면 inline style도 즉시 적용 */
+  const isLight = document.documentElement.classList.contains('light');
+  if (isLight) {
+    const root = document.documentElement;
+    root.style.setProperty('--bg',       lightColors.bg);
+    root.style.setProperty('--surface',  lightColors.surface);
+    root.style.setProperty('--surface2', lightColors.surface2);
+    if (lightColors.accent) root.style.setProperty('--accent', lightColors.accent);
+  }
 }
 
 function applyDarkThemeVars(darkColors) {
   const root = document.documentElement;
-  /* 현재 다크 모드면 즉시 반영, 아니면 :root 변수만 업데이트 */
   const isDark = !document.documentElement.classList.contains('light');
+  /* 다크 모드면 inline style로 즉시 반영 */
   if (isDark) {
     root.style.setProperty('--bg',       darkColors.bg);
     root.style.setProperty('--surface',  darkColors.surface);
     root.style.setProperty('--surface2', darkColors.surface2);
     if (darkColors.accent) root.style.setProperty('--accent', darkColors.accent);
+  } else {
+    /* 라이트 모드일 때 다크 변수는 :root에 미리 세팅 (theme 전환 대비) */
+    root.style.removeProperty('--bg');
+    root.style.removeProperty('--surface');
+    root.style.removeProperty('--surface2');
+    root.style.removeProperty('--accent');
   }
   /* :root 오버라이드 style 태그 */
   let styleEl = document.getElementById('_dark-theme-override');
@@ -3411,10 +3433,15 @@ const MONTH_KOR  = ['1월','2월','3월','4월','5월','6월','7월','8월','9�
 
 function switchPcView(view) {
   pcView = view;
-  document.querySelectorAll('.view-toggle-btn').forEach(btn=>btn.classList.toggle('active',btn.dataset.view===view));
-  /* filterBar(legend) 숨김 처리 */
+  const isList = view === 'list';
+  /* 월/주/일 버튼 active */
+  document.querySelectorAll('.view-toggle-btn:not(.list-view-btn)').forEach(btn=>btn.classList.toggle('active',btn.dataset.view===view));
+  /* 리스트 버튼 active */
+  const lvBtn = document.getElementById('listViewBtn');
+  if (lvBtn) lvBtn.classList.toggle('active', isList);
+  /* filterBar(=legend) 숨김 */
   const fb = document.getElementById('filterBar');
-  if (fb) fb.style.display = (view==='list') ? 'none' : '';
+  if (fb) fb.style.display = isList ? 'none' : '';
   renderAll();
 }
 
@@ -3667,9 +3694,13 @@ document.getElementById('todayBtn').addEventListener('click',()=>{
   else renderPcDay();
 });
 
-document.querySelectorAll('.view-toggle-btn').forEach(btn=>{
+document.querySelectorAll('.view-toggle-btn:not(.list-view-btn)').forEach(btn=>{
   btn.addEventListener('click',()=>{ if(isMobile()) return; switchPcView(btn.dataset.view); });
 });
+(function(){
+  const lvb = document.getElementById('listViewBtn');
+  if (lvb) lvb.addEventListener('click',()=>{ if(isMobile()) return; switchPcView(pcView==='list'?'month':'list'); });
+})();
 
 /* ══════════════════════════════════════════
    MOBILE VIEW
@@ -4002,6 +4033,9 @@ function renderAll() {
   document.getElementById('pcWeekView').style.display  = (!mobile && pcView==='week') ? '' : 'none';
   document.getElementById('pcDayView').style.display   = (!mobile && pcView==='day')  ? '' : 'none';
   document.getElementById('listView').style.display    = (!mobile && pcView==='list') ? '' : 'none';
+  /* 리스트뷰일 때 legend/filterBar 숨김 (뒤로가기 등 대비) */
+  const _fb = document.getElementById('filterBar');
+  if (_fb) _fb.style.display = (!mobile && pcView==='list') ? 'none' : '';
 
   if (mobile) {
     if (!mvWeekStart) mvWeekStart=getWeekStart(mvSelDate);
