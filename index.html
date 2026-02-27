@@ -934,6 +934,10 @@
   <div class="auth-box">
     <div class="auth-logo">📅 Calendar</div>
     <div class="auth-subtitle">DRGO Team</div>
+    <div class="auth-label">아이디</div>
+    <input class="auth-input" type="text" id="authIdInput"
+           placeholder="아이디" autocomplete="username"
+           maxlength="30" style="margin-bottom:10px;" />
     <div class="auth-label">비밀번호</div>
     <input class="auth-input" type="password" id="authInput"
            placeholder="••••••••" autocomplete="current-password"
@@ -1575,10 +1579,10 @@
 
 <script type="module">
 /* AUTH */
-const PASS_HASH = '25689706309b7389a2a9c7e5822c91399f60b3c5be15fe6aecdb17b2b0863be8';
-const MAX_TRIES  = 5;
-const LOCK_MS    = 60000;
+const MAX_TRIES   = 5;
+const LOCK_MS     = 60000;
 const SESSION_KEY = 'cal_auth_ok';
+const SESSION_UID = 'cal_auth_uid';
 const TRIES_KEY   = 'cal_auth_tries';
 const LOCK_KEY    = 'cal_auth_lock';
 
@@ -1606,44 +1610,8 @@ function updateLockUI() {
   }
 }
 
-async function tryAuth() {
-  if (getLockRemaining() > 0) return;
-  const input = document.getElementById('authInput');
-  const errorEl = document.getElementById('authError');
-  const val = input.value;
-  if (!val) return;
-  const hash = await sha256(val);
-  if (hash === PASS_HASH) {
-    sessionStorage.setItem(SESSION_KEY, '1');
-    localStorage.removeItem(TRIES_KEY);
-    localStorage.removeItem(LOCK_KEY);
-    hideAuth();
-  } else {
-    const tries = parseInt(localStorage.getItem(TRIES_KEY)||'0') + 1;
-    localStorage.setItem(TRIES_KEY, tries);
-    input.value = '';
-    input.classList.add('error');
-    setTimeout(() => input.classList.remove('error'), 400);
-    if (tries >= MAX_TRIES) {
-      localStorage.setItem(LOCK_KEY, Date.now() + LOCK_MS);
-      errorEl.textContent = '비밀번호가 틀렸습니다.';
-      updateLockUI();
-    } else {
-      errorEl.textContent = `비밀번호가 틀렸습니다. (${MAX_TRIES - tries}회 남음)`;
-      document.getElementById('authLockMsg').textContent = '';
-    }
-    input.focus();
-  }
-}
-
-document.getElementById('authBtn').addEventListener('click', tryAuth);
-document.getElementById('authInput').addEventListener('keydown', e => { if (e.key==='Enter') tryAuth(); });
-
-if (isAuthenticated()) { hideAuth(); }
-else { showAuth(); updateLockUI(); setTimeout(() => document.getElementById('authInput').focus(), 100); }
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getFirestore, collection, doc, setDoc, deleteDoc, addDoc, query, where, orderBy, getDocs, onSnapshot, serverTimestamp }
+import { getFirestore, collection, doc, setDoc, deleteDoc, addDoc, query, where, orderBy, getDocs, getDoc, onSnapshot, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -1657,6 +1625,67 @@ const firebaseConfig = {
 const app       = initializeApp(firebaseConfig);
 const db        = getFirestore(app);
 const eventsCol = collection(db, 'events');
+
+async function tryAuth() {
+  if (getLockRemaining() > 0) return;
+  const idInput = document.getElementById('authIdInput');
+  const pwInput = document.getElementById('authInput');
+  const errorEl = document.getElementById('authError');
+  const userId  = idInput.value.trim();
+  const userPw  = pwInput.value;
+
+  idInput.classList.remove('error');
+  pwInput.classList.remove('error');
+
+  if (!userId) { idInput.classList.add('error'); idInput.focus(); errorEl.textContent = '아이디를 입력하세요.'; return; }
+  if (!userPw) { pwInput.classList.add('error'); pwInput.focus(); errorEl.textContent = '비밀번호를 입력하세요.'; return; }
+
+  const btn = document.getElementById('authBtn');
+  btn.disabled = true; btn.textContent = '확인 중…';
+
+  try {
+    const pwHash  = await sha256(userPw);
+    const userDoc = await getDoc(doc(db, 'users', userId));
+
+    if (userDoc.exists() && userDoc.data().passwordHash === pwHash) {
+      sessionStorage.setItem(SESSION_KEY, '1');
+      sessionStorage.setItem(SESSION_UID, userId);
+      localStorage.removeItem(TRIES_KEY);
+      localStorage.removeItem(LOCK_KEY);
+      hideAuth();
+    } else {
+      const tries = parseInt(localStorage.getItem(TRIES_KEY)||'0') + 1;
+      localStorage.setItem(TRIES_KEY, tries);
+      pwInput.value = '';
+      pwInput.classList.add('error');
+      setTimeout(() => pwInput.classList.remove('error'), 400);
+      if (tries >= MAX_TRIES) {
+        localStorage.setItem(LOCK_KEY, Date.now() + LOCK_MS);
+        errorEl.textContent = '아이디 또는 비밀번호가 틀렸습니다.';
+        updateLockUI();
+      } else {
+        errorEl.textContent = `아이디 또는 비밀번호가 틀렸습니다. (${MAX_TRIES - tries}회 남음)`;
+        document.getElementById('authLockMsg').textContent = '';
+      }
+      pwInput.focus();
+    }
+  } catch(err) {
+    errorEl.textContent = '오류가 발생했습니다: ' + err.message;
+    btn.disabled = false; btn.textContent = '접속';
+  } finally {
+    updateLockUI();
+    if (!btn.disabled) btn.textContent = '접속';
+  }
+}
+
+document.getElementById('authBtn').addEventListener('click', tryAuth);
+document.getElementById('authInput').addEventListener('keydown', e => { if (e.key==='Enter') tryAuth(); });
+document.getElementById('authIdInput').addEventListener('keydown', e => { if (e.key==='Enter') document.getElementById('authInput').focus(); });
+
+if (isAuthenticated()) { hideAuth(); }
+else { showAuth(); updateLockUI(); setTimeout(() => document.getElementById('authIdInput').focus(), 100); }
+
+
 
 
 const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];

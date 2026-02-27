@@ -457,16 +457,17 @@ function getPcWeekStart() {
 function dateDiff(d1,d2){ return (new Date(d2+'T00:00:00')-new Date(d1+'T00:00:00'))/86400000; }
 
 /* 게스트: 모든 일정 표시 (필터 없음) */
-function allEvents() { return events; }
+/* 게스트: 사내업무(blue), 휴가관련(red) 제외 */
+function allEvents() { return events.filter(ev => ev.color !== 'blue' && ev.color !== 'red'); }
 
 /* ── 일정 표시 텍스트: 시간만 ── */
 function guestChipText(ev) {
-  if (ev.allDay !== false) return '종일';
+  const label = TYPE_LABELS[ev.color||'gold'] || '';
+  if (ev.allDay !== false) return `종일 · ${label}`;
   const st = ev.startTime || '';
   const et = ev.endTime   || '';
-  if (st && et) return `${st} ~ ${et}`;
-  if (st) return st;
-  return '일정';
+  const time = (st && et) ? `${st} ~ ${et}` : st || '일정';
+  return `${time} · ${label}`;
 }
 
 /* ── Firebase 로드 ── */
