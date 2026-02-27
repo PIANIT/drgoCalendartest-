@@ -151,11 +151,11 @@
   .settings-btn:hover { border-color:var(--accent); color:var(--accent); }
   .settings-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:150; backdrop-filter:blur(3px); }
   .settings-overlay.open { display:block; }
-  .settings-panel { position:fixed; top:0; right:0; bottom:0; width:320px; max-width:92vw; background:var(--surface); border-left:1px solid var(--border); z-index:151; display:flex; flex-direction:column; transform:translateX(100%); transition:transform 0.28s cubic-bezier(.4,0,.2,1); overflow-y:auto; }
+  .settings-panel { position:fixed; top:0; right:0; bottom:0; width:320px; max-width:92vw; background:var(--surface); border-left:1px solid var(--border); z-index:151; display:flex; flex-direction:column; transform:translateX(100%); transition:transform 0.28s cubic-bezier(.4,0,.2,1); overflow:hidden; }
   .settings-panel.open { transform:translateX(0); }
   .settings-panel-header { display:flex; align-items:center; justify-content:space-between; padding:20px 20px 16px; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--surface); z-index:1; }
   .settings-panel-title { font-size:15px; font-weight:700; letter-spacing:0.04em; color:var(--text); }
-  .settings-panel-body { padding:20px; display:flex; flex-direction:column; gap:16px; }
+  .settings-panel-body { padding:20px; display:flex; flex-direction:column; gap:16px; overflow-y:auto; flex:1; min-height:0; }
   .settings-section-title { font-size:11px; font-family:var(--font-mono); letter-spacing:0.12em; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px; }
   .color-setting-row { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-radius:8px; background:var(--surface2); border:1px solid var(--border); gap:10px; }
   .color-setting-label { font-size:13px; font-weight:500; color:var(--text); flex:1; }
@@ -165,8 +165,22 @@
   .settings-reset-btn { padding:10px; border-radius:8px; border:1px solid var(--border); background:none; color:var(--text-muted); font-family:var(--font-main); font-size:13px; cursor:pointer; transition:all 0.15s; width:100%; }
   .settings-reset-btn:hover { border-color:var(--red); color:var(--red); background:rgba(200,100,100,0.07); }
   @media (max-width:600px) {
-    .settings-panel { width:100%; border-left:none; top:auto; border-radius:20px 20px 0 0; transform:translateY(100%); }
+    .settings-panel {
+      width:100%; border-left:none;
+      top:auto; bottom:0; left:0; right:0;
+      height:55vh; max-height:55vh;
+      border-radius:20px 20px 0 0;
+      transform:translateY(100%);
+      display:flex; flex-direction:column;
+    }
     .settings-panel.open { transform:translateY(0); }
+    .settings-panel-header {
+      flex-shrink:0;
+    }
+    .settings-panel-body {
+      flex:1; min-height:0; overflow-y:auto;
+      -webkit-overflow-scrolling:touch;
+    }
   }
   .month-label { font-size:18px; font-weight:500; letter-spacing:0.05em; min-width:180px; text-align:center; }
   .add-btn { background:var(--accent); color:#1a1207; border:none; padding:8px 20px; border-radius:6px; font-family:var(--font-main); font-size:13px; cursor:pointer; transition:all 0.2s; font-weight:500; }
@@ -847,10 +861,11 @@
     .mv-event-title { font-size:14px; font-weight:600; color:var(--text); white-space:normal; overflow:hidden; word-break:break-word; margin-bottom:3px; }
     .mv-event-meta { font-size:11px; color:var(--text-muted); display:flex; gap:8px; flex-wrap:wrap; }
     .mv-event-badge { display:inline-flex; align-items:center; padding:1px 7px; border-radius:4px; font-size:10px; font-family:var(--font-mono); }
-    .mv-event-badge.gold  { background:rgba(200,176,138,0.2); color:var(--accent); }
-    .mv-event-badge.blue  { background:rgba(138,180,200,0.2); color:#8ab4c8; }
-    .mv-event-badge.red   { background:rgba(200,122,122,0.2); color:var(--red); }
-    .mv-event-badge.green { background:rgba(122,200,122,0.2); color:var(--green); }
+    .mv-event-badge.gold   { background:rgba(200,176,138,0.2); color:var(--accent); }
+    .mv-event-badge.blue   { background:rgba(138,180,200,0.2); color:#8ab4c8; }
+    .mv-event-badge.red    { background:rgba(200,122,122,0.2); color:var(--red); }
+    .mv-event-badge.green  { background:rgba(122,200,122,0.2); color:var(--green); }
+    .mv-event-badge.purple { background:rgba(155,112,200,0.2); color:var(--chip-purple-bg); }
     .mv-day-nav { display:flex; align-items:center; justify-content:space-between; padding:6px 14px 10px; }
     .mv-day-nav-label { font-size:15px; font-weight:700; color:var(--text); }
     .mv-day-nav-sub { font-size:11px; color:var(--text-muted); font-family:var(--font-mono); }
@@ -3516,7 +3531,7 @@ let mvMonthYear  = new Date().getFullYear();
 let mvMonthMonth = new Date().getMonth(); // 0-based
 
 const DOW_KR = ['일','월','화','수','목','금','토'];
-const TYPE_LABELS_MV = { gold:'방문의뢰', blue:'사내업무', red:'휴가관련', green:'촬영관련' };
+const TYPE_LABELS_MV = { gold:'방문의뢰', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방' };
 
 function addDays(dk, n) { const d=new Date(dk+'T00:00:00'); d.setDate(d.getDate()+n); return fmtDate(d); }
 function getWeekStart(dk) { const d=new Date(dk+'T00:00:00'); d.setDate(d.getDate()-d.getDay()); return fmtDate(d); }
