@@ -710,6 +710,16 @@
   }
   html.light .list-date-input { color-scheme:light; }
   .list-date-input:focus { border-color:var(--accent); }
+  .list-date-input-wrap {
+    display:inline-flex; cursor:pointer;
+    border-radius:7px; border:1px solid var(--border);
+    background:var(--surface2); transition:border-color 0.2s;
+    overflow:hidden;
+  }
+  .list-date-input-wrap:focus-within { border-color:var(--accent); }
+  .list-date-input-wrap .list-date-input {
+    border:none; background:transparent; cursor:pointer; padding:7px 9px;
+  }
   .list-date-sep { color:var(--text-muted); font-size:12px; }
   .list-date-clear {
     background:none; border:1px solid var(--border); color:var(--text-muted);
@@ -770,10 +780,10 @@
   .list-info-bar { font-family:var(--font-mono); font-size:11px; color:var(--text-muted); padding:8px 6px 4px; letter-spacing:0.06em; }
   .admin-link-btn {
     background:none; border:1px solid var(--border); color:var(--text-muted);
-    padding:6px 14px; border-radius:7px; font-size:12px; font-weight:600;
-    cursor:pointer; transition:all 0.2s; font-family:var(--font-mono);
-    letter-spacing:0.08em; display:flex; align-items:center; gap:6px;
-    white-space:nowrap; text-decoration:none;
+    width:32px; height:32px; border-radius:6px; font-size:15px;
+    cursor:pointer; transition:all 0.2s;
+    display:flex; align-items:center; justify-content:center;
+    text-decoration:none; flex-shrink:0;
   }
   .admin-link-btn:hover { border-color:var(--accent); color:var(--accent); }
   @media (max-width:900px) and (min-width:601px) {
@@ -828,7 +838,7 @@
       <button class="view-toggle-btn" data-view="list">리스트</button>
     </div>
     <button class="theme-btn" id="themeBtn" title="테마 전환">🌙</button>
-    <a href="admin.html" class="admin-link-btn" title="DB 관리자 페이지">🔐 관리자</a>
+    <a href="admin.html" class="admin-link-btn" title="DB 관리자 페이지">🔐</a>
     <button class="add-btn" id="addBtn">+ 일정 추가</button>
   </div>
 </header>
@@ -871,9 +881,13 @@
     </div>
     <div class="list-date-range">
       <span class="list-date-label">기간</span>
-      <input class="list-date-input" type="date" id="listDateFrom" />
+      <label class="list-date-input-wrap" for="listDateFrom">
+        <input class="list-date-input" type="date" id="listDateFrom" />
+      </label>
       <span class="list-date-sep">—</span>
-      <input class="list-date-input" type="date" id="listDateTo" />
+      <label class="list-date-input-wrap" for="listDateTo">
+        <input class="list-date-input" type="date" id="listDateTo" />
+      </label>
       <button class="list-date-clear" id="listDateClear" style="display:none;">✕</button>
     </div>
     <div class="list-filter-group" id="listFilterGroup">
@@ -2499,7 +2513,7 @@ function renderListView() {
     (e.address||'').toLowerCase().includes(listSearch) ||
     (e.gold?.name||'').toLowerCase().includes(listSearch)
   );
-  if (listDateFrom) evs = evs.filter(e => (e.endDate||e.startDate) >= listDateFrom);
+  if (listDateFrom) evs = evs.filter(e => e.startDate >= listDateFrom);
   if (listDateTo)   evs = evs.filter(e => e.startDate <= listDateTo);
 
   evs.sort((a, b) => {

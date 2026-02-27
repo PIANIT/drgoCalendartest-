@@ -178,6 +178,13 @@ header {
 }
 html.light .date-range-input { color-scheme:light; }
 .date-range-input:focus { border-color:var(--accent); }
+.date-range-input-wrap {
+  display:inline-flex; cursor:pointer;
+  border-radius:7px; border:1px solid var(--border);
+  background:var(--surface2); transition:border-color 0.2s; overflow:hidden;
+}
+.date-range-input-wrap:focus-within { border-color:var(--accent); }
+.date-range-input-wrap .date-range-input { border:none; background:transparent; cursor:pointer; }
 .date-range-sep { color:var(--text-muted); font-size:12px; }
 .date-range-clear {
   background:none; border:1px solid var(--border); color:var(--text-muted);
@@ -441,9 +448,13 @@ html.light .date-range-input { color-scheme:light; }
   </div>
   <div class="date-range-wrap" id="dateRangeWrap">
     <span class="date-range-label">기간</span>
-    <input class="date-range-input" type="date" id="dateFrom" />
+    <label class="date-range-input-wrap" for="dateFrom">
+      <input class="date-range-input" type="date" id="dateFrom" />
+    </label>
     <span class="date-range-sep">—</span>
-    <input class="date-range-input" type="date" id="dateTo" />
+    <label class="date-range-input-wrap" for="dateTo">
+      <input class="date-range-input" type="date" id="dateTo" />
+    </label>
     <button class="date-range-clear" id="dateRangeClear" style="display:none;">✕ 초기화</button>
   </div>
   <div class="toolbar-right">
@@ -870,7 +881,7 @@ function applyFilters() {
     (e.address||'').toLowerCase().includes(searchQuery) ||
     (e.gold?.name||'').toLowerCase().includes(searchQuery)
   );
-  if (dateFrom) evs = evs.filter(e => (e.endDate||e.startDate) >= dateFrom);
+  if (dateFrom) evs = evs.filter(e => e.startDate >= dateFrom);
   if (dateTo)   evs = evs.filter(e => e.startDate <= dateTo);
   evs.sort((a, b) => {
     let av = a[sortKey]||'', bv = b[sortKey]||'';
