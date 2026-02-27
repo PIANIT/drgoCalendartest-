@@ -2,9 +2,21 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
-<title>캘린더</title>
+<title>DRGO Calendar</title>
+
+<!-- ── PWA ── -->
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#1c1c1c" id="metaThemeColor" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="DRGO Cal" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png" />
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512x512.png" />
+
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   /* 맑은 고딕 우선 폰트 스택 */
@@ -14,7 +26,38 @@
   }
 </style>
 <style>
-  /* ── 로그인 오버레이 ── */
+  /* ── PWA 설치 배너 ── */
+  #pwaInstallBanner {
+    display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+    z-index:9998; background:var(--surface); border:1px solid var(--accent);
+    border-radius:14px; padding:14px 18px; box-shadow:0 8px 32px rgba(0,0,0,0.5);
+    align-items:center; gap:12px; max-width:calc(100vw - 32px); width:360px;
+    animation:bannerIn 0.3s cubic-bezier(.34,1.56,.64,1);
+  }
+  #pwaInstallBanner.show { display:flex; }
+  @keyframes bannerIn {
+    from { opacity:0; transform:translateX(-50%) translateY(20px); }
+    to   { opacity:1; transform:translateX(-50%) translateY(0); }
+  }
+  .pwa-banner-icon { font-size:28px; flex-shrink:0; }
+  .pwa-banner-text { flex:1; min-width:0; }
+  .pwa-banner-title { font-size:13px; font-weight:700; color:var(--text); margin-bottom:2px; }
+  .pwa-banner-sub   { font-size:11px; color:var(--text-muted); }
+  .pwa-banner-btns  { display:flex; gap:6px; flex-shrink:0; }
+  .pwa-install-btn {
+    background:var(--accent); color:#1a1207; border:none;
+    padding:7px 14px; border-radius:8px; font-size:12px; font-weight:700;
+    cursor:pointer; transition:all 0.15s; white-space:nowrap;
+    font-family:var(--font-main);
+  }
+  .pwa-install-btn:hover { background:#e0cc9e; }
+  .pwa-dismiss-btn {
+    background:none; border:1px solid var(--border); color:var(--text-muted);
+    padding:7px 10px; border-radius:8px; font-size:12px;
+    cursor:pointer; transition:all 0.15s;
+    font-family:var(--font-main);
+  }
+  .pwa-dismiss-btn:hover { border-color:var(--red); color:var(--red); }
   #authOverlay {
     display:flex; position:fixed; inset:0; z-index:9999;
     background:var(--bg, #1a1207);
@@ -682,6 +725,150 @@
     font-weight:700;
   }
 
+  /* ── ADMIN LINK BUTTON ── */
+  .admin-link-btn {
+    background:none; border:1px solid var(--border); color:var(--text-muted);
+    width:32px; height:32px; border-radius:6px; font-size:14px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; text-decoration:none; transition:all 0.2s; flex-shrink:0;
+  }
+  .admin-link-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+  /* ══ LIST VIEW ══ */
+  #listView { display:none; }
+  .lv-wrap { padding:0 32px 40px; }
+  .lv-toolbar {
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    padding:14px 32px; border-bottom:1px solid var(--border);
+    background:var(--bg); position:sticky; top:57px; z-index:5;
+  }
+  .lv-search-wrap {
+    display:flex; align-items:center; gap:8px;
+    background:var(--surface2); border:1px solid var(--border);
+    border-radius:8px; padding:7px 12px; flex:1; min-width:160px; max-width:260px;
+    transition:border-color 0.2s;
+  }
+  .lv-search-wrap:focus-within { border-color:var(--accent); }
+  .lv-search-icon { color:var(--text-muted); font-size:13px; flex-shrink:0; }
+  .lv-search-input {
+    background:none; border:none; outline:none; color:var(--text);
+    font-family:var(--font-main); font-size:13px; flex:1;
+  }
+  .lv-search-input::placeholder { color:var(--text-muted); }
+  .lv-date-range { display:flex; align-items:center; gap:5px; }
+  .lv-date-label {
+    font-family:var(--font-mono); font-size:10px; letter-spacing:0.15em;
+    text-transform:uppercase; color:var(--text-muted); white-space:nowrap;
+  }
+  .lv-date-input-wrap {
+    display:inline-flex; cursor:pointer;
+    border-radius:7px; border:1px solid var(--border);
+    background:var(--surface2); transition:border-color 0.2s; overflow:hidden;
+  }
+  .lv-date-input-wrap:focus-within { border-color:var(--accent); }
+  .lv-date-input {
+    padding:7px 9px; font-size:12px; font-family:var(--font-mono);
+    background:transparent; border:none; color:var(--text); outline:none;
+    cursor:pointer; color-scheme:dark;
+  }
+  html.light .lv-date-input { color-scheme:light; }
+  .lv-date-sep { color:var(--text-muted); font-size:12px; }
+  .lv-date-clear {
+    background:none; border:1px solid var(--border); color:var(--text-muted);
+    padding:6px 10px; border-radius:7px; font-size:11px; cursor:pointer;
+    font-family:var(--font-mono); transition:all 0.15s; white-space:nowrap;
+  }
+  .lv-date-clear:hover { border-color:var(--red); color:var(--red); }
+  .lv-filter-group { display:flex; gap:5px; flex-wrap:wrap; }
+  .lv-filter-btn {
+    display:flex; align-items:center; gap:5px; padding:5px 10px;
+    border-radius:6px; border:1px solid var(--border); background:var(--surface2);
+    font-size:11px; font-family:var(--font-mono); cursor:pointer;
+    transition:all 0.15s; color:var(--text-muted); white-space:nowrap;
+  }
+  .lv-filter-btn .lv-fdot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+  .lv-filter-btn.lv-f-gold  .lv-fdot { background:var(--chip-gold-bg); }
+  .lv-filter-btn.lv-f-blue  .lv-fdot { background:var(--chip-blue-bg); }
+  .lv-filter-btn.lv-f-red   .lv-fdot { background:var(--chip-red-bg); }
+  .lv-filter-btn.lv-f-green .lv-fdot { background:var(--chip-green-bg); }
+  .lv-filter-btn.lv-f-purple .lv-fdot { background:var(--chip-purple-bg); }
+  .lv-filter-btn.active { color:var(--text); }
+  .lv-filter-btn.active.lv-f-gold   { background:rgba(200,168,112,0.15); border-color:var(--chip-gold-bg); }
+  .lv-filter-btn.active.lv-f-blue   { background:rgba(122,174,200,0.15); border-color:var(--chip-blue-bg); }
+  .lv-filter-btn.active.lv-f-red    { background:rgba(200,112,112,0.15); border-color:var(--chip-red-bg); }
+  .lv-filter-btn.active.lv-f-green  { background:rgba(112,200,112,0.15); border-color:var(--chip-green-bg); }
+  .lv-filter-btn.active.lv-f-purple { background:rgba(155,112,200,0.15); border-color:var(--chip-purple-bg); }
+  .lv-toolbar-right { margin-left:auto; display:flex; align-items:center; gap:6px; }
+  .lv-count {
+    font-family:var(--font-mono); font-size:11px; color:var(--text-muted);
+    white-space:nowrap;
+  }
+
+  /* LIST TABLE */
+  .lv-sort-bar {
+    display:grid; grid-template-columns:26px 2fr 1.1fr 1fr 90px 70px;
+    align-items:center; padding:8px 32px;
+    border-bottom:1px solid var(--border);
+    font-family:var(--font-mono); font-size:10px; color:var(--text-muted);
+    letter-spacing:0.1em; text-transform:uppercase;
+    background:var(--surface2); position:sticky; top:calc(57px + 52px); z-index:4;
+  }
+  .lv-sort-col {
+    cursor:pointer; user-select:none; transition:color 0.12s;
+    display:flex; align-items:center; gap:3px;
+  }
+  .lv-sort-col:hover { color:var(--accent); }
+  .lv-sort-col.active { color:var(--accent); }
+  .lv-sort-arrow { font-size:10px; }
+  .lv-row {
+    display:grid; grid-template-columns:26px 2fr 1.1fr 1fr 90px 70px;
+    align-items:center; padding:10px 32px;
+    border-bottom:1px solid var(--border);
+    cursor:pointer; transition:background 0.12s;
+    border-left:3px solid transparent;
+  }
+  .lv-row:hover { background:var(--surface2); }
+  .lv-row.lv-gold   { border-left-color:var(--chip-gold-bg); }
+  .lv-row.lv-blue   { border-left-color:var(--chip-blue-bg); }
+  .lv-row.lv-red    { border-left-color:var(--chip-red-bg); }
+  .lv-row.lv-green  { border-left-color:var(--chip-green-bg); }
+  .lv-row.lv-purple { border-left-color:var(--chip-purple-bg); }
+  .lv-row-num { font-family:var(--font-mono); font-size:11px; color:var(--text-muted); }
+  .lv-row-title { font-size:13px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding-right:8px; display:flex; align-items:center; gap:5px; }
+  .lv-row-date { font-family:var(--font-mono); font-size:11px; color:var(--text-muted); }
+  .lv-row-name { font-size:12px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .lv-row-badge {
+    display:inline-flex; align-items:center; gap:4px;
+    padding:3px 8px; border-radius:4px; font-family:var(--font-mono);
+    font-size:10px; font-weight:600; white-space:nowrap;
+  }
+  .lv-row-badge.lv-gold   { background:rgba(200,168,112,0.2); color:var(--chip-gold-bg); }
+  .lv-row-badge.lv-blue   { background:rgba(122,174,200,0.2); color:var(--chip-blue-bg); }
+  .lv-row-badge.lv-red    { background:rgba(200,112,112,0.2); color:var(--chip-red-bg); }
+  .lv-row-badge.lv-green  { background:rgba(112,200,112,0.2); color:var(--chip-green-bg); }
+  .lv-row-badge.lv-purple { background:rgba(155,112,200,0.2); color:var(--chip-purple-bg); }
+  .lv-row-flags { display:flex; gap:3px; flex-wrap:wrap; font-size:12px; }
+  .lv-empty { text-align:center; padding:60px 0; color:var(--text-muted); font-size:14px; }
+  .lv-pagination {
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    padding:18px 32px; font-family:var(--font-mono); font-size:12px;
+  }
+  .lv-page-btn {
+    background:var(--surface2); border:1px solid var(--border); color:var(--text-muted);
+    padding:5px 11px; border-radius:6px; cursor:pointer; transition:all 0.15s; font-size:12px;
+  }
+  .lv-page-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .lv-page-btn:disabled { opacity:0.35; cursor:not-allowed; }
+  .lv-page-info { color:var(--text-muted); }
+  @media (max-width:900px) and (min-width:601px) {
+    .lv-sort-bar, .lv-row { grid-template-columns:26px 2fr 1fr 90px 60px; }
+    .lv-sort-bar > *:nth-child(4), .lv-row > *:nth-child(4) { display:none; }
+    .lv-toolbar { padding:10px 16px; top:52px; }
+    .lv-sort-bar { top:calc(52px + 46px); }
+    .lv-wrap { padding:0 16px 40px; }
+    .lv-sort-bar, .lv-row { padding:8px 16px; }
+  }
+
   .pc-week-row {
     display:grid; grid-template-columns:repeat(7,1fr);
     gap:1px; border-bottom:1px solid var(--border);
@@ -900,9 +1087,11 @@
       <button class="view-toggle-btn active" data-view="month">월간</button>
       <button class="view-toggle-btn" data-view="week">주간</button>
       <button class="view-toggle-btn" data-view="day">일간</button>
+      <button class="view-toggle-btn" data-view="list">리스트</button>
     </div>
     <button class="settings-btn" id="settingsBtn" title="색상 설정">⚙️</button>
     <button class="theme-btn" id="themeBtn" title="테마 전환">🌙</button>
+    <a href="admin.html" class="admin-link-btn" title="관리자 페이지">🔐</a>
     <button class="add-btn" id="addBtn">+ 일정 추가</button>
   </div>
 </header>
@@ -936,6 +1125,47 @@
     <div class="pc-day-header" id="pcDayHeader"></div>
     <div class="pc-day-list" id="pcDayList"></div>
   </div>
+</div>
+
+<!-- ═══ LIST VIEW ═══ -->
+<div id="listView" style="display:none;">
+  <div class="lv-toolbar" id="lvToolbar">
+    <div class="lv-search-wrap">
+      <span class="lv-search-icon">🔍</span>
+      <input class="lv-search-input" id="lvSearch" placeholder="제목, 이름, 주소 검색…" />
+    </div>
+    <div class="lv-date-range">
+      <span class="lv-date-label">기간</span>
+      <label class="lv-date-input-wrap" for="lvDateFrom">
+        <input class="lv-date-input" type="date" id="lvDateFrom" />
+      </label>
+      <span class="lv-date-sep">—</span>
+      <label class="lv-date-input-wrap" for="lvDateTo">
+        <input class="lv-date-input" type="date" id="lvDateTo" />
+      </label>
+      <button class="lv-date-clear" id="lvDateClear" style="display:none;">✕ 초기화</button>
+    </div>
+    <div class="lv-filter-group" id="lvFilterGroup">
+      <button class="lv-filter-btn lv-f-gold  active" data-lf="gold">  <span class="lv-fdot"></span>방문의뢰</button>
+      <button class="lv-filter-btn lv-f-blue  active" data-lf="blue">  <span class="lv-fdot"></span>사내업무</button>
+      <button class="lv-filter-btn lv-f-red   active" data-lf="red">   <span class="lv-fdot"></span>휴가관련</button>
+      <button class="lv-filter-btn lv-f-green active" data-lf="green"> <span class="lv-fdot"></span>촬영관련</button>
+      <button class="lv-filter-btn lv-f-purple active" data-lf="purple"><span class="lv-fdot"></span>미팅/내방</button>
+    </div>
+    <div class="lv-toolbar-right">
+      <span class="lv-count" id="lvCount"></span>
+    </div>
+  </div>
+  <div class="lv-sort-bar">
+    <div></div>
+    <div class="lv-sort-col active" data-lsort="startDate">날짜 <span class="lv-sort-arrow" id="lvsa-startDate">↓</span></div>
+    <div class="lv-sort-col" data-lsort="title">제목 <span class="lv-sort-arrow" id="lvsa-title"></span></div>
+    <div class="lv-sort-col" data-lsort="name">이름 <span class="lv-sort-arrow" id="lvsa-name"></span></div>
+    <div class="lv-sort-col" data-lsort="color">유형 <span class="lv-sort-arrow" id="lvsa-color"></span></div>
+    <div></div>
+  </div>
+  <div id="lvList"></div>
+  <div class="lv-pagination" id="lvPagination"></div>
 </div>
 
 <div id="mobileView">
@@ -1382,6 +1612,19 @@
     <button class="day-popover-close" id="dayPopoverClose">✕</button>
   </div>
   <div class="day-popover-list" id="dayPopoverList"></div>
+</div>
+
+<!-- ═══ PWA INSTALL BANNER ═══ -->
+<div id="pwaInstallBanner">
+  <div class="pwa-banner-icon">📅</div>
+  <div class="pwa-banner-text">
+    <div class="pwa-banner-title">앱으로 설치하기</div>
+    <div class="pwa-banner-sub">홈 화면에 추가하면 더 빠르게 열립니다</div>
+  </div>
+  <div class="pwa-banner-btns">
+    <button class="pwa-install-btn" id="pwaInstallBtn">설치</button>
+    <button class="pwa-dismiss-btn" id="pwaDismissBtn">나중에</button>
+  </div>
 </div>
 
 <div id="loadingOverlay" style="display:flex;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:16px;backdrop-filter:blur(4px);">
@@ -3250,6 +3493,9 @@ const MONTH_KOR  = ['1월','2월','3월','4월','5월','6월','7월','8월','9�
 function switchPcView(view) {
   pcView = view;
   document.querySelectorAll('.view-toggle-btn').forEach(btn=>btn.classList.toggle('active',btn.dataset.view===view));
+  /* filterBar(legend) 숨김 처리 */
+  const fb = document.getElementById('filterBar');
+  if (fb) fb.style.display = (view==='list') ? 'none' : '';
   renderAll();
 }
 
@@ -3466,6 +3712,7 @@ document.getElementById('prevBtn').addEventListener('click',()=>{
   }
   if (pcView==='month'){currentMonth--;if(currentMonth<0){currentMonth=11;currentYear--;}render();}
   else if (pcView==='week'){pcWeekStart=addDaysPc(pcWeekStart,-7);renderPcWeek();}
+  else if (pcView==='list') return;
   else{pcDayDate=addDaysPc(pcDayDate,-1);renderPcDay();}
 });
 document.getElementById('nextBtn').addEventListener('click',()=>{
@@ -3483,6 +3730,7 @@ document.getElementById('nextBtn').addEventListener('click',()=>{
   }
   if (pcView==='month'){currentMonth++;if(currentMonth>11){currentMonth=0;currentYear++;}render();}
   else if (pcView==='week'){pcWeekStart=addDaysPc(pcWeekStart,7);renderPcWeek();}
+  else if (pcView==='list') return;
   else{pcDayDate=addDaysPc(pcDayDate,1);renderPcDay();}
 });
 document.getElementById('todayBtn').addEventListener('click',()=>{
@@ -3834,6 +4082,7 @@ function renderAll() {
   if (calWrap) calWrap.style.display = (!mobile && pcView==='month') ? '' : (mobile ? 'none' : 'none');
   document.getElementById('pcWeekView').style.display  = (!mobile && pcView==='week') ? '' : 'none';
   document.getElementById('pcDayView').style.display   = (!mobile && pcView==='day')  ? '' : 'none';
+  document.getElementById('listView').style.display    = (!mobile && pcView==='list') ? '' : 'none';
 
   if (mobile) {
     if (!mvWeekStart) mvWeekStart=getWeekStart(mvSelDate);
@@ -3841,9 +4090,174 @@ function renderAll() {
   } else {
     if (pcView==='month') { if(calWrap) calWrap.style.display=''; render(); }
     else if (pcView==='week') { if(!pcWeekStart) pcWeekStart=getPcWeekStart(); renderPcWeek(); }
-    else { if(!pcDayDate) pcDayDate=todayStr; renderPcDay(); }
+    else if (pcView==='day') { if(!pcDayDate) pcDayDate=todayStr; renderPcDay(); }
+    else if (pcView==='list') renderListView();
   }
 }
+
+/* ══════════════════════════════════════════
+   LIST VIEW
+═══════════════════════════════════════════ */
+(function(){
+  const LV_TYPE_LABELS = { gold:'방문의뢰', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방' };
+  const LV_PAGE_SIZE = 30;
+  let lvSearch   = '';
+  let lvDateFrom = '';
+  let lvDateTo   = '';
+  let lvFilters  = new Set(['gold','blue','red','green','purple']);
+  let lvSortKey  = 'startDate';
+  let lvSortDir  = -1; // -1 = desc
+  let lvPage     = 1;
+
+  function lvFilteredEvents() {
+    let evs = events.filter(ev => lvFilters.has(ev.color||'gold'));
+    if (lvSearch) {
+      const q = lvSearch.toLowerCase();
+      evs = evs.filter(ev =>
+        (ev.title||'').toLowerCase().includes(q) ||
+        (ev.name||'').toLowerCase().includes(q) ||
+        (ev.address||'').toLowerCase().includes(q) ||
+        (ev.gold?.name||'').toLowerCase().includes(q)
+      );
+    }
+    if (lvDateFrom) evs = evs.filter(ev => ev.startDate >= lvDateFrom);
+    if (lvDateTo)   evs = evs.filter(ev => ev.startDate <= lvDateTo);
+    evs.sort((a,b) => {
+      let av = a[lvSortKey]||'', bv = b[lvSortKey]||'';
+      if (lvSortKey==='color') { av=LV_TYPE_LABELS[av]||''; bv=LV_TYPE_LABELS[bv]||''; }
+      return av < bv ? lvSortDir : av > bv ? -lvSortDir : 0;
+    });
+    return evs;
+  }
+
+  function lvUpdateDateClear() {
+    document.getElementById('lvDateClear').style.display = (lvDateFrom||lvDateTo) ? '' : 'none';
+  }
+
+  function renderListView() {
+    const evs = lvFilteredEvents();
+    const total = evs.length;
+    const totalPages = Math.max(1, Math.ceil(total/LV_PAGE_SIZE));
+    lvPage = Math.min(lvPage, totalPages);
+    const start = (lvPage-1)*LV_PAGE_SIZE;
+    const pageEvs = evs.slice(start, start+LV_PAGE_SIZE);
+
+    /* count */
+    document.getElementById('lvCount').textContent = `총 ${total}건`;
+
+    /* sort arrows */
+    ['startDate','title','name','color'].forEach(k => {
+      const el = document.getElementById(`lvsa-${k}`);
+      if (!el) return;
+      el.textContent = lvSortKey===k ? (lvSortDir===-1 ? '↓' : '↑') : '';
+    });
+    document.querySelectorAll('.lv-sort-col').forEach(c=>c.classList.toggle('active',c.dataset.lsort===lvSortKey));
+
+    const list = document.getElementById('lvList');
+    list.innerHTML = '';
+    if (pageEvs.length===0) {
+      list.innerHTML = '<div class="lv-empty">검색 결과가 없습니다</div>';
+    } else {
+      pageEvs.forEach((ev, i) => {
+        const c = ev.color||'gold';
+        const idx = events.indexOf(ev);
+        const row = document.createElement('div');
+        row.className = `lv-row lv-${c}`;
+
+        /* 날짜 */
+        const sd = ev.startDate||'';
+        const ed = ev.endDate||sd;
+        const dateStr = (ed&&ed!==sd) ? `${sd} ~ ${ed}` : sd;
+
+        /* 아이콘 */
+        const icons = getSpecialIconStr(ev);
+        const schedIcon = ev.schedOpt ? `<span style="font-size:11px;">${SCHED_OPTS[ev.schedOpt]?.icon||''}</span>` : '';
+
+        row.innerHTML = `
+          <div class="lv-row-num">${start+i+1}</div>
+          <div class="lv-row-title">${icons}${escHtml(ev.title||'(제목 없음)')}${schedIcon}</div>
+          <div class="lv-row-date">${dateStr}</div>
+          <div class="lv-row-name">${ev.gold?.name||ev.name||''}</div>
+          <div><span class="lv-row-badge lv-${c}">${LV_TYPE_LABELS[c]||c}</span></div>
+          <div class="lv-row-flags">${icons}</div>`;
+        /* title 컬럼에 이미 icons 있으니 flags는 별도 특수아이콘만 */
+        const flagsCell = row.querySelector('.lv-row-flags');
+        flagsCell.innerHTML = ev.locked ? '🔒' : '';
+
+        row.addEventListener('click', () => { if(idx>=0) openModal(idx); });
+        list.appendChild(row);
+      });
+    }
+
+    /* pagination */
+    const pg = document.getElementById('lvPagination');
+    pg.innerHTML = '';
+    if (totalPages>1) {
+      const prev = document.createElement('button');
+      prev.className='lv-page-btn'; prev.textContent='‹ 이전';
+      prev.disabled = lvPage<=1;
+      prev.addEventListener('click',()=>{ lvPage--; renderListView(); });
+      pg.appendChild(prev);
+      const info = document.createElement('span');
+      info.className='lv-page-info';
+      info.textContent=`${lvPage} / ${totalPages}`;
+      pg.appendChild(info);
+      const next = document.createElement('button');
+      next.className='lv-page-btn'; next.textContent='다음 ›';
+      next.disabled = lvPage>=totalPages;
+      next.addEventListener('click',()=>{ lvPage++; renderListView(); });
+      pg.appendChild(next);
+    }
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  /* 검색 */
+  document.getElementById('lvSearch').addEventListener('input', e => {
+    lvSearch = e.target.value.trim(); lvPage=1; renderListView();
+  });
+
+  /* 날짜 범위 */
+  document.getElementById('lvDateFrom').addEventListener('change', e => {
+    lvDateFrom=e.target.value; lvUpdateDateClear(); lvPage=1; renderListView();
+  });
+  document.getElementById('lvDateTo').addEventListener('change', e => {
+    lvDateTo=e.target.value; lvUpdateDateClear(); lvPage=1; renderListView();
+  });
+  document.getElementById('lvDateClear').addEventListener('click', () => {
+    lvDateFrom=''; lvDateTo='';
+    document.getElementById('lvDateFrom').value='';
+    document.getElementById('lvDateTo').value='';
+    lvUpdateDateClear(); lvPage=1; renderListView();
+  });
+
+  /* 카테고리 필터 */
+  document.getElementById('lvFilterGroup').addEventListener('click', e => {
+    const btn = e.target.closest('.lv-filter-btn');
+    if (!btn) return;
+    const key = btn.dataset.lf;
+    if (lvFilters.has(key)) lvFilters.delete(key);
+    else lvFilters.add(key);
+    btn.classList.toggle('active', lvFilters.has(key));
+    lvPage=1; renderListView();
+  });
+
+  /* 정렬 */
+  document.querySelectorAll('.lv-sort-col').forEach(col => {
+    col.addEventListener('click', () => {
+      const k = col.dataset.lsort;
+      if (!k) return;
+      if (lvSortKey===k) lvSortDir*=-1;
+      else { lvSortKey=k; lvSortDir=-1; }
+      lvPage=1; renderListView();
+    });
+  });
+
+  /* 외부에서 호출 가능하도록 전역 등록 */
+  window.renderListView = renderListView;
+})();
 
 window.addEventListener('resize',()=>{ renderAll(); });
 
@@ -3886,6 +4300,89 @@ function slideAnimate(el,toLeft,callback){
     setTimeout(()=>{el.style.transition='';el.style.transform='';},140);
   },130);
 }
+</script>
+
+<!-- ═══ PWA : Service Worker 등록 + 설치 프롬프트 ═══ -->
+<script>
+(function() {
+  /* ── 테마 색상 동기화 ── */
+  function syncThemeColor() {
+    const isLight = document.documentElement.classList.contains('light');
+    const mc = document.getElementById('metaThemeColor');
+    if (mc) mc.setAttribute('content', isLight ? '#f7f4f0' : '#1c1c1c');
+  }
+  const themeObserver = new MutationObserver(syncThemeColor);
+  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+  syncThemeColor();
+
+  /* ── Service Worker 등록 ── */
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js', { scope: './' })
+        .then(reg => {
+          console.log('[PWA] SW 등록 완료:', reg.scope);
+          /* 새 SW가 대기 중이면 즉시 적용 */
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            if (newWorker) {
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  console.log('[PWA] 새 버전 감지 — 새로고침하면 업데이트됩니다');
+                }
+              });
+            }
+          });
+        })
+        .catch(err => console.warn('[PWA] SW 등록 실패:', err));
+    });
+  }
+
+  /* ── 설치 프롬프트 ── */
+  let deferredPrompt = null;
+  const banner       = document.getElementById('pwaInstallBanner');
+  const installBtn   = document.getElementById('pwaInstallBtn');
+  const dismissBtn   = document.getElementById('pwaDismissBtn');
+  const DISMISSED_KEY = 'pwa_banner_dismissed';
+
+  /* 이미 설치됐거나 배너 숨김 처리한 경우 표시 안 함 */
+  function isBannerSuppressed() {
+    if (window.matchMedia('(display-mode: standalone)').matches) return true;
+    if (navigator.standalone) return true;
+    const ts = parseInt(localStorage.getItem(DISMISSED_KEY) || '0');
+    /* 7일간 재표시 안 함 */
+    return ts > 0 && Date.now() - ts < 7 * 24 * 60 * 60 * 1000;
+  }
+
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (!isBannerSuppressed()) {
+      /* 페이지 로드 2초 후에 배너 표시 */
+      setTimeout(() => banner.classList.add('show'), 2000);
+    }
+  });
+
+  installBtn?.addEventListener('click', async () => {
+    banner.classList.remove('show');
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log('[PWA] 설치 결과:', outcome);
+    deferredPrompt = null;
+  });
+
+  dismissBtn?.addEventListener('click', () => {
+    banner.classList.remove('show');
+    localStorage.setItem(DISMISSED_KEY, Date.now().toString());
+  });
+
+  /* 설치 완료 시 배너 숨김 */
+  window.addEventListener('appinstalled', () => {
+    banner.classList.remove('show');
+    deferredPrompt = null;
+    console.log('[PWA] 설치 완료!');
+  });
+})();
 </script>
 
 </body>
