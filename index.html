@@ -1581,16 +1581,28 @@
 /* AUTH */
 const MAX_TRIES   = 5;
 const LOCK_MS     = 60000;
-const SESSION_KEY = 'cal_auth_ok';
-const SESSION_UID = 'cal_auth_uid';
-const TRIES_KEY   = 'cal_auth_tries';
-const LOCK_KEY    = 'cal_auth_lock';
+const SESSION_KEY  = 'cal_auth_ok';
+const SESSION_UID  = 'cal_auth_uid';
+const SESSION_EXP  = 'cal_auth_exp';
+const TRIES_KEY    = 'cal_auth_tries';
+const LOCK_KEY     = 'cal_auth_lock';
+const AUTH_TTL_MS  = 30 * 24 * 60 * 60 * 1000; // 30일
 
 async function sha256(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
-function isAuthenticated() { return sessionStorage.getItem(SESSION_KEY) === '1'; }
+function isAuthenticated() {
+  if (localStorage.getItem(SESSION_KEY) !== '1') return false;
+  const exp = parseInt(localStorage.getItem(SESSION_EXP) || '0');
+  if (Date.now() > exp) {
+    localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(SESSION_UID);
+    localStorage.removeItem(SESSION_EXP);
+    return false;
+  }
+  return true;
+}
 function getLockRemaining() { return Math.max(0, parseInt(localStorage.getItem(LOCK_KEY)||'0') - Date.now()); }
 function getTriesLeft() { return Math.max(0, MAX_TRIES - parseInt(localStorage.getItem(TRIES_KEY)||'0')); }
 function showAuth() { document.getElementById('authOverlay').classList.remove('hidden'); }
@@ -1648,8 +1660,9 @@ async function tryAuth() {
     const userDoc = await getDoc(doc(db, 'users', userId));
 
     if (userDoc.exists() && userDoc.data().passwordHash === pwHash) {
-      sessionStorage.setItem(SESSION_KEY, '1');
-      sessionStorage.setItem(SESSION_UID, userId);
+      localStorage.setItem(SESSION_KEY, '1');
+      localStorage.setItem(SESSION_UID, userId);
+      localStorage.setItem(SESSION_EXP, Date.now() + AUTH_TTL_MS);
       localStorage.removeItem(TRIES_KEY);
       localStorage.removeItem(LOCK_KEY);
       hideAuth();
@@ -2420,7 +2433,7 @@ async function saveEvent(){
     await setDoc(doc(db,'events',docId), evData);
 
     /* ── 로그 기록 ── */
-    const currentUserId = sessionStorage.getItem('cal_auth_uid') || '(알 수 없음)';
+    const currentUserId = localStorage.getItem('cal_auth_uid') || '(알 수 없음)';
     const logsCol = collection(db, 'eventLogs');
     if (isNew) {
       await addDoc(logsCol, {
