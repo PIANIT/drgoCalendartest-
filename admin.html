@@ -26,6 +26,8 @@
   --chip-red-text: #200808;
   --chip-green-bg: #70c870;
   --chip-green-text: #08200a;
+  --chip-purple-bg: #9b70c8;
+  --chip-purple-text: #f0eaff;
   --font-main: "Malgun Gothic","맑은 고딕",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
   --font-mono: 'DM Mono',"Malgun Gothic","맑은 고딕",monospace;
 }
@@ -37,6 +39,7 @@ html.light {
   --chip-blue-bg: #5898ba; --chip-blue-text: #ffffff;
   --chip-red-bg: #b85858; --chip-red-text: #ffffff;
   --chip-green-bg: #58b058; --chip-green-text: #ffffff;
+  --chip-purple-bg: #7b50a8; --chip-purple-text: #ffffff;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 body { background:var(--bg); color:var(--text); font-family:var(--font-main); min-height:100vh; }
@@ -103,7 +106,7 @@ header {
 
 /* ── STATS BAR ── */
 .stats-bar {
-  display:grid; grid-template-columns:repeat(5,1fr); gap:1px;
+  display:grid; grid-template-columns:repeat(6,1fr); gap:1px;
   background:var(--border); border-bottom:1px solid var(--border);
 }
 .stat-card {
@@ -115,6 +118,7 @@ header {
 .stat-value.blue  { color:var(--chip-blue-bg); }
 .stat-value.red   { color:var(--chip-red-bg); }
 .stat-value.green { color:var(--chip-green-bg); }
+.stat-value.purple{ color:var(--chip-purple-bg); }
 
 /* ── TOOLBAR ── */
 .toolbar {
@@ -143,11 +147,13 @@ header {
 .filter-btn.f-blue.active  { border-color:var(--chip-blue-bg);  background:rgba(122,174,200,0.15); color:var(--chip-blue-bg); }
 .filter-btn.f-red.active   { border-color:var(--chip-red-bg);   background:rgba(200,112,112,0.15); color:var(--chip-red-bg); }
 .filter-btn.f-green.active { border-color:var(--chip-green-bg); background:rgba(112,200,112,0.15); color:var(--chip-green-bg); }
+.filter-btn.f-purple.active{ border-color:var(--chip-purple-bg);background:rgba(155,112,200,0.15); color:var(--chip-purple-bg); }
 .color-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
 .cd-gold  { background:var(--chip-gold-bg); }
 .cd-blue  { background:var(--chip-blue-bg); }
 .cd-red   { background:var(--chip-red-bg); }
 .cd-green { background:var(--chip-green-bg); }
+.cd-purple{ background:var(--chip-purple-bg); }
 
 .toolbar-right { display:flex; gap:8px; margin-left:auto; }
 .action-btn {
@@ -232,11 +238,12 @@ html.light .date-range-input { color-scheme:light; }
 .cb-blue  { background:var(--chip-blue-bg); }
 .cb-red   { background:var(--chip-red-bg); }
 .cb-green { background:var(--chip-green-bg); }
+.cb-purple{ background:var(--chip-purple-bg); }
 .title-text { font-size:14px; font-weight:500; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .title-sub { font-size:11px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
 
 .row-date { font-family:var(--font-mono); font-size:12px; color:var(--text-muted); }
-.row-person { font-size:13px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.row-person { font-size:13px; color:var(--text-muted); white-space:normal; overflow:hidden; line-height:1.4; }
 .row-badge {
   display:inline-flex; align-items:center; padding:3px 9px; border-radius:5px;
   font-family:var(--font-mono); font-size:10px; font-weight:600; letter-spacing:0.06em;
@@ -246,6 +253,7 @@ html.light .date-range-input { color-scheme:light; }
 .rb-blue  { background:rgba(122,174,200,0.18); color:var(--chip-blue-bg); border:1px solid rgba(122,174,200,0.3); }
 .rb-red   { background:rgba(200,112,112,0.18); color:var(--chip-red-bg);  border:1px solid rgba(200,112,112,0.3); }
 .rb-green { background:rgba(112,200,112,0.18); color:var(--chip-green-bg);border:1px solid rgba(112,200,112,0.3); }
+.rb-purple{ background:rgba(155,112,200,0.18); color:var(--chip-purple-bg);border:1px solid rgba(155,112,200,0.3); }
 
 .row-flags { display:flex; gap:3px; flex-wrap:wrap; font-size:13px; }
 .row-actions { display:flex; gap:6px; justify-content:flex-end; }
@@ -279,6 +287,7 @@ html.light .date-range-input { color-scheme:light; }
 .ms-blue  { background:var(--chip-blue-bg); }
 .ms-red   { background:var(--chip-red-bg); }
 .ms-green { background:var(--chip-green-bg); }
+.ms-purple{ background:var(--chip-purple-bg); }
 .modal-header { padding:20px 24px 16px; display:flex; align-items:flex-start; justify-content:space-between; gap:12px; border-bottom:1px solid var(--border); }
 .modal-header-info { flex:1; min-width:0; }
 .modal-badge { font-family:var(--font-mono); font-size:10px; letter-spacing:0.15em; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px; }
@@ -431,6 +440,10 @@ html.light .date-range-input { color-scheme:light; }
     <div class="stat-label">촬영관련</div>
     <div class="stat-value green" id="st-green">—</div>
   </div>
+  <div class="stat-card">
+    <div class="stat-label">미팅/내방</div>
+    <div class="stat-value purple" id="st-purple">—</div>
+  </div>
 </div>
 
 <!-- ═══ TOOLBAR ═══ -->
@@ -445,6 +458,7 @@ html.light .date-range-input { color-scheme:light; }
     <button class="filter-btn f-blue" data-filter="blue"><span class="color-dot cd-blue"></span>사내업무</button>
     <button class="filter-btn f-red"  data-filter="red" ><span class="color-dot cd-red"></span>휴가관련</button>
     <button class="filter-btn f-green" data-filter="green"><span class="color-dot cd-green"></span>촬영관련</button>
+    <button class="filter-btn f-purple" data-filter="purple"><span class="color-dot cd-purple"></span>미팅/내방</button>
   </div>
   <div class="date-range-wrap" id="dateRangeWrap">
     <span class="date-range-label">기간</span>
@@ -581,7 +595,7 @@ const LOCK_KEY    = 'cal_admin_lock';
 const MAX_TRIES   = 5;
 const LOCK_MS     = 120000;
 
-const TYPE_LABELS    = { gold:'개인의뢰', blue:'사내업무', red:'휴가관련', green:'촬영관련' };
+const TYPE_LABELS    = { gold:'개인의뢰', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방' };
 const SPECIAL_LABELS = { car:'🚗차량', brief:'💼제품', return:'←', group:'👥2인', urgent:'🚨긴급', ladder:'🪜사다리' };
 const SCHED_LABELS   = { suggest:'💬제안', hope:'🙏희망', target:'🎯목표' };
 
@@ -899,6 +913,7 @@ function updateStats() {
   document.getElementById('st-blue').textContent  = allEvents.filter(e=>e.color==='blue').length;
   document.getElementById('st-red').textContent   = allEvents.filter(e=>e.color==='red').length;
   document.getElementById('st-green').textContent = allEvents.filter(e=>e.color==='green').length;
+  document.getElementById('st-purple').textContent= allEvents.filter(e=>e.color==='purple').length;
 }
 
 function renderList() {
@@ -925,6 +940,10 @@ function renderList() {
         ...(ev.schedOpt ? [SCHED_LABELS[ev.schedOpt]||''] : [])
       ];
       const personName = c === 'gold' ? (ev.gold?.name || ev.name || '') : (ev.name || '');
+      const personAddr = ev.address || '';
+      const personCell = personName
+        ? `${personName}${personAddr ? `<br><span style="font-size:11px;color:var(--text-muted);opacity:0.85">📍 ${personAddr}</span>` : ''}`
+        : (personAddr ? `<span style="font-size:11px;color:var(--text-muted)">📍 ${personAddr}</span>` : '—');
 
       row.innerHTML = `
         <div class="row-check"><div class="check-circle">${isSelected ? '✓' : ''}</div></div>
@@ -932,11 +951,11 @@ function renderList() {
           <div class="color-bar cb-${c}"></div>
           <div>
             <div class="title-text">${ev.title||'(제목 없음)'}</div>
-            ${ev.address ? `<div class="title-sub">📍 ${ev.address}</div>` : ''}
+            ${ev.desc ? `<div class="title-sub">${ev.desc.slice(0,40)}${ev.desc.length>40?'…':''}</div>` : ''}
           </div>
         </div>
         <div class="row-date hide-m">${dateStr}${endStr}</div>
-        <div class="row-person hide-m">${personName || '—'}</div>
+        <div class="row-person hide-m">${personCell}</div>
         <div><span class="row-badge rb-${c}">${TYPE_LABELS[c]||c}</span></div>
         <div class="row-flags">${flags.map(f=>`<span title="${f}">${f.slice(0,2)}</span>`).join('')}${ev.locked ? '🔒' : ''}</div>
         <div class="row-actions">
@@ -1025,6 +1044,14 @@ function openDetail(ev) {
     if (g.special)   body.appendChild(makeSection('특이사항', [['내용', g.special]]));
     const imgCount = (g.quoteImgs||[]).length + (g.refImgs||[]).length + (g.roomImgs||[]).length;
     if (imgCount > 0) body.appendChild(makeSection('첨부 이미지', [['이미지 수', `${imgCount}개`]]));
+  }
+
+  if (c === 'purple') {
+    const meetFields = [];
+    if (ev.name)    meetFields.push(['담당자/참석자', ev.name]);
+    if (ev.address) meetFields.push(['장소', ev.address]);
+    if (ev.desc)    meetFields.push(['내용', ev.desc]);
+    if (meetFields.length > 0) body.appendChild(makeSection('미팅/내방 정보', meetFields));
   }
 
   if ((ev.attachments||[]).length > 0)
