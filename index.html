@@ -934,10 +934,6 @@
   <div class="auth-box">
     <div class="auth-logo">📅 Calendar</div>
     <div class="auth-subtitle">DRGO Team</div>
-    <div class="auth-label">아이디</div>
-    <input class="auth-input" type="text" id="authIdInput"
-           placeholder="아이디" autocomplete="username"
-           maxlength="30" style="margin-bottom:10px;" />
     <div class="auth-label">비밀번호</div>
     <input class="auth-input" type="password" id="authInput"
            placeholder="••••••••" autocomplete="current-password"
@@ -1432,7 +1428,23 @@
 
     <div class="modal-footer">
       <button class="btn-delete" id="deleteBtn">일정 삭제</button>
-      <button class="btn-save"   id="saveBtn">저장</button>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn-log" id="logBtn" style="display:none;">📋 <span>변경 로그</span></button>
+        <button class="btn-save" id="saveBtn">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 변경 로그 오버레이 ═══ -->
+<div id="logOverlay">
+  <div class="log-modal">
+    <div class="log-modal-header">
+      <div class="log-modal-title">📋 변경 로그</div>
+      <button class="log-modal-close" id="logOverlayClose">✕</button>
+    </div>
+    <div class="log-modal-body" id="logModalBody">
+      <div class="log-loading">로딩 중…</div>
     </div>
   </div>
 </div>
@@ -1463,6 +1475,87 @@
   <div style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.15em;color:#c8b08a;opacity:0.8;">LOADING</div>
 </div>
 <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+<style>
+/* ── 변경 로그 오버레이 ── */
+#logOverlay {
+  display:none; position:fixed; inset:0; z-index:10000;
+  background:rgba(0,0,0,0.72); backdrop-filter:blur(6px);
+  align-items:center; justify-content:center; padding:20px;
+}
+#logOverlay.open { display:flex; }
+.log-modal {
+  background:var(--surface); border:1px solid var(--border); border-radius:16px;
+  width:100%; max-width:520px; max-height:80vh; display:flex; flex-direction:column;
+  animation:modalIn 0.2s ease;
+}
+@keyframes modalIn { from{opacity:0;transform:translateY(12px) scale(0.97)} to{opacity:1;transform:none} }
+.log-modal-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:18px 22px 14px; border-bottom:1px solid var(--border);
+}
+.log-modal-title {
+  font-size:15px; font-weight:700; color:var(--text);
+  display:flex; align-items:center; gap:8px;
+}
+.log-modal-close {
+  background:none; border:1px solid var(--border); color:var(--text-muted);
+  width:30px; height:30px; border-radius:7px; cursor:pointer; font-size:14px;
+  display:flex; align-items:center; justify-content:center; transition:all 0.15s;
+}
+.log-modal-close:hover { border-color:var(--red); color:var(--red); }
+.log-modal-body { overflow-y:auto; padding:16px 22px 20px; display:flex; flex-direction:column; gap:12px; }
+.log-entry {
+  background:var(--surface2); border-radius:10px; border:1px solid var(--border);
+  overflow:hidden;
+}
+.log-entry-header {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 14px; border-bottom:1px solid var(--border);
+  background:rgba(255,255,255,0.02);
+}
+.log-type-badge {
+  font-family:var(--font-mono); font-size:10px; font-weight:700;
+  letter-spacing:0.12em; padding:3px 8px; border-radius:4px; text-transform:uppercase;
+}
+.log-type-create { background:rgba(136,212,136,0.2); color:var(--green); border:1px solid rgba(136,212,136,0.3); }
+.log-type-update { background:rgba(144,188,212,0.2); color:var(--accent2); border:1px solid rgba(144,188,212,0.3); }
+.log-user {
+  font-family:var(--font-mono); font-size:12px; color:var(--accent); font-weight:600;
+}
+.log-time {
+  font-family:var(--font-mono); font-size:11px; color:var(--text-muted); margin-left:auto;
+}
+.log-changes { padding:10px 14px; display:flex; flex-direction:column; gap:6px; }
+.log-change-row { display:grid; grid-template-columns:90px 1fr; gap:8px; align-items:start; }
+.log-field-name {
+  font-family:var(--font-mono); font-size:10px; letter-spacing:0.1em;
+  color:var(--text-muted); text-transform:uppercase; padding-top:2px;
+}
+.log-diff { display:flex; flex-direction:column; gap:3px; }
+.log-before {
+  font-size:12px; color:var(--red); background:rgba(212,136,136,0.1);
+  border-radius:4px; padding:2px 7px; text-decoration:line-through; opacity:0.8;
+  word-break:break-all;
+}
+.log-after {
+  font-size:12px; color:var(--green); background:rgba(136,212,136,0.1);
+  border-radius:4px; padding:2px 7px;
+  word-break:break-all;
+}
+.log-empty { text-align:center; padding:40px 0; color:var(--text-muted); font-size:13px; }
+.log-loading { text-align:center; padding:40px 0; color:var(--text-muted); font-size:13px; }
+.btn-log {
+  background:none; border:1px solid var(--border); color:var(--text-muted);
+  padding:7px 14px; border-radius:8px; font-size:12px; font-weight:600;
+  cursor:pointer; font-family:var(--font-main); transition:all 0.15s;
+  display:flex; align-items:center; gap:5px;
+}
+.btn-log:hover { border-color:var(--accent2); color:var(--accent2); }
+@media (max-width:600px) {
+  .log-modal { max-height:90vh; }
+  .btn-log span { display:none; }
+}
+</style>
 
 <div class="lightbox" id="lightbox">
   <img id="lightboxImg" src="" alt="preview" />
@@ -1482,10 +1575,10 @@
 
 <script type="module">
 /* AUTH */
+const PASS_HASH = '25689706309b7389a2a9c7e5822c91399f60b3c5be15fe6aecdb17b2b0863be8';
 const MAX_TRIES  = 5;
 const LOCK_MS    = 60000;
 const SESSION_KEY = 'cal_auth_ok';
-const SESSION_UID = 'cal_auth_uid';
 const TRIES_KEY   = 'cal_auth_tries';
 const LOCK_KEY    = 'cal_auth_lock';
 
@@ -1513,8 +1606,44 @@ function updateLockUI() {
   }
 }
 
+async function tryAuth() {
+  if (getLockRemaining() > 0) return;
+  const input = document.getElementById('authInput');
+  const errorEl = document.getElementById('authError');
+  const val = input.value;
+  if (!val) return;
+  const hash = await sha256(val);
+  if (hash === PASS_HASH) {
+    sessionStorage.setItem(SESSION_KEY, '1');
+    localStorage.removeItem(TRIES_KEY);
+    localStorage.removeItem(LOCK_KEY);
+    hideAuth();
+  } else {
+    const tries = parseInt(localStorage.getItem(TRIES_KEY)||'0') + 1;
+    localStorage.setItem(TRIES_KEY, tries);
+    input.value = '';
+    input.classList.add('error');
+    setTimeout(() => input.classList.remove('error'), 400);
+    if (tries >= MAX_TRIES) {
+      localStorage.setItem(LOCK_KEY, Date.now() + LOCK_MS);
+      errorEl.textContent = '비밀번호가 틀렸습니다.';
+      updateLockUI();
+    } else {
+      errorEl.textContent = `비밀번호가 틀렸습니다. (${MAX_TRIES - tries}회 남음)`;
+      document.getElementById('authLockMsg').textContent = '';
+    }
+    input.focus();
+  }
+}
+
+document.getElementById('authBtn').addEventListener('click', tryAuth);
+document.getElementById('authInput').addEventListener('keydown', e => { if (e.key==='Enter') tryAuth(); });
+
+if (isAuthenticated()) { hideAuth(); }
+else { showAuth(); updateLockUI(); setTimeout(() => document.getElementById('authInput').focus(), 100); }
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getFirestore, collection, doc, setDoc, deleteDoc, getDoc, onSnapshot, serverTimestamp }
+import { getFirestore, collection, doc, setDoc, deleteDoc, addDoc, query, where, orderBy, getDocs, onSnapshot, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -1528,67 +1657,6 @@ const firebaseConfig = {
 const app       = initializeApp(firebaseConfig);
 const db        = getFirestore(app);
 const eventsCol = collection(db, 'events');
-
-/* ── 로그인 처리 (Firebase users 컬렉션 검증) ── */
-async function tryAuth() {
-  if (getLockRemaining() > 0) return;
-  const idInput = document.getElementById('authIdInput');
-  const pwInput = document.getElementById('authInput');
-  const errorEl = document.getElementById('authError');
-  const userId  = idInput.value.trim();
-  const userPw  = pwInput.value;
-
-  idInput.classList.remove('error');
-  pwInput.classList.remove('error');
-
-  if (!userId) { idInput.classList.add('error'); idInput.focus(); errorEl.textContent = '아이디를 입력하세요.'; return; }
-  if (!userPw) { pwInput.classList.add('error'); pwInput.focus(); errorEl.textContent = '비밀번호를 입력하세요.'; return; }
-
-  const btn = document.getElementById('authBtn');
-  btn.disabled = true;
-  btn.textContent = '확인 중…';
-
-  try {
-    const pwHash = await sha256(userPw);
-    const userDoc = await getDoc(doc(db, 'users', userId));
-
-    if (userDoc.exists() && userDoc.data().passwordHash === pwHash) {
-      sessionStorage.setItem(SESSION_KEY, '1');
-      sessionStorage.setItem(SESSION_UID, userId);
-      localStorage.removeItem(TRIES_KEY);
-      localStorage.removeItem(LOCK_KEY);
-      hideAuth();
-    } else {
-      const tries = parseInt(localStorage.getItem(TRIES_KEY)||'0') + 1;
-      localStorage.setItem(TRIES_KEY, tries);
-      pwInput.value = '';
-      pwInput.classList.add('error');
-      setTimeout(() => pwInput.classList.remove('error'), 400);
-      if (tries >= MAX_TRIES) {
-        localStorage.setItem(LOCK_KEY, Date.now() + LOCK_MS);
-        errorEl.textContent = '아이디 또는 비밀번호가 틀렸습니다.';
-        updateLockUI();
-      } else {
-        errorEl.textContent = `아이디 또는 비밀번호가 틀렸습니다. (${MAX_TRIES - tries}회 남음)`;
-        document.getElementById('authLockMsg').textContent = '';
-      }
-      pwInput.focus();
-    }
-  } catch(err) {
-    errorEl.textContent = '오류가 발생했습니다: ' + err.message;
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '접속';
-    updateLockUI();
-  }
-}
-
-document.getElementById('authBtn').addEventListener('click', tryAuth);
-document.getElementById('authInput').addEventListener('keydown', e => { if (e.key==='Enter') tryAuth(); });
-document.getElementById('authIdInput').addEventListener('keydown', e => { if (e.key==='Enter') document.getElementById('authInput').focus(); });
-
-if (isAuthenticated()) { hideAuth(); }
-else { showAuth(); updateLockUI(); setTimeout(() => document.getElementById('authIdInput').focus(), 100); }
 
 
 const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
@@ -2198,6 +2266,7 @@ function openNewModal(dk){
   setColor('gold'); setAllDay(false); setSpecialOpts([],null);
   resetGoldFields(); renderAttachments();
   document.getElementById('deleteBtn').style.display='none';
+  document.getElementById('logBtn').style.display='none';
   document.getElementById('modalOverlay').classList.add('open');
   applyLockState();
   if (!isMobile() && pcView==='month') document.getElementById('modalTitle').focus();
@@ -2238,6 +2307,7 @@ function openModal(evIdx){
   setSpecialOpts(ev.specialOpts||[], ev.schedOpt||null);
   renderAttachments();
   document.getElementById('deleteBtn').style.display='';
+  document.getElementById('logBtn').style.display='';
   document.getElementById('modalOverlay').classList.add('open');
   applyLockState();
   if (!isLocked && !isMobile() && pcView==='month') document.getElementById('modalTitle').focus();
@@ -2297,6 +2367,7 @@ async function saveEvent(){
     const sd=document.getElementById('startDate').value;
     const ed=document.getElementById('endDate').value||sd;
     const docId = editingId||genId();
+    const isNew = !editingId;
     const evData={
       title:document.getElementById('modalTitle').value.trim()||'(제목 없음)',
       startDate:sd, endDate:ed<sd?sd:ed,
@@ -2313,7 +2384,35 @@ async function saveEvent(){
       updatedAt:serverTimestamp(),
     };
     if (currentColor==='gold') evData.gold=collectGoldTextFields();
+
+    /* ── 수정 시 변경 내역 계산 ── */
+    const prevEv = isNew ? null : events.find(e=>e._id===editingId);
+
     await setDoc(doc(db,'events',docId), evData);
+
+    /* ── 로그 기록 ── */
+    const currentUserId = sessionStorage.getItem('cal_auth_uid') || '(알 수 없음)';
+    const logsCol = collection(db, 'eventLogs');
+    if (isNew) {
+      await addDoc(logsCol, {
+        eventId: docId,
+        type: 'create',
+        userId: currentUserId,
+        createdAt: serverTimestamp()
+      });
+    } else {
+      const changes = calcChanges(prevEv, evData);
+      if (changes.length > 0) {
+        await addDoc(logsCol, {
+          eventId: docId,
+          type: 'update',
+          userId: currentUserId,
+          changes,
+          createdAt: serverTimestamp()
+        });
+      }
+    }
+
     _modalSnapshot = null;
     closeModal();
   } catch(e){
@@ -2324,6 +2423,40 @@ async function saveEvent(){
   }
   setSaving(false);
 }
+
+/* 변경 내역 비교 함수 */
+const LOG_FIELD_LABELS = {
+  title:'제목', startDate:'시작일', endDate:'종료일',
+  startTime:'시작시간', endTime:'종료시간', allDay:'종일여부',
+  color:'분류', name:'담당자', address:'주소', location:'장소',
+  desc:'내용', schedOpt:'일정유형', specialOpts:'특수옵션',
+};
+const COLOR_LABELS = {gold:'개인의뢰', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방'};
+
+function calcChanges(prev, next) {
+  if (!prev) return [];
+  const changes = [];
+  const fields = Object.keys(LOG_FIELD_LABELS);
+  for (const f of fields) {
+    let pv = prev[f], nv = next[f];
+    /* 배열은 JSON 비교 */
+    if (Array.isArray(pv) || Array.isArray(nv)) {
+      pv = JSON.stringify(pv||[]); nv = JSON.stringify(nv||[]);
+    } else {
+      pv = (pv===undefined||pv===null) ? '' : String(pv);
+      nv = (nv===undefined||nv===null) ? '' : String(nv);
+    }
+    if (pv === nv) continue;
+    /* 표시용 변환 */
+    let pvDisp = pv, nvDisp = nv;
+    if (f==='color') { pvDisp=COLOR_LABELS[pv]||pv; nvDisp=COLOR_LABELS[nv]||nv; }
+    if (f==='allDay') { pvDisp=pv==='true'?'종일':'시간지정'; nvDisp=nv==='true'?'종일':'시간지정'; }
+    changes.push({ field: LOG_FIELD_LABELS[f]||f, before: pvDisp, after: nvDisp });
+  }
+  return changes;
+}
+
+
 
 async function deleteEvent(){
   if (!editingId) { closeModal(); return; }
@@ -2896,6 +3029,103 @@ document.getElementById('confirmOverlay').addEventListener('click', e => {
 document.getElementById('closeBtn').addEventListener('click', tryCloseModal);
 document.getElementById('saveBtn').addEventListener('click',saveEvent);
 document.getElementById('saveBtnTop').addEventListener('click',saveEvent);
+
+/* ── 변경 로그 버튼 ── */
+document.getElementById('logBtn').addEventListener('click', () => openLogOverlay());
+document.getElementById('logOverlayClose').addEventListener('click', () => {
+  document.getElementById('logOverlay').classList.remove('open');
+});
+document.getElementById('logOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('logOverlay'))
+    document.getElementById('logOverlay').classList.remove('open');
+});
+
+async function openLogOverlay() {
+  if (!editingId) return;
+  const overlay = document.getElementById('logOverlay');
+  const body    = document.getElementById('logModalBody');
+  overlay.classList.add('open');
+  body.innerHTML = '<div class="log-loading">로딩 중…</div>';
+
+  try {
+    const q = query(
+      collection(db, 'eventLogs'),
+      where('eventId', '==', editingId),
+      orderBy('createdAt', 'desc')
+    );
+    /* createdAt 또는 updatedAt 기준 정렬 — Firestore는 두 필드 혼용 불가,
+       대신 단일 타임스탬프 필드(ts)로 로그 저장하도록 openLogOverlay에서 처리 */
+    let snap;
+    try {
+      snap = await getDocs(q);
+    } catch(e) {
+      /* index 미생성 시 fallback: orderBy 없이 가져와서 JS 정렬 */
+      snap = await getDocs(query(collection(db, 'eventLogs'), where('eventId', '==', editingId)));
+    }
+
+    if (snap.empty) {
+      body.innerHTML = '<div class="log-empty">📭 변경 로그가 없습니다</div>';
+      return;
+    }
+
+    const logs = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => {
+        const ta = (a.createdAt?.seconds||a.updatedAt?.seconds||0);
+        const tb = (b.createdAt?.seconds||b.updatedAt?.seconds||0);
+        return tb - ta; /* 최신 순 */
+      });
+
+    body.innerHTML = '';
+    logs.forEach(log => {
+      const ts = log.createdAt || log.updatedAt;
+      const timeStr = ts?.toDate ? ts.toDate().toLocaleString('ko-KR', {
+        year:'numeric', month:'2-digit', day:'2-digit',
+        hour:'2-digit', minute:'2-digit'
+      }) : '—';
+
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+
+      const isCreate = log.type === 'create';
+      entry.innerHTML = `
+        <div class="log-entry-header">
+          <span class="log-type-badge ${isCreate ? 'log-type-create' : 'log-type-update'}">
+            ${isCreate ? '생성' : '수정'}
+          </span>
+          <span class="log-user">🔑 ${log.userId || '(알 수 없음)'}</span>
+          <span class="log-time">${timeStr}</span>
+        </div>`;
+
+      if (!isCreate && log.changes && log.changes.length > 0) {
+        const changesEl = document.createElement('div');
+        changesEl.className = 'log-changes';
+        log.changes.forEach(ch => {
+          const row = document.createElement('div');
+          row.className = 'log-change-row';
+          row.innerHTML = `
+            <span class="log-field-name">${ch.field}</span>
+            <div class="log-diff">
+              <span class="log-before">${escapeHtml(ch.before)||'(없음)'}</span>
+              <span class="log-after">${escapeHtml(ch.after)||'(없음)'}</span>
+            </div>`;
+          changesEl.appendChild(row);
+        });
+        entry.appendChild(changesEl);
+      }
+
+      body.appendChild(entry);
+    });
+  } catch(err) {
+    body.innerHTML = `<div class="log-empty">⚠️ 로그 불러오기 실패: ${err.message}</div>`;
+    console.error('log fetch error:', err);
+  }
+}
+
+function escapeHtml(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
 document.getElementById('deleteBtn').addEventListener('click',deleteEvent);
 document.getElementById('addBtn').addEventListener('click',()=>openNewModal(todayStr));
 document.getElementById('modalOverlay').addEventListener('click',e=>{
