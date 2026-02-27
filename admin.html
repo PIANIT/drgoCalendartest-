@@ -180,24 +180,19 @@ header {
 .dr-date-box {
   position:relative; display:inline-flex; align-items:center;
   background:var(--surface); border:1px solid var(--border);
-  border-radius:7px; transition:border-color 0.2s; overflow:hidden;
-  cursor:pointer;
+  border-radius:7px; transition:border-color 0.2s;
+  cursor:pointer; user-select:none;
 }
 .dr-date-box:focus-within,
 .dr-date-box:hover { border-color:var(--accent); }
 .dr-date-box input[type="date"] {
-  padding:7px 10px; font-size:13px; font-family:var(--font-mono);
-  background:transparent; border:none; color:var(--text);
-  outline:none; cursor:pointer; color-scheme:dark;
-  /* 전체 영역 클릭 가능하게 */
-  position:absolute; inset:0; width:100%; height:100%;
-  opacity:0; z-index:2;
+  position:absolute; width:0; height:0; opacity:0; pointer-events:none; border:none; padding:0;
 }
 html.light .dr-date-box input[type="date"] { color-scheme:light; }
 .dr-date-display {
-  padding:7px 12px; font-size:13px; font-family:var(--font-mono);
-  color:var(--text); white-space:nowrap; pointer-events:none;
-  min-width:108px; display:flex; align-items:center; gap:6px; z-index:1;
+  padding:7px 14px; font-size:13px; font-family:var(--font-mono);
+  color:var(--text); white-space:nowrap;
+  min-width:108px; display:flex; align-items:center; gap:6px;
 }
 .dr-date-display .dr-cal-icon { font-size:13px; opacity:0.55; }
 .dr-date-display.empty { color:var(--text-muted); }
@@ -834,6 +829,16 @@ function initApp() {
     updateDateClearBtn();
     currentPage = 1;
     applyFilters();
+  });
+
+  /* 박스 전체 클릭 → 달력 열기 */
+  document.getElementById('drFromBox').addEventListener('click', () => {
+    const inp = document.getElementById('dateFrom');
+    try { inp.showPicker(); } catch(e) { inp.focus(); }
+  });
+  document.getElementById('drToBox').addEventListener('click', () => {
+    const inp = document.getElementById('dateTo');
+    try { inp.showPicker(); } catch(e) { inp.focus(); }
   });
   document.getElementById('dateRangeClear').addEventListener('click', () => {
     dateFrom = ''; dateTo = '';
