@@ -170,28 +170,38 @@ header {
 
 /* ── DATE RANGE FILTER ── */
 .date-range-wrap {
-  display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+  display:flex; align-items:center; gap:8px;
 }
 .date-range-label {
   font-family:var(--font-mono); font-size:10px; letter-spacing:0.15em;
   text-transform:uppercase; color:var(--text-muted); white-space:nowrap;
 }
-.date-range-input {
-  padding:7px 10px; font-size:12px; font-family:var(--font-mono);
-  background:var(--surface2); border:1px solid var(--border);
-  border-radius:7px; color:var(--text); outline:none;
-  transition:border-color 0.2s; cursor:pointer; color-scheme:dark;
+/* index.html dt-input 스타일의 날짜 선택 */
+.dr-date-box {
+  position:relative; display:inline-flex; align-items:center;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:7px; transition:border-color 0.2s; overflow:hidden;
+  cursor:pointer;
 }
-html.light .date-range-input { color-scheme:light; }
-.date-range-input:focus { border-color:var(--accent); }
-.date-range-input-wrap {
-  display:inline-flex; cursor:pointer;
-  border-radius:7px; border:1px solid var(--border);
-  background:var(--surface2); transition:border-color 0.2s; overflow:hidden;
+.dr-date-box:focus-within,
+.dr-date-box:hover { border-color:var(--accent); }
+.dr-date-box input[type="date"] {
+  padding:7px 10px; font-size:13px; font-family:var(--font-mono);
+  background:transparent; border:none; color:var(--text);
+  outline:none; cursor:pointer; color-scheme:dark;
+  /* 전체 영역 클릭 가능하게 */
+  position:absolute; inset:0; width:100%; height:100%;
+  opacity:0; z-index:2;
 }
-.date-range-input-wrap:focus-within { border-color:var(--accent); }
-.date-range-input-wrap .date-range-input { border:none; background:transparent; cursor:pointer; width:100%; }
-.date-range-sep { color:var(--text-muted); font-size:12px; }
+html.light .dr-date-box input[type="date"] { color-scheme:light; }
+.dr-date-display {
+  padding:7px 12px; font-size:13px; font-family:var(--font-mono);
+  color:var(--text); white-space:nowrap; pointer-events:none;
+  min-width:108px; display:flex; align-items:center; gap:6px; z-index:1;
+}
+.dr-date-display .dr-cal-icon { font-size:13px; opacity:0.55; }
+.dr-date-display.empty { color:var(--text-muted); }
+.date-range-sep { color:var(--text-muted); font-size:13px; }
 .date-range-clear {
   background:none; border:1px solid var(--border); color:var(--text-muted);
   padding:6px 10px; border-radius:7px; font-size:11px; cursor:pointer;
@@ -205,8 +215,8 @@ html.light .date-range-input { color-scheme:light; }
   border-bottom:1px solid var(--border);
   font-family:var(--font-mono); font-size:11px; color:var(--text-muted);
   letter-spacing:0.1em; text-transform:uppercase;
-  grid-template-columns: 36px 2fr 1fr 1fr 80px 100px 80px;
-  gap:12px;
+  grid-template-columns: 36px 2fr 100px 1.4fr 70px 80px 80px 80px;
+  gap:10px;
 }
 .sort-col { cursor:pointer; user-select:none; display:flex; align-items:center; gap:4px; transition:color 0.15s; }
 .sort-col:hover { color:var(--accent); }
@@ -218,8 +228,8 @@ html.light .date-range-input { color-scheme:light; }
 .event-row {
   display:grid; align-items:center; padding:13px 0;
   border-bottom:1px solid rgba(58,58,58,0.6);
-  grid-template-columns: 36px 2fr 1fr 1fr 80px 100px 80px;
-  gap:12px; cursor:pointer; transition:background 0.12s; border-radius:4px;
+  grid-template-columns: 36px 2fr 100px 1.4fr 70px 80px 80px 80px;
+  gap:10px; cursor:pointer; transition:background 0.12s; border-radius:4px;
   padding-left:4px; padding-right:4px;
 }
 .event-row:hover { background:var(--surface); }
@@ -243,7 +253,8 @@ html.light .date-range-input { color-scheme:light; }
 .title-sub { font-size:11px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
 
 .row-date { font-family:var(--font-mono); font-size:12px; color:var(--text-muted); }
-.row-person { font-size:13px; color:var(--text-muted); white-space:normal; overflow:hidden; line-height:1.4; }
+.row-person { font-size:13px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.row-address { font-size:12px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; opacity:0.85; }
 .row-badge {
   display:inline-flex; align-items:center; padding:3px 9px; border-radius:5px;
   font-family:var(--font-mono); font-size:10px; font-weight:600; letter-spacing:0.06em;
@@ -541,13 +552,15 @@ html.light .date-range-input { color-scheme:light; }
   </div>
   <div class="date-range-wrap" id="dateRangeWrap">
     <span class="date-range-label">기간</span>
-    <label class="date-range-input-wrap" for="dateFrom">
-      <input class="date-range-input" type="date" id="dateFrom" />
-    </label>
+    <div class="dr-date-box" id="drFromBox">
+      <input type="date" id="dateFrom" />
+      <div class="dr-date-display empty" id="drFromDisplay"><span class="dr-cal-icon">📅</span><span id="drFromText">시작일</span></div>
+    </div>
     <span class="date-range-sep">—</span>
-    <label class="date-range-input-wrap" for="dateTo">
-      <input class="date-range-input" type="date" id="dateTo" />
-    </label>
+    <div class="dr-date-box" id="drToBox">
+      <input type="date" id="dateTo" />
+      <div class="dr-date-display empty" id="drToDisplay"><span class="dr-cal-icon">📅</span><span id="drToText">종료일</span></div>
+    </div>
     <button class="date-range-clear" id="dateRangeClear" style="display:none;">✕ 초기화</button>
   </div>
   <div class="toolbar-right">
@@ -562,6 +575,7 @@ html.light .date-range-input { color-scheme:light; }
   <div></div>
   <div class="sort-col active" data-sort="title">제목 <span class="sort-arrow" id="sa-title">↑</span></div>
   <div class="sort-col hide-m" data-sort="startDate">날짜 <span class="sort-arrow" id="sa-startDate"></span></div>
+  <div class="sort-col hide-m" data-sort="address">주소</div>
   <div class="sort-col hide-m" data-sort="name">담당자 <span class="sort-arrow" id="sa-name"></span></div>
   <div class="sort-col" data-sort="color">분류 <span class="sort-arrow" id="sa-color"></span></div>
   <div class="sort-col" data-sort="flags">옵션</div>
@@ -966,6 +980,25 @@ function initApp() {
 ══════════════════════════════ */
 function updateDateClearBtn() {
   document.getElementById('dateRangeClear').style.display = (dateFrom || dateTo) ? '' : 'none';
+  /* 날짜 표시 텍스트 업데이트 */
+  const fromDisplay = document.getElementById('drFromDisplay');
+  const toDisplay   = document.getElementById('drToDisplay');
+  const fromText    = document.getElementById('drFromText');
+  const toText      = document.getElementById('drToText');
+  if (dateFrom) {
+    fromText.textContent = dateFrom;
+    fromDisplay.classList.remove('empty');
+  } else {
+    fromText.textContent = '시작일';
+    fromDisplay.classList.add('empty');
+  }
+  if (dateTo) {
+    toText.textContent = dateTo;
+    toDisplay.classList.remove('empty');
+  } else {
+    toText.textContent = '종료일';
+    toDisplay.classList.add('empty');
+  }
 }
 
 function applyFilters() {
@@ -1022,10 +1055,11 @@ function renderList() {
         ...(ev.schedOpt ? [SCHED_LABELS[ev.schedOpt]||''] : [])
       ];
       const personName = c === 'gold' ? (ev.gold?.name || ev.name || '') : (ev.name || '');
-      const personAddr = ev.address || '';
-      const personCell = personName
-        ? `${personName}${personAddr ? `<br><span style="font-size:11px;color:var(--text-muted);opacity:0.85">📍 ${personAddr}</span>` : ''}`
-        : (personAddr ? `<span style="font-size:11px;color:var(--text-muted)">📍 ${personAddr}</span>` : '—');
+      const personAddr = ev.address || ev.location || '';
+      const nameCell   = personName || '—';
+      const addrCell   = personAddr
+        ? `<span title="${personAddr}">📍 ${personAddr}</span>`
+        : '<span style="opacity:0.35">—</span>';
 
       row.innerHTML = `
         <div class="row-check"><div class="check-circle">${isSelected ? '✓' : ''}</div></div>
@@ -1037,7 +1071,8 @@ function renderList() {
           </div>
         </div>
         <div class="row-date hide-m">${dateStr}${endStr}</div>
-        <div class="row-person hide-m">${personCell}</div>
+        <div class="row-address hide-m">${addrCell}</div>
+        <div class="row-person hide-m">${nameCell}</div>
         <div><span class="row-badge rb-${c}">${TYPE_LABELS[c]||c}</span></div>
         <div class="row-flags">${flags.map(f=>`<span title="${f}">${f.slice(0,2)}</span>`).join('')}${ev.locked ? '🔒' : ''}</div>
         <div class="row-actions">
