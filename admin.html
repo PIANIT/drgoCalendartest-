@@ -965,8 +965,8 @@ async function runImport(data, db) {
       // Deep-clone and sanitize: remove Firestore timestamp objects & _id
       const { _id, id: _id2, updatedAt, createdAt, ...cleanData } = ev;
 
-      // Sanitize nested objects: remove any Firestore-specific fields
-      const sanitized = JSON.parse(JSON.stringify(cleanData));
+      // Strip timestamp objects and deep-clone
+      const sanitized = stripTimestamps(JSON.parse(JSON.stringify(cleanData)));
 
       await setDoc(doc(db, 'events', id), {
         ...sanitized,
@@ -976,6 +976,8 @@ async function runImport(data, db) {
     } catch(e) {
       console.error('복원 실패:', ev._id, e);
       fail++;
+      // 첫 번째 실패 시 에러 메시지를 title에 표시
+      if (fail === 1) title.textContent = `⚠️ 오류: ${e.code || e.message}`;
     }
 
     // Update progress
@@ -997,11 +999,24 @@ async function runImport(data, db) {
   showToast(msg, ok > 0 ? 'success' : 'error');
 }
 
+function stripTimestamps(obj) {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(stripTimestamps);
+  // Firestore Timestamp 객체 제거 (seconds/nanoseconds 구조)
+  if ('seconds' in obj && 'nanoseconds' in obj) return null;
+  const result = {};
+  for (const [k, v] of Object.entries(obj)) {
+    result[k] = stripTimestamps(v);
+  }
+  return result;
+}
+
 function exportJSON() {
   const toExport = filteredEvents.map(ev => {
-    const clean = { ...ev };
-    delete clean._id;
-    return { _id: ev._id, ...clean };
+    const { _id, ...rest } = ev;
+    const clean = stripTimestamps(rest);
+    return { _id, ...clean };
   });
   const blob = new Blob([JSON.stringify(toExport, null, 2)], { type:'application/json' });
   const url = URL.createObjectURL(blob);
