@@ -329,12 +329,11 @@ html.light .date-range-input { color-scheme:light; }
 
 /* ── USER MANAGEMENT ── */
 .user-mgmt-wrap {
-  padding:24px 32px; border-bottom:1px solid var(--border);
+  padding:20px 32px; border-bottom:1px solid var(--border);
   background:var(--surface);
 }
 .user-mgmt-header {
-  display:flex; align-items:center; justify-content:space-between;
-  margin-bottom:16px;
+  display:flex; align-items:center; justify-content:space-between; margin-bottom:0;
 }
 .user-mgmt-title {
   font-family:var(--font-mono); font-size:12px; letter-spacing:0.2em;
@@ -342,48 +341,43 @@ html.light .date-range-input { color-scheme:light; }
 }
 .user-mgmt-toggle {
   background:none; border:1px solid var(--border); color:var(--text-muted);
-  padding:6px 14px; border-radius:7px; font-size:12px; cursor:pointer;
+  padding:5px 13px; border-radius:7px; font-size:12px; cursor:pointer;
   font-family:var(--font-main); transition:all 0.15s;
 }
 .user-mgmt-toggle:hover { border-color:var(--accent); color:var(--accent); }
-.user-mgmt-body { display:none; }
+.user-mgmt-body { display:none; padding-top:16px; }
 .user-mgmt-body.open { display:block; }
 .user-create-form {
-  display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; margin-bottom:18px;
-  padding:16px; background:var(--surface2); border-radius:10px; border:1px solid var(--border);
+  display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; margin-bottom:14px;
+  padding:14px 16px; background:var(--surface2); border-radius:10px; border:1px solid var(--border);
 }
 .user-form-field { display:flex; flex-direction:column; gap:5px; }
 .user-form-label { font-family:var(--font-mono); font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color:var(--text-muted); }
 .user-form-input {
-  padding:9px 13px; font-size:13px;
+  padding:8px 12px; font-size:13px;
   background:var(--surface); border:1px solid var(--border);
   border-radius:8px; color:var(--text); font-family:var(--font-main);
-  outline:none; transition:border-color 0.2s; min-width:160px;
+  outline:none; transition:border-color 0.2s; min-width:150px;
 }
 .user-form-input:focus { border-color:var(--accent); }
 .user-form-input.error { border-color:var(--red); }
 .user-create-btn {
-  padding:9px 18px; border-radius:8px; border:none;
+  padding:8px 16px; border-radius:8px; border:none;
   background:var(--accent); color:#1a1207; font-size:13px; font-weight:700;
-  cursor:pointer; font-family:var(--font-main); transition:all 0.15s;
-  white-space:nowrap; align-self:flex-end;
+  cursor:pointer; font-family:var(--font-main); transition:all 0.15s; white-space:nowrap;
 }
 .user-create-btn:hover { background:#e0cc9e; }
 .user-list { display:flex; flex-direction:column; gap:6px; }
-.user-list-empty { text-align:center; padding:20px; color:var(--text-muted); font-size:13px; }
+.user-list-empty { padding:16px 4px; color:var(--text-muted); font-size:13px; }
 .user-row {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:10px 14px; background:var(--surface2); border-radius:8px;
-  border:1px solid var(--border); gap:12px;
+  display:flex; align-items:center; gap:12px;
+  padding:9px 13px; background:var(--surface2); border-radius:8px; border:1px solid var(--border);
 }
-.user-row-id {
-  font-family:var(--font-mono); font-size:13px; color:var(--text);
-  font-weight:600; flex:1;
-}
+.user-row-id { font-family:var(--font-mono); font-size:13px; color:var(--text); font-weight:600; flex:1; }
 .user-row-meta { font-size:11px; color:var(--text-muted); }
 .user-row-del {
   background:none; border:1px solid rgba(212,136,136,0.3); color:var(--red);
-  padding:5px 11px; border-radius:6px; font-size:11px; cursor:pointer;
+  padding:4px 10px; border-radius:6px; font-size:11px; cursor:pointer;
   font-family:var(--font-main); transition:all 0.15s;
 }
 .user-row-del:hover { background:rgba(212,136,136,0.12); border-color:var(--red); }
@@ -514,7 +508,6 @@ html.light .date-range-input { color-scheme:light; }
     <button class="user-mgmt-toggle" id="userMgmtToggle">펼치기 ▾</button>
   </div>
   <div class="user-mgmt-body" id="userMgmtBody">
-    <!-- 계정 생성 폼 -->
     <div class="user-create-form">
       <div class="user-form-field">
         <label class="user-form-label">아이디</label>
@@ -526,7 +519,6 @@ html.light .date-range-input { color-scheme:light; }
       </div>
       <button class="user-create-btn" id="userCreateBtn">➕ 계정 추가</button>
     </div>
-    <!-- 계정 목록 -->
     <div class="user-list" id="userList">
       <div class="user-list-empty">로딩 중…</div>
     </div>
@@ -780,7 +772,7 @@ function initApp() {
   const db  = getFirestore(app);
   const col = collection(db, 'events');
 
-  /* ── 계정 관리 섹션 초기화 ── */
+  /* -- 계정 관리 초기화 -- */
   initUserMgmt(db);
 
   /* -- Theme -- */
@@ -1293,13 +1285,8 @@ function showConfirm(title, text, cb, okLabel='삭제', type='delete') {
 }
 
 /* ══════════════════════════════
-   USER MANAGEMENT
+   USER MANAGEMENT  (sha256는 위 AUTH 섹션에서 공유)
 ══════════════════════════════ */
-async function sha256(str) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
-}
-
 function initUserMgmt(db) {
   const wrap   = document.getElementById('userMgmtWrap');
   const body   = document.getElementById('userMgmtBody');
@@ -1314,6 +1301,7 @@ function initUserMgmt(db) {
 
   document.getElementById('userCreateBtn').addEventListener('click', () => createUser(db));
   document.getElementById('newUserPw').addEventListener('keydown', e => { if (e.key === 'Enter') createUser(db); });
+  document.getElementById('newUserId').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('newUserPw').focus(); });
 }
 
 async function loadUserList(db) {
@@ -1328,7 +1316,7 @@ async function loadUserList(db) {
     listEl.innerHTML = '';
     snap.docs.forEach(d => {
       const data = d.data();
-      const row = document.createElement('div');
+      const row  = document.createElement('div');
       row.className = 'user-row';
       const createdAt = data.createdAt?.toDate ? data.createdAt.toDate().toLocaleDateString('ko-KR') : '—';
       row.innerHTML = `
@@ -1336,22 +1324,26 @@ async function loadUserList(db) {
         <span class="user-row-meta">생성: ${createdAt}</span>
         <button class="user-row-del" data-uid="${d.id}">삭제</button>`;
       row.querySelector('.user-row-del').addEventListener('click', () => {
-        showConfirm(`계정 삭제`, `"${d.id}" 계정을 삭제하시겠습니까?\n삭제 후에는 캘린더에 접속할 수 없습니다.`, async () => {
-          await deleteDoc(doc(db, 'users', d.id));
-          showToast(`계정 "${d.id}" 삭제됨`, 'success');
-          loadUserList(db);
-        }, '삭제', 'delete');
+        showConfirm(
+          '계정 삭제',
+          `"${d.id}" 계정을 삭제하시겠습니까?\n삭제 후 캘린더에 접속할 수 없게 됩니다.`,
+          async () => {
+            await deleteDoc(doc(db, 'users', d.id));
+            showToast(`계정 "${d.id}" 삭제됨`, 'success');
+            loadUserList(db);
+          }, '삭제', 'delete'
+        );
       });
       listEl.appendChild(row);
     });
   } catch(err) {
-    listEl.innerHTML = '<div class="user-list-empty">오류: ' + err.message + '</div>';
+    listEl.innerHTML = `<div class="user-list-empty">오류: ${err.message}</div>`;
   }
 }
 
 async function createUser(db) {
-  const idEl = document.getElementById('newUserId');
-  const pwEl = document.getElementById('newUserPw');
+  const idEl   = document.getElementById('newUserId');
+  const pwEl   = document.getElementById('newUserPw');
   const userId = idEl.value.trim();
   const userPw = pwEl.value;
 
@@ -1362,7 +1354,7 @@ async function createUser(db) {
   if (!userPw) { pwEl.classList.add('error'); pwEl.focus(); showToast('비밀번호를 입력하세요', 'error'); return; }
   if (!/^[a-zA-Z0-9_\-가-힣]+$/.test(userId)) {
     idEl.classList.add('error'); idEl.focus();
-    showToast('아이디는 영문, 숫자, _, - 또는 한글만 가능합니다', 'error'); return;
+    showToast('아이디는 영문, 숫자, _, - 또는 한글만 사용 가능합니다', 'error'); return;
   }
 
   try {
@@ -1371,13 +1363,11 @@ async function createUser(db) {
       idEl.classList.add('error'); idEl.focus();
       showToast(`"${userId}" 아이디는 이미 존재합니다`, 'error'); return;
     }
-
-    const pwHash = await sha256(userPw);
+    const pwHash = await sha256(userPw);   // ← 위 AUTH 섹션의 sha256 재사용
     await setDoc(doc(db, 'users', userId), {
       passwordHash: pwHash,
       createdAt: serverTimestamp()
     });
-
     idEl.value = ''; pwEl.value = '';
     showToast(`계정 "${userId}" 추가 완료`, 'success');
     loadUserList(db);
@@ -1386,7 +1376,8 @@ async function createUser(db) {
   }
 }
 
-
+let toastTimer;
+function showToast(msg, type='info') {
   const t = document.getElementById('toast');
   t.textContent = type==='success' ? '✓ '+msg : type==='error' ? '✕ '+msg : 'ℹ '+msg;
   t.className   = 'toast show ' + type;
