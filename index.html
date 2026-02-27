@@ -2432,6 +2432,13 @@ const LOG_FIELD_LABELS = {
   desc:'내용', schedOpt:'일정유형', specialOpts:'특수옵션',
 };
 const COLOR_LABELS = {gold:'개인의뢰', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방'};
+const SPECIAL_LABELS_LOG = { car:'🚗 차량', brief:'💼 제품', return:'← 반납', group:'👥 2인', urgent:'🚨 긴급', ladder:'▤ 사다리' };
+const SCHED_LABELS_LOG   = { suggest:'💬 제안', hope:'🙏 희망', target:'🎯 목표' };
+
+function formatSpecialOpts(arr) {
+  if (!Array.isArray(arr) || arr.length === 0) return '(없음)';
+  return arr.map(k => SPECIAL_LABELS_LOG[k] || k).join(', ');
+}
 
 function calcChanges(prev, next) {
   if (!prev) return [];
@@ -2439,7 +2446,19 @@ function calcChanges(prev, next) {
   const fields = Object.keys(LOG_FIELD_LABELS);
   for (const f of fields) {
     let pv = prev[f], nv = next[f];
-    /* 배열은 JSON 비교 */
+
+    if (f === 'specialOpts') {
+      /* 배열 비교 — 순서 무관하게 내용이 같으면 변경 없음 */
+      const pa = [...(pv||[])].sort(), na = [...(nv||[])].sort();
+      if (JSON.stringify(pa) === JSON.stringify(na)) continue;
+      changes.push({
+        field: LOG_FIELD_LABELS[f],
+        before: formatSpecialOpts(pv),
+        after:  formatSpecialOpts(nv)
+      });
+      continue;
+    }
+
     if (Array.isArray(pv) || Array.isArray(nv)) {
       pv = JSON.stringify(pv||[]); nv = JSON.stringify(nv||[]);
     } else {
@@ -2447,10 +2466,13 @@ function calcChanges(prev, next) {
       nv = (nv===undefined||nv===null) ? '' : String(nv);
     }
     if (pv === nv) continue;
+
     /* 표시용 변환 */
     let pvDisp = pv, nvDisp = nv;
-    if (f==='color') { pvDisp=COLOR_LABELS[pv]||pv; nvDisp=COLOR_LABELS[nv]||nv; }
-    if (f==='allDay') { pvDisp=pv==='true'?'종일':'시간지정'; nvDisp=nv==='true'?'종일':'시간지정'; }
+    if (f==='color')   { pvDisp=COLOR_LABELS[pv]||pv;   nvDisp=COLOR_LABELS[nv]||nv; }
+    if (f==='allDay')  { pvDisp=pv==='true'?'종일':'시간지정'; nvDisp=nv==='true'?'종일':'시간지정'; }
+    if (f==='schedOpt'){ pvDisp=SCHED_LABELS_LOG[pv]||pv||'(없음)'; nvDisp=SCHED_LABELS_LOG[nv]||nv||'(없음)'; }
+
     changes.push({ field: LOG_FIELD_LABELS[f]||f, before: pvDisp, after: nvDisp });
   }
   return changes;
