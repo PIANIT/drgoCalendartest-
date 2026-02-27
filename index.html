@@ -1146,6 +1146,14 @@
         🔔 테스트 알림 보내기
       </button>
     </div>
+
+    <div style="border-top:1px solid var(--border); padding-top:14px; margin-top:4px;">
+      <div class="settings-section-title">계정</div>
+      <button class="settings-reset-btn" id="logoutBtn"
+        style="border-color:rgba(212,136,136,0.4); color:var(--red); margin-top:6px;">
+        🚪 로그아웃
+      </button>
+    </div>
   </div>
 </div>
 
@@ -3557,6 +3565,14 @@ document.getElementById('discordTestBtn').addEventListener('click', async () => 
     btn.textContent = '❌ 오류: ' + e.message;
     setTimeout(() => { btn.textContent = '🔔 테스트 알림 보내기'; btn.disabled = false; }, 3000);
   }
+});
+
+/* ── 로그아웃 ── */
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  localStorage.removeItem('cal_auth_ok');
+  localStorage.removeItem('cal_auth_uid');
+  localStorage.removeItem('cal_auth_exp');
+  location.reload();
 });
 
 /* color-dot active 상태 변경 시 border 색도 업데이트 */
