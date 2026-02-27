@@ -520,25 +520,58 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 import { getFirestore, collection, doc, deleteDoc, setDoc, onSnapshot, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-/* ── AUTH ── */
-const ADMIN_HASH = 'b536e460b48ff9981aeee9b2cfb0bb01548a3b111fe16cdec6dbc5a4c6e7a4c2';
+/* ══════════════════════════════
+   CONFIG & CONSTANTS  (반드시 맨 위)
+══════════════════════════════ */
+const firebaseConfig = {
+  apiKey: "AIzaSyDnEOATYmwq0WJr6pCl-86-Q3ZEQjrrfeY",
+  authDomain: "drgo-calender.firebaseapp.com",
+  projectId: "drgo-calender",
+  storageBucket: "drgo-calender.firebasestorage.app",
+  messagingSenderId: "163730741115",
+  appId: "1:163730741115:web:73a06d5b1cf1a477734fde"
+};
+
+const ADMIN_HASH  = 'b536e460b48ff9981aeee9b2cfb0bb01548a3b111fe16cdec6dbc5a4c6e7a4c2';
 const SESSION_KEY = 'cal_admin_ok';
 const TRIES_KEY   = 'cal_admin_tries';
 const LOCK_KEY    = 'cal_admin_lock';
 const MAX_TRIES   = 5;
 const LOCK_MS     = 120000;
 
+const TYPE_LABELS    = { gold:'개인의뢰', blue:'사내업무', red:'휴가관련', green:'촬영관련' };
+const SPECIAL_LABELS = { car:'🚗차량', brief:'💼제품', return:'←당김', group:'👥2인', urgent:'🚨긴급', ladder:'🪜사다리' };
+const SCHED_LABELS   = { suggest:'💬제안', hope:'🙏희망', target:'🎯목표' };
+
+/* ══════════════════════════════
+   STATE
+══════════════════════════════ */
+let allEvents      = [];
+let filteredEvents = [];
+let selectedIds    = new Set();
+let currentFilter  = 'all';
+let searchQuery    = '';
+let sortKey        = 'startDate';
+let sortDir        = 1;
+let currentPage    = 1;
+const PAGE_SIZE    = 25;
+let confirmCallback = null;
+let importData      = null;
+
+/* ══════════════════════════════
+   AUTH
+══════════════════════════════ */
 async function sha256(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
-function isAuth() { return sessionStorage.getItem(SESSION_KEY)==='1'; }
+function isAuth()     { return sessionStorage.getItem(SESSION_KEY) === '1'; }
 function getLockRem() { return Math.max(0, parseInt(localStorage.getItem(LOCK_KEY)||'0') - Date.now()); }
 
 function updateLockUI() {
-  const rem = getLockRem();
-  const tries = parseInt(localStorage.getItem(TRIES_KEY)||'0');
-  const btn = document.getElementById('authBtn');
+  const rem    = getLockRem();
+  const tries  = parseInt(localStorage.getItem(TRIES_KEY)||'0');
+  const btn    = document.getElementById('authBtn');
   const lockEl = document.getElementById('authLock');
   if (rem > 0) {
     btn.disabled = true;
@@ -552,7 +585,7 @@ function updateLockUI() {
 
 async function tryAuth() {
   if (getLockRem() > 0) return;
-  const inp = document.getElementById('authInput');
+  const inp   = document.getElementById('authInput');
   const errEl = document.getElementById('authError');
   if (!inp.value) return;
   const hash = await sha256(inp.value);
@@ -580,52 +613,40 @@ async function tryAuth() {
 }
 
 document.getElementById('authBtn').addEventListener('click', tryAuth);
-document.getElementById('authInput').addEventListener('keydown', e => { if(e.key==='Enter') tryAuth(); });
+document.getElementById('authInput').addEventListener('keydown', e => { if (e.key==='Enter') tryAuth(); });
 
-if (isAuth()) { document.getElementById('authOverlay').classList.add('hidden'); initApp(); }
-else { updateLockUI(); setTimeout(()=>document.getElementById('authInput').focus(), 100); }
+/* ══════════════════════════════
+   ENTRY POINT
+══════════════════════════════ */
+if (isAuth()) {
+  document.getElementById('authOverlay').classList.add('hidden');
+  initApp();
+} else {
+  updateLockUI();
+  setTimeout(() => document.getElementById('authInput').focus(), 100);
+}
 
-/* ── FIREBASE ── */
-const firebaseConfig = {
-  apiKey: "AIzaSyDnEOATYmwq0WJr6pCl-86-Q3ZEQjrrfeY",
-  authDomain: "drgo-calender.firebaseapp.com",
-  projectId: "drgo-calender",
-  storageBucket: "drgo-calender.firebasestorage.app",
-  messagingSenderId: "163730741115",
-  appId: "1:163730741115:web:73a06d5b1cf1a477734fde"
-};
-
-const TYPE_LABELS = { gold:'개인의뢰', blue:'사내업무', red:'휴가관련', green:'촬영관련' };
-const SPECIAL_LABELS = { car:'🚗차량', brief:'💼제품', return:'←당김', group:'👥2인', urgent:'🚨긴급', ladder:'🪜사다리' };
-const SCHED_LABELS = { suggest:'💬제안', hope:'🙏희망', target:'🎯목표' };
-
-let allEvents = [];
-let filteredEvents = [];
-let selectedIds = new Set();
-let currentFilter = 'all';
-let searchQuery = '';
-let sortKey = 'startDate';
-let sortDir = 1;
-let currentPage = 1;
-const PAGE_SIZE = 25;
-let confirmCallback = null;
-let importData = null;
-
+/* ══════════════════════════════
+   APP INIT  (db는 여기서 생성 후 클로저로 공유)
+══════════════════════════════ */
 function initApp() {
+  /* -- Firebase -- */
   const app = initializeApp(firebaseConfig);
   const db  = getFirestore(app);
   const col = collection(db, 'events');
 
-  // Theme
+  /* -- Theme -- */
   const saved = localStorage.getItem('cal_theme');
   if (saved === 'light') document.documentElement.classList.add('light');
-  document.getElementById('themeBtn').textContent = document.documentElement.classList.contains('light') ? '☀️' : '🌙';
+  document.getElementById('themeBtn').textContent =
+    document.documentElement.classList.contains('light') ? '☀️' : '🌙';
   document.getElementById('themeBtn').addEventListener('click', () => {
     const isL = document.documentElement.classList.toggle('light');
     localStorage.setItem('cal_theme', isL ? 'light' : 'dark');
     document.getElementById('themeBtn').textContent = isL ? '☀️' : '🌙';
   });
 
+  /* -- Firestore 실시간 리스너 -- */
   onSnapshot(col, snap => {
     allEvents = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
     applyFilters();
@@ -634,19 +655,20 @@ function initApp() {
     showToast('Firestore 연결 실패: ' + err.message, 'error');
   });
 
-  // Refresh
+  /* -- 새로고침 -- */
   document.getElementById('refreshBtn').addEventListener('click', () => {
-    applyFilters(); showToast('새로고침 완료', 'info');
+    applyFilters();
+    showToast('새로고침 완료', 'info');
   });
 
-  // Search
+  /* -- 검색 -- */
   document.getElementById('searchInput').addEventListener('input', e => {
     searchQuery = e.target.value.toLowerCase();
     currentPage = 1;
     applyFilters();
   });
 
-  // Filters
+  /* -- 필터 -- */
   document.getElementById('filterGroup').addEventListener('click', e => {
     const btn = e.target.closest('.filter-btn');
     if (!btn) return;
@@ -657,14 +679,14 @@ function initApp() {
     applyFilters();
   });
 
-  // Sort
-  document.querySelectorAll('.sort-col').forEach(col => {
-    col.addEventListener('click', () => {
-      const key = col.dataset.sort;
+  /* -- 정렬 -- */
+  document.querySelectorAll('.sort-col').forEach(colEl => {
+    colEl.addEventListener('click', () => {
+      const key = colEl.dataset.sort;
       if (sortKey === key) sortDir *= -1;
       else { sortKey = key; sortDir = 1; }
       document.querySelectorAll('.sort-col').forEach(c => c.classList.remove('active'));
-      col.classList.add('active');
+      colEl.classList.add('active');
       document.querySelectorAll('.sort-arrow').forEach(a => a.textContent = '');
       const arrow = document.getElementById('sa-' + key);
       if (arrow) arrow.textContent = sortDir === 1 ? '↑' : '↓';
@@ -672,30 +694,41 @@ function initApp() {
     });
   });
 
-  // Export
+  /* -- 백업 -- */
   document.getElementById('exportBtn').addEventListener('click', exportJSON);
 
-  // Import
+  /* -- 복원 -- */
   document.getElementById('importBtn').addEventListener('click', () => {
     document.getElementById('importOverlay').classList.add('open');
   });
   document.getElementById('importClose').addEventListener('click', closeImport);
   document.getElementById('importCancelBtn').addEventListener('click', closeImport);
+
   const importZone = document.getElementById('importZone');
   const importFile = document.getElementById('importFile');
   importZone.addEventListener('dragover', e => { e.preventDefault(); importZone.classList.add('drag-over'); });
   importZone.addEventListener('dragleave', () => importZone.classList.remove('drag-over'));
-  importZone.addEventListener('drop', e => { e.preventDefault(); importZone.classList.remove('drag-over'); handleImportFile(e.dataTransfer.files[0]); });
+  importZone.addEventListener('drop', e => {
+    e.preventDefault(); importZone.classList.remove('drag-over');
+    handleImportFile(e.dataTransfer.files[0]);
+  });
   importFile.addEventListener('change', e => handleImportFile(e.target.files[0]));
+
   document.getElementById('importConfirmBtn').addEventListener('click', () => {
     if (!importData) return;
-    showConfirm('📥 데이터 복원', `${importData.length}개 일정을 복원하시겠습니까?\n동일 ID의 일정은 덮어쓰기 됩니다.`, async () => {
-      closeImport();
-      await runImport(importData, db);
-    }, '복원 실행', 'import');
+    showConfirm(
+      '📥 데이터 복원',
+      `${importData.length}개 일정을 복원하시겠습니까?\n동일 ID의 일정은 덮어쓰기 됩니다.`,
+      async () => {
+        const dataToRestore = importData; // 클로저로 캡처
+        closeImport();
+        await runImport(dataToRestore, db); // db 명시적 전달
+      },
+      '복원 실행', 'import'
+    );
   });
 
-  // Bulk delete
+  /* -- 일괄 삭제 -- */
   document.getElementById('bulkDeleteBtn').addEventListener('click', () => {
     if (selectedIds.size === 0) return;
     showConfirm('🗑 선택 삭제', `선택한 ${selectedIds.size}개 일정을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`, async () => {
@@ -704,29 +737,36 @@ function initApp() {
         try { await deleteDoc(doc(db, 'events', id)); ok++; } catch {}
       }
       selectedIds.clear();
+      updateBulkBtn();
       showToast(`${ok}개 일정 삭제됨`, 'success');
     });
   });
 
-  // Pagination
-  document.getElementById('pagePrev').addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderList(); } });
+  /* -- 페이지네이션 -- */
+  document.getElementById('pagePrev').addEventListener('click', () => {
+    if (currentPage > 1) { currentPage--; renderList(); }
+  });
   document.getElementById('pageNext').addEventListener('click', () => {
     const total = Math.ceil(filteredEvents.length / PAGE_SIZE);
     if (currentPage < total) { currentPage++; renderList(); }
   });
 
-  // Detail modal
-  document.getElementById('detailClose').addEventListener('click', () => document.getElementById('detailOverlay').classList.remove('open'));
+  /* -- 상세 모달 -- */
+  document.getElementById('detailClose').addEventListener('click',    () => document.getElementById('detailOverlay').classList.remove('open'));
   document.getElementById('detailCloseBtn').addEventListener('click', () => document.getElementById('detailOverlay').classList.remove('open'));
+  document.getElementById('detailDeleteBtn').addEventListener('click', () => {
+    const id = document.getElementById('detailId').dataset.id;
+    if (id) deleteEventById(id, db);
+  });
 
-  // Confirm
+  /* -- 확인 다이얼로그 -- */
   document.getElementById('confirmCancel').addEventListener('click', () => document.getElementById('confirmOverlay').classList.remove('open'));
   document.getElementById('confirmOk').addEventListener('click', () => {
     document.getElementById('confirmOverlay').classList.remove('open');
     if (confirmCallback) confirmCallback();
   });
 
-  // Escape
+  /* -- ESC -- */
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
       document.getElementById('detailOverlay').classList.remove('open');
@@ -735,8 +775,16 @@ function initApp() {
     }
   });
 
-  // Window delete handler
-  window._deleteEvent = async (id) => {
+  /* -- 행 삭제 버튼 (이벤트 위임으로 renderList 이후도 동작) -- */
+  document.getElementById('eventList').addEventListener('click', e => {
+    const delBtn = e.target.closest('[data-delid]');
+    if (delBtn) {
+      e.stopPropagation();
+      deleteEventById(delBtn.dataset.delid, db);
+    }
+  });
+
+  function deleteEventById(id, db) {
     const ev = allEvents.find(e => e._id === id);
     if (!ev) return;
     showConfirm('🗑 일정 삭제', `"${ev.title||'(제목 없음)'}" 일정을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`, async () => {
@@ -744,18 +792,16 @@ function initApp() {
         await deleteDoc(doc(db, 'events', id));
         document.getElementById('detailOverlay').classList.remove('open');
         showToast('일정이 삭제되었습니다', 'success');
-      } catch(e) {
-        showToast('삭제 실패: ' + e.message, 'error');
+      } catch(err) {
+        showToast('삭제 실패: ' + err.message, 'error');
       }
     });
-  };
-
-  document.getElementById('detailDeleteBtn').addEventListener('click', () => {
-    const id = document.getElementById('detailId').dataset.id;
-    if (id) window._deleteEvent(id);
-  });
+  }
 }
 
+/* ══════════════════════════════
+   FILTER / SORT / RENDER
+══════════════════════════════ */
 function applyFilters() {
   let evs = [...allEvents];
   if (currentFilter !== 'all') evs = evs.filter(e => (e.color||'gold') === currentFilter);
@@ -784,29 +830,32 @@ function updateStats() {
 }
 
 function renderList() {
-  const list = document.getElementById('eventList');
-  const total = filteredEvents.length;
+  const list       = document.getElementById('eventList');
+  const total      = filteredEvents.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const start = (currentPage - 1) * PAGE_SIZE;
-  const pageEvs = filteredEvents.slice(start, start + PAGE_SIZE);
+  const start      = (currentPage - 1) * PAGE_SIZE;
+  const pageEvs    = filteredEvents.slice(start, start + PAGE_SIZE);
 
   list.innerHTML = '';
   if (pageEvs.length === 0) {
     list.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">일정이 없습니다</div></div>`;
   } else {
     pageEvs.forEach(ev => {
-      const c = ev.color || 'gold';
+      const c          = ev.color || 'gold';
       const isSelected = selectedIds.has(ev._id);
-      const row = document.createElement('div');
-      row.className = 'event-row' + (isSelected ? ' selected' : '');
+      const row        = document.createElement('div');
+      row.className    = 'event-row' + (isSelected ? ' selected' : '');
 
-      const dateStr = ev.startDate || '';
-      const endStr  = ev.endDate && ev.endDate !== ev.startDate ? ` ~ ${ev.endDate}` : '';
-      const flags = [...(ev.specialOpts||[]).map(k=>SPECIAL_LABELS[k]||''), ...(ev.schedOpt?[SCHED_LABELS[ev.schedOpt]||'']:[])];
+      const dateStr    = ev.startDate || '';
+      const endStr     = ev.endDate && ev.endDate !== ev.startDate ? ` ~ ${ev.endDate}` : '';
+      const flags      = [
+        ...(ev.specialOpts||[]).map(k => SPECIAL_LABELS[k]||''),
+        ...(ev.schedOpt ? [SCHED_LABELS[ev.schedOpt]||''] : [])
+      ];
       const personName = c === 'gold' ? (ev.gold?.name || ev.name || '') : (ev.name || '');
 
       row.innerHTML = `
-        <div class="row-check"><div class="check-circle">${isSelected?'✓':''}</div></div>
+        <div class="row-check"><div class="check-circle">${isSelected ? '✓' : ''}</div></div>
         <div class="row-title">
           <div class="color-bar cb-${c}"></div>
           <div>
@@ -817,13 +866,12 @@ function renderList() {
         <div class="row-date hide-m">${dateStr}${endStr}</div>
         <div class="row-person hide-m">${personName || '—'}</div>
         <div><span class="row-badge rb-${c}">${TYPE_LABELS[c]||c}</span></div>
-        <div class="row-flags">${flags.map(f=>`<span title="${f}">${f.slice(0,2)}</span>`).join('')}${ev.locked?'🔒':''}</div>
+        <div class="row-flags">${flags.map(f=>`<span title="${f}">${f.slice(0,2)}</span>`).join('')}${ev.locked ? '🔒' : ''}</div>
         <div class="row-actions">
-          <button class="row-action-btn edit" title="상세보기" data-id="${ev._id}">🔍</button>
-          <button class="row-action-btn del" title="삭제" data-delid="${ev._id}">🗑</button>
+          <button class="row-action-btn edit" data-id="${ev._id}" title="상세보기">🔍</button>
+          <button class="row-action-btn del"  data-delid="${ev._id}" title="삭제">🗑</button>
         </div>`;
 
-      // Row click → select
       row.addEventListener('click', e => {
         if (e.target.closest('.row-action-btn')) return;
         if (selectedIds.has(ev._id)) selectedIds.delete(ev._id);
@@ -832,19 +880,19 @@ function renderList() {
         renderList();
       });
 
-      // Detail btn
-      row.querySelector('.row-action-btn.edit').addEventListener('click', e => { e.stopPropagation(); openDetail(ev); });
-      // Delete btn
-      row.querySelector('.row-action-btn.del').addEventListener('click', e => { e.stopPropagation(); window._deleteEvent(ev._id); });
+      row.querySelector('.row-action-btn.edit').addEventListener('click', e => {
+        e.stopPropagation();
+        openDetail(ev);
+      });
 
       list.appendChild(row);
     });
   }
 
-  // Pagination
+  /* 페이지네이션 */
   document.getElementById('pagePrev').disabled = currentPage <= 1;
   document.getElementById('pageNext').disabled = currentPage >= totalPages;
-  const nums = document.getElementById('pageNums');
+  const nums  = document.getElementById('pageNums');
   nums.innerHTML = '';
   const range = 3;
   for (let p = Math.max(1, currentPage-range); p <= Math.min(totalPages, currentPage+range); p++) {
@@ -857,83 +905,80 @@ function renderList() {
   document.getElementById('pageInfo').textContent = `${start+1}–${Math.min(start+PAGE_SIZE, total)} / ${total}건`;
 
   const selEl = document.getElementById('selCount');
-  if (selectedIds.size > 0) { selEl.style.display=''; selEl.textContent = `${selectedIds.size}개 선택됨`; }
-  else { selEl.style.display='none'; }
+  if (selectedIds.size > 0) { selEl.style.display = ''; selEl.textContent = `${selectedIds.size}개 선택됨`; }
+  else selEl.style.display = 'none';
 }
 
 function updateBulkBtn() {
   document.getElementById('bulkDeleteBtn').style.display = selectedIds.size > 0 ? '' : 'none';
 }
 
+/* ══════════════════════════════
+   DETAIL MODAL
+══════════════════════════════ */
 function openDetail(ev) {
   const c = ev.color || 'gold';
-  document.getElementById('detailStrip').className = 'modal-strip ms-' + c;
-  document.getElementById('detailBadge').textContent = `${ev.startDate||''} ${TYPE_LABELS[c]||''}`;
-  document.getElementById('detailTitle').textContent = ev.title || '(제목 없음)';
-  document.getElementById('detailId').textContent = `ID: ${ev._id}`;
-  document.getElementById('detailId').dataset.id = ev._id;
+  document.getElementById('detailStrip').className      = 'modal-strip ms-' + c;
+  document.getElementById('detailBadge').textContent    = `${ev.startDate||''} ${TYPE_LABELS[c]||''}`;
+  document.getElementById('detailTitle').textContent    = ev.title || '(제목 없음)';
+  document.getElementById('detailId').textContent       = `ID: ${ev._id}`;
+  document.getElementById('detailId').dataset.id        = ev._id;
 
   const body = document.getElementById('detailBody');
   body.innerHTML = '';
 
-  // Basic info
-  const basics = [
-    ['시작일', ev.startDate||'—'],
-    ['종료일', ev.endDate||ev.startDate||'—'],
-    ['시간', ev.allDay!==false ? '종일' : `${ev.startTime||'?'} ~ ${ev.endTime||'?'}`],
-    ['분류', TYPE_LABELS[c]||c],
+  body.appendChild(makeSection('기본 정보', [
+    ['시작일',    ev.startDate||'—'],
+    ['종료일',    ev.endDate||ev.startDate||'—'],
+    ['시간',      ev.allDay!==false ? '종일' : `${ev.startTime||'?'} ~ ${ev.endTime||'?'}`],
+    ['분류',      TYPE_LABELS[c]||c],
     ['이름/담당자', ev.name||(ev.gold?.name)||'—'],
-    ['주소', ev.address||'—'],
-    ['잠금', ev.locked?'🔒 잠금됨':'없음'],
-    ['특수옵션', (ev.specialOpts||[]).map(k=>SPECIAL_LABELS[k]||k).join(', ')||(ev.schedOpt?SCHED_LABELS[ev.schedOpt]:'없음')],
-  ];
-  body.appendChild(makeSection('기본 정보', basics));
+    ['주소',      ev.address||'—'],
+    ['잠금',      ev.locked ? '🔒 잠금됨' : '없음'],
+    ['특수옵션',  (ev.specialOpts||[]).map(k=>SPECIAL_LABELS[k]||k).join(', ') || (ev.schedOpt ? SCHED_LABELS[ev.schedOpt] : '없음')],
+  ]));
 
   if (ev.desc) body.appendChild(makeSection('상세 설명', [['내용', ev.desc]]));
 
-  // Gold template
   if (c === 'gold' && ev.gold) {
     const g = ev.gold;
-    const goldFields = [
-      ['전화번호', g.phone||'—'], ['플랫폼', g.platform||'—'],
-      ['방송주제', g.topic||'—'], ['경력', g.career||'—'],
-      ['결제', g.paid||'—'], ['주문제품', g.order||'—'],
-      ['잔금', g.balance||'—'], ['잔금금액', g.balance_amount||'—'],
-    ];
-    body.appendChild(makeSection('의뢰자 정보', goldFields));
+    body.appendChild(makeSection('의뢰자 정보', [
+      ['전화번호', g.phone||'—'], ['플랫폼',  g.platform||'—'],
+      ['방송주제', g.topic||'—'], ['경력',    g.career||'—'],
+      ['결제',     g.paid||'—'],  ['주문제품', g.order||'—'],
+      ['잔금',     g.balance||'—'],['잔금금액', g.balance_amount||'—'],
+    ]));
     if (g.equipment) body.appendChild(makeSection('장비 목록', [['장비', g.equipment]]));
-    if (g.req_topic || g.req_detail) body.appendChild(makeSection('의뢰 내용', [['주제', g.req_topic||'—'],['세부', g.req_detail||'—']]));
-    if (g.special) body.appendChild(makeSection('특이사항', [['내용', g.special]]));
+    if (g.req_topic||g.req_detail) body.appendChild(makeSection('의뢰 내용', [['주제',g.req_topic||'—'],['세부',g.req_detail||'—']]));
+    if (g.special)   body.appendChild(makeSection('특이사항', [['내용', g.special]]));
     const imgCount = (g.quoteImgs||[]).length + (g.refImgs||[]).length + (g.roomImgs||[]).length;
-    if (imgCount > 0) body.appendChild(makeSection('첨부 이미지', [['이미지 수', `${imgCount}개 (미리보기 생략)`]]));
+    if (imgCount > 0) body.appendChild(makeSection('첨부 이미지', [['이미지 수', `${imgCount}개`]]));
   }
 
-  // Attachments
-  if ((ev.attachments||[]).length > 0) {
+  if ((ev.attachments||[]).length > 0)
     body.appendChild(makeSection('첨부 파일', [['파일 수', `${ev.attachments.length}개`]]));
-  }
 
-  // Raw JSON
-  const jsonSection = document.createElement('div'); jsonSection.className = 'detail-section';
+  /* Raw JSON */
+  const jsonSec   = document.createElement('div'); jsonSec.className = 'detail-section';
   const jsonTitle = document.createElement('div'); jsonTitle.className = 'detail-section-title'; jsonTitle.textContent = 'Raw JSON';
-  const jsonBox = document.createElement('div'); jsonBox.className = 'json-view-box';
+  const jsonBox   = document.createElement('div'); jsonBox.className = 'json-view-box';
   const { _id, ...cleanEv } = ev;
   jsonBox.textContent = JSON.stringify(cleanEv, null, 2);
-  jsonSection.appendChild(jsonTitle); jsonSection.appendChild(jsonBox);
-  body.appendChild(jsonSection);
-  body.appendChild(document.createElement('div')); // spacer
+  jsonSec.appendChild(jsonTitle); jsonSec.appendChild(jsonBox);
+  body.appendChild(jsonSec);
+  body.appendChild(document.createElement('div'));
 
   document.getElementById('detailOverlay').classList.add('open');
 }
 
 function makeSection(title, fields) {
-  const sec = document.createElement('div'); sec.className = 'detail-section';
-  const t = document.createElement('div'); t.className = 'detail-section-title'; t.textContent = title;
+  const sec  = document.createElement('div'); sec.className = 'detail-section';
+  const t    = document.createElement('div'); t.className = 'detail-section-title'; t.textContent = title;
   const grid = document.createElement('div'); grid.className = 'detail-grid';
   fields.forEach(([k, v]) => {
     const item = document.createElement('div'); item.className = 'detail-item';
-    const key = document.createElement('div'); key.className = 'detail-key'; key.textContent = k;
-    const val = document.createElement('div');
+    const key  = document.createElement('div'); key.className = 'detail-key'; key.textContent = k;
+    const val  = document.createElement('div');
     val.className = 'detail-val' + (!v || v === '—' ? ' empty' : '');
     val.textContent = v || '—';
     item.appendChild(key); item.appendChild(val); grid.appendChild(item);
@@ -942,86 +987,28 @@ function makeSection(title, fields) {
   return sec;
 }
 
-async function runImport(data, db) {
-  const total = data.length;
-  let ok = 0, fail = 0, skip = 0;
-
-  // Show progress overlay
-  const overlay = document.getElementById('progressOverlay');
-  const bar     = document.getElementById('progressBar');
-  const txt     = document.getElementById('progressText');
-  const title   = document.getElementById('progressTitle');
-  overlay.style.display = 'flex';
-  title.textContent = `복원 중… (총 ${total}개)`;
-  bar.style.width = '0%';
-  txt.textContent = `0 / ${total}`;
-
-  for (let i = 0; i < data.length; i++) {
-    const ev = data[i];
-    try {
-      const id = ev._id || ev.id;
-      if (!id) { skip++; continue; }
-
-      // Deep-clone and sanitize: remove Firestore timestamp objects & _id
-      const { _id, id: _id2, updatedAt, createdAt, ...cleanData } = ev;
-
-      // Strip timestamp objects and deep-clone
-      const sanitized = stripTimestamps(JSON.parse(JSON.stringify(cleanData)));
-
-      await setDoc(doc(db, 'events', id), {
-        ...sanitized,
-        updatedAt: serverTimestamp()
-      });
-      ok++;
-    } catch(e) {
-      console.error('복원 실패:', ev._id, e);
-      fail++;
-      // 첫 번째 실패 시 에러 메시지를 title에 표시
-      if (fail === 1) title.textContent = `⚠️ 오류: ${e.code || e.message}`;
-    }
-
-    // Update progress
-    const pct = Math.round(((i + 1) / total) * 100);
-    bar.style.width = pct + '%';
-    txt.textContent = `${i + 1} / ${total}`;
-    title.textContent = `복원 중… ${pct}%`;
-
-    // Yield to UI thread every 5 items
-    if (i % 5 === 0) await new Promise(r => setTimeout(r, 0));
-  }
-
-  // Done
-  overlay.style.display = 'none';
-
-  const msg = `복원 완료: ${ok}개 성공` +
-    (fail > 0 ? `, ${fail}개 실패` : '') +
-    (skip > 0 ? `, ${skip}개 건너뜀 (ID 없음)` : '');
-  showToast(msg, ok > 0 ? 'success' : 'error');
-}
-
+/* ══════════════════════════════
+   EXPORT / IMPORT
+══════════════════════════════ */
 function stripTimestamps(obj) {
   if (obj === null || obj === undefined) return obj;
   if (typeof obj !== 'object') return obj;
   if (Array.isArray(obj)) return obj.map(stripTimestamps);
-  // Firestore Timestamp 객체 제거 (seconds/nanoseconds 구조)
   if ('seconds' in obj && 'nanoseconds' in obj) return null;
   const result = {};
-  for (const [k, v] of Object.entries(obj)) {
-    result[k] = stripTimestamps(v);
-  }
+  for (const [k, v] of Object.entries(obj)) result[k] = stripTimestamps(v);
   return result;
 }
 
 function exportJSON() {
   const toExport = filteredEvents.map(ev => {
     const { _id, ...rest } = ev;
-    const clean = stripTimestamps(rest);
-    return { _id, ...clean };
+    return { _id, ...stripTimestamps(rest) };
   });
-  const blob = new Blob([JSON.stringify(toExport, null, 2)], { type:'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const now = new Date();
+  const blob    = new Blob([JSON.stringify(toExport, null, 2)], { type: 'application/json' });
+  const url     = URL.createObjectURL(blob);
+  const a       = document.createElement('a');
+  const now     = new Date();
   const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
   a.href = url; a.download = `calendar_backup_${dateStr}.json`;
   a.click(); URL.revokeObjectURL(url);
@@ -1054,10 +1041,63 @@ function closeImport() {
   importData = null;
 }
 
+async function runImport(data, db) {
+  const total = data.length;
+  let ok = 0, fail = 0, skip = 0;
+
+  const overlay = document.getElementById('progressOverlay');
+  const bar     = document.getElementById('progressBar');
+  const txt     = document.getElementById('progressText');
+  const title   = document.getElementById('progressTitle');
+
+  overlay.style.display = 'flex';
+  title.textContent = `복원 중… (총 ${total}개)`;
+  bar.style.width   = '0%';
+  txt.textContent   = `0 / ${total}`;
+
+  for (let i = 0; i < data.length; i++) {
+    const ev = data[i];
+    try {
+      const id = ev._id || ev.id;
+      if (!id) { skip++; continue; }
+
+      const { _id, id: _id2, updatedAt, createdAt, ...rawData } = ev;
+      const sanitized = stripTimestamps(JSON.parse(JSON.stringify(rawData)));
+
+      await setDoc(doc(db, 'events', id), {
+        ...sanitized,
+        updatedAt: serverTimestamp()
+      });
+      ok++;
+    } catch(err) {
+      console.error('복원 실패:', ev._id, err);
+      fail++;
+      title.textContent = `⚠️ 오류 발생 (${err.code || err.message})`;
+    }
+
+    const pct        = Math.round(((i + 1) / total) * 100);
+    bar.style.width  = pct + '%';
+    txt.textContent  = `${i + 1} / ${total}`;
+    if (fail === 0) title.textContent = `복원 중… ${pct}%`;
+
+    if (i % 5 === 0) await new Promise(r => setTimeout(r, 0));
+  }
+
+  overlay.style.display = 'none';
+
+  const msg = `복원 완료: ${ok}개 성공` +
+    (fail > 0 ? `, ${fail}개 실패` : '') +
+    (skip > 0 ? `, ${skip}개 건너뜀` : '');
+  showToast(msg, ok > 0 ? 'success' : 'error');
+}
+
+/* ══════════════════════════════
+   CONFIRM / TOAST
+══════════════════════════════ */
 function showConfirm(title, text, cb, okLabel='삭제', type='delete') {
   document.getElementById('confirmTitle').textContent = title;
-  document.getElementById('confirmText').textContent = text;
-  document.getElementById('confirmOk').textContent = okLabel;
+  document.getElementById('confirmText').textContent  = text;
+  document.getElementById('confirmOk').textContent    = okLabel;
   document.getElementById('confirmOk').style.background = type === 'import' ? 'var(--accent2)' : 'var(--red)';
   confirmCallback = cb;
   document.getElementById('confirmOverlay').classList.add('open');
@@ -1066,10 +1106,10 @@ function showConfirm(title, text, cb, okLabel='삭제', type='delete') {
 let toastTimer;
 function showToast(msg, type='info') {
   const t = document.getElementById('toast');
-  t.textContent = type==='success'?'✓ '+msg : type==='error'?'✕ '+msg : 'ℹ '+msg;
-  t.className = 'toast show ' + type;
+  t.textContent = type==='success' ? '✓ '+msg : type==='error' ? '✕ '+msg : 'ℹ '+msg;
+  t.className   = 'toast show ' + type;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 4000);
 }
 </script>
 <!-- ═══ PROGRESS OVERLAY ═══ -->
