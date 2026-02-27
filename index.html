@@ -1271,13 +1271,10 @@
       <div class="divider"></div>
 
       <div id="commonFields">
+        <input type="hidden" id="modalAddress" value="" />
         <div class="field-group">
           <label class="field-label" id="labelName">이름 / 담당자</label>
           <input class="field-input" id="modalName" placeholder="이름을 입력하세요" />
-        </div>
-        <div style="margin-top:12px" class="field-group">
-          <label class="field-label" for="modalAddress">주소</label>
-          <input class="field-input" id="modalAddress" placeholder="주소를 입력하세요" />
         </div>
         <div style="margin-top:12px" class="field-group">
           <label class="field-label" for="modalDesc">상세 설명</label>
@@ -2081,9 +2078,6 @@ function setColor(c){
   const nameFg = document.getElementById('modalName')?.closest('.field-group');
   if (nameFg) nameFg.style.display = hideSchedSpecial ? 'none' : '';
 
-  /* 휴가관련(red): 주소(modalAddress) + 첨부파일 추가 숨김 */
-  const addrFg = document.getElementById('modalAddress')?.closest('.field-group');
-  if (addrFg) addrFg.style.display = isRed ? 'none' : '';
   document.getElementById('generalAttachSection').style.display =
     isGold ? 'none' : isRed ? 'none' : 'block';
 
@@ -2475,11 +2469,23 @@ async function saveEvent(){
 }
 
 /* 변경 내역 비교 함수 */
+/* 변경 내역 비교 함수 */
 const LOG_FIELD_LABELS = {
-  title:'제목', startDate:'시작일', endDate:'종료일',
+  /* 공통 */
+  title:'제목', color:'분류',
+  startDate:'시작일', endDate:'종료일',
   startTime:'시작시간', endTime:'종료시간', allDay:'종일여부',
-  color:'분류', name:'담당자', address:'주소', location:'장소',
-  desc:'내용', schedOpt:'일정유형', specialOpts:'특수옵션',
+  location:'주소', name:'담당자', desc:'내용',
+  schedOpt:'일정유형', specialOpts:'특수옵션',
+  notifMinutes:'알림', locked:'잠금',
+};
+const GOLD_FIELD_LABELS = {
+  name:'의뢰자 이름', phone:'전화번호', platform:'플랫폼',
+  career:'경력 여부', topic:'방송 주제',
+  equipment:'장비 목록', req_topic:'의뢰 주제', req_detail:'의뢰 세부항목',
+  special:'특이사항', paid:'결제 여부', order:'주문 여부',
+  delivery:'수령 방법', balance:'잔금 여부', balance_amount:'잔금 금액',
+  estimate_amount:'견적 총액',
 };
 const COLOR_LABELS = {gold:'개인의뢰', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방'};
 const SPECIAL_LABELS_LOG = { car:'🚗 차량', brief:'💼 제품', return:'← 반납', group:'👥 2인', urgent:'🚨 긴급', ladder:'▤ 사다리' };
@@ -2493,38 +2499,71 @@ function formatSpecialOpts(arr) {
 function calcChanges(prev, next) {
   if (!prev) return [];
   const changes = [];
-  const fields = Object.keys(LOG_FIELD_LABELS);
-  for (const f of fields) {
+
+  /* ── 공통 필드 ── */
+  for (const f of Object.keys(LOG_FIELD_LABELS)) {
     let pv = prev[f], nv = next[f];
 
     if (f === 'specialOpts') {
-      /* 배열 비교 — 순서 무관하게 내용이 같으면 변경 없음 */
       const pa = [...(pv||[])].sort(), na = [...(nv||[])].sort();
       if (JSON.stringify(pa) === JSON.stringify(na)) continue;
-      changes.push({
-        field: LOG_FIELD_LABELS[f],
-        before: formatSpecialOpts(pv),
-        after:  formatSpecialOpts(nv)
-      });
+      changes.push({ field: LOG_FIELD_LABELS[f], before: formatSpecialOpts(pv), after: formatSpecialOpts(nv) });
       continue;
     }
 
-    if (Array.isArray(pv) || Array.isArray(nv)) {
-      pv = JSON.stringify(pv||[]); nv = JSON.stringify(nv||[]);
-    } else {
-      pv = (pv===undefined||pv===null) ? '' : String(pv);
-      nv = (nv===undefined||nv===null) ? '' : String(nv);
-    }
+    pv = (pv===undefined||pv===null) ? '' : String(pv);
+    nv = (nv===undefined||nv===null) ? '' : String(nv);
     if (pv === nv) continue;
 
-    /* 표시용 변환 */
     let pvDisp = pv, nvDisp = nv;
-    if (f==='color')   { pvDisp=COLOR_LABELS[pv]||pv;   nvDisp=COLOR_LABELS[nv]||nv; }
-    if (f==='allDay')  { pvDisp=pv==='true'?'종일':'시간지정'; nvDisp=nv==='true'?'종일':'시간지정'; }
-    if (f==='schedOpt'){ pvDisp=SCHED_LABELS_LOG[pv]||pv||'(없음)'; nvDisp=SCHED_LABELS_LOG[nv]||nv||'(없음)'; }
+    if (f==='color')        { pvDisp=COLOR_LABELS[pv]||pv;  nvDisp=COLOR_LABELS[nv]||nv; }
+    if (f==='allDay')       { pvDisp=pv==='true'?'종일':'시간지정'; nvDisp=nv==='true'?'종일':'시간지정'; }
+    if (f==='schedOpt')     { pvDisp=SCHED_LABELS_LOG[pv]||pv||'(없음)'; nvDisp=SCHED_LABELS_LOG[nv]||nv||'(없음)'; }
+    if (f==='locked')       { pvDisp=pv==='true'?'잠금':'해제'; nvDisp=nv==='true'?'잠금':'해제'; }
+    if (f==='notifMinutes') {
+      const fmt = v => v===''||v==='null'?'없음': v==='allday'?'당일 오전 9시': `${v}분 전`;
+      pvDisp=fmt(pv); nvDisp=fmt(nv);
+    }
 
-    changes.push({ field: LOG_FIELD_LABELS[f]||f, before: pvDisp, after: nvDisp });
+    changes.push({ field: LOG_FIELD_LABELS[f], before: pvDisp||'(없음)', after: nvDisp||'(없음)' });
   }
+
+  /* ── 첨부파일 (일반) ── */
+  const prevAtts = (prev.attachments||[]);
+  const nextAtts = (next.attachments||[]);
+  const prevNames = prevAtts.map(a=>a.name||'파일');
+  const nextNames = nextAtts.map(a=>a.name||'파일');
+  const added   = nextNames.filter(n => !prevNames.includes(n));
+  const removed = prevNames.filter(n => !nextNames.includes(n));
+  if (added.length)   changes.push({ field:'첨부파일', before:'—', after:`🖼️ 이미지 첨부됨 (${added.join(', ')})` });
+  if (removed.length) changes.push({ field:'첨부파일', before:`🖼️ ${removed.join(', ')}`, after:'🗑️ 이미지 삭제됨' });
+
+  /* ── 방문의뢰(gold) 전용 필드 ── */
+  const pg = prev.gold||{}, ng = next.gold||{};
+  if (prev.color==='gold' || next.color==='gold') {
+    for (const f of Object.keys(GOLD_FIELD_LABELS)) {
+      const pv = (pg[f]===undefined||pg[f]===null)?'':String(pg[f]);
+      const nv = (ng[f]===undefined||ng[f]===null)?'':String(ng[f]);
+      if (pv === nv) continue;
+      changes.push({ field: GOLD_FIELD_LABELS[f], before: pv||'(없음)', after: nv||'(없음)' });
+    }
+
+    /* gold 이미지들 */
+    const goldImgSets = [
+      { key:'quoteImgs', label:'견적서 이미지' },
+      { key:'refImgs',   label:'참고 이미지' },
+      { key:'roomImgs',  label:'공간 이미지' },
+    ];
+    for (const {key, label} of goldImgSets) {
+      const pImgs = (pg[key]||[]).map(i=>i.name||'파일');
+      const nImgs = (ng[key]||[]).map(i=>i.name||'파일');
+      const added   = nImgs.filter(n=>!pImgs.includes(n));
+      const removed = pImgs.filter(n=>!nImgs.includes(n));
+      if (added.length)   changes.push({ field:label, before:'—', after:`🖼️ 이미지 첨부됨 (${added.join(', ')})` });
+      if (removed.length) changes.push({ field:label, before:`🖼️ ${removed.join(', ')}`, after:'🗑️ 이미지 삭제됨' });
+    }
+  }
+
   return changes;
 }
 
