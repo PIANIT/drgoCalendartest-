@@ -208,8 +208,9 @@
   .settings-reset-btn { padding:10px; border-radius:8px; border:1px solid var(--border); background:none; color:var(--text-muted); font-family:var(--font-main); font-size:13px; cursor:pointer; transition:all 0.15s; width:100%; }
   .settings-reset-btn:hover { border-color:var(--red); color:var(--red); background:rgba(200,100,100,0.07); }
   @media (max-width:600px) {
-    .settings-panel { width:100%; border-left:none; top:auto; border-radius:20px 20px 0 0; transform:translateY(100%); }
+    .settings-panel { width:100%; border-left:none; top:auto; bottom:0; max-height:85vh; border-radius:20px 20px 0 0; transform:translateY(100%); overflow-y:auto; -webkit-overflow-scrolling:touch; }
     .settings-panel.open { transform:translateY(0); }
+    .settings-panel-body { padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 20px); }
   }
   .month-label { font-size:18px; font-weight:500; letter-spacing:0.05em; min-width:180px; text-align:center; }
   .add-btn { background:var(--accent); color:#1a1207; border:none; padding:8px 20px; border-radius:6px; font-family:var(--font-main); font-size:13px; cursor:pointer; transition:all 0.2s; font-weight:500; }
@@ -736,174 +737,68 @@
 
   /* ══ LIST VIEW ══ */
   #listView { display:none; }
-
-  /* 통계바 */
-  .lv-stats-bar {
-    display:grid; grid-template-columns:repeat(5,1fr);
-    gap:1px; border-bottom:1px solid var(--border);
-    background:var(--border);
-  }
-  .lv-stat-card {
-    background:var(--surface); padding:18px 24px;
-    display:flex; flex-direction:column; gap:4px;
-  }
-  .lv-stat-label { font-family:var(--font-mono); font-size:10px; letter-spacing:0.15em; color:var(--text-muted); text-transform:uppercase; }
-  .lv-stat-val   { font-size:26px; font-weight:700; color:var(--text); line-height:1; }
-  .lv-stat-val.lv-sv-gold   { color:var(--chip-gold-bg); }
-  .lv-stat-val.lv-sv-blue   { color:var(--chip-blue-bg); }
-  .lv-stat-val.lv-sv-red    { color:var(--chip-red-bg); }
-  .lv-stat-val.lv-sv-green  { color:var(--chip-green-bg); }
-  .lv-stat-val.lv-sv-purple { color:var(--chip-purple-bg); }
-
-  /* 툴바 */
   .lv-toolbar {
     display:flex; align-items:center; gap:10px; flex-wrap:wrap;
-    padding:12px 32px; border-bottom:1px solid var(--border);
+    padding:12px 28px; border-bottom:1px solid var(--border);
     background:var(--bg); position:sticky; top:57px; z-index:5;
   }
   .lv-search-wrap {
     display:flex; align-items:center; gap:8px;
     background:var(--surface2); border:1px solid var(--border);
-    border-radius:8px; padding:7px 12px; min-width:200px; max-width:280px;
+    border-radius:8px; padding:7px 12px; min-width:160px; max-width:240px;
     transition:border-color 0.2s;
   }
   .lv-search-wrap:focus-within { border-color:var(--accent); }
-  .lv-search-icon { color:var(--text-muted); font-size:13px; flex-shrink:0; }
-  .lv-search-input {
-    background:none; border:none; outline:none; color:var(--text);
-    font-family:var(--font-main); font-size:13px; flex:1; min-width:0;
-  }
+  .lv-search-input { background:none; border:none; outline:none; color:var(--text); font-family:var(--font-main); font-size:13px; width:100%; }
   .lv-search-input::placeholder { color:var(--text-muted); }
-
-  /* 필터 버튼 */
-  .lv-filter-group { display:flex; gap:5px; flex-wrap:wrap; }
-  .lv-filter-btn {
-    display:flex; align-items:center; gap:5px; padding:6px 12px;
-    border-radius:20px; border:1px solid var(--border); background:none;
-    font-size:12px; font-family:var(--font-main); cursor:pointer;
-    transition:all 0.15s; color:var(--text-muted); white-space:nowrap;
-  }
-  .lv-filter-btn .lv-fdot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
-  .lv-filter-btn.lv-f-all   { color:var(--text-muted); }
-  .lv-filter-btn.lv-f-gold  .lv-fdot { background:var(--chip-gold-bg); }
-  .lv-filter-btn.lv-f-blue  .lv-fdot { background:var(--chip-blue-bg); }
-  .lv-filter-btn.lv-f-red   .lv-fdot { background:var(--chip-red-bg); }
-  .lv-filter-btn.lv-f-green .lv-fdot { background:var(--chip-green-bg); }
-  .lv-filter-btn.lv-f-purple .lv-fdot { background:var(--chip-purple-bg); }
-  .lv-filter-btn.active { color:var(--text); border-color:var(--accent); background:rgba(200,176,138,0.1); }
-  .lv-filter-btn.active.lv-f-gold   { border-color:var(--chip-gold-bg);  background:rgba(200,168,112,0.12); color:var(--chip-gold-bg); }
-  .lv-filter-btn.active.lv-f-blue   { border-color:var(--chip-blue-bg);  background:rgba(122,174,200,0.12); color:var(--chip-blue-bg); }
-  .lv-filter-btn.active.lv-f-red    { border-color:var(--chip-red-bg);   background:rgba(200,112,112,0.12); color:var(--chip-red-bg); }
-  .lv-filter-btn.active.lv-f-green  { border-color:var(--chip-green-bg); background:rgba(112,200,112,0.12); color:var(--chip-green-bg); }
-  .lv-filter-btn.active.lv-f-purple { border-color:var(--chip-purple-bg);background:rgba(155,112,200,0.12); color:var(--chip-purple-bg); }
-
-  /* 날짜 범위 */
-  .lv-date-wrap { display:flex; align-items:center; gap:6px; }
+  .lv-date-wrap { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
   .lv-date-label { font-family:var(--font-mono); font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color:var(--text-muted); white-space:nowrap; }
-  .lv-date-input-wrap {
-    display:inline-flex; cursor:pointer;
-    border-radius:7px; border:1px solid var(--border);
-    background:var(--surface2); transition:border-color 0.2s; overflow:hidden;
-  }
+  .lv-date-input-wrap { display:inline-flex; cursor:pointer; border-radius:7px; border:1px solid var(--border); background:var(--surface2); transition:border-color 0.2s; overflow:hidden; }
   .lv-date-input-wrap:focus-within { border-color:var(--accent); }
-  .lv-date-input {
-    padding:7px 10px; font-size:12px; font-family:var(--font-mono);
-    background:transparent; border:none; color:var(--text); outline:none;
-    cursor:pointer; color-scheme:dark; width:100%;
-  }
+  .lv-date-input { padding:7px 10px; font-size:12px; font-family:var(--font-mono); background:transparent; border:none; color:var(--text); outline:none; cursor:pointer; color-scheme:dark; width:100%; }
   html.light .lv-date-input { color-scheme:light; }
   .lv-date-sep { color:var(--text-muted); font-size:12px; }
-  .lv-date-clear {
-    background:none; border:1px solid var(--border); color:var(--text-muted);
-    padding:6px 10px; border-radius:7px; font-size:11px; cursor:pointer;
-    font-family:var(--font-mono); transition:all 0.15s; white-space:nowrap;
-  }
+  .lv-date-clear { background:none; border:1px solid var(--border); color:var(--text-muted); padding:6px 10px; border-radius:7px; font-size:11px; cursor:pointer; font-family:var(--font-mono); transition:all 0.15s; white-space:nowrap; }
   .lv-date-clear:hover { border-color:var(--red); color:var(--red); }
-
-  /* 정렬바 */
-  .lv-sort-bar {
-    display:grid; align-items:center; padding:10px 32px;
-    border-bottom:1px solid var(--border);
-    font-family:var(--font-mono); font-size:11px; color:var(--text-muted);
-    letter-spacing:0.1em; text-transform:uppercase;
-    grid-template-columns: 36px 2fr 1fr 1fr 90px 80px;
-    gap:12px; background:var(--surface2);
-    position:sticky; top:calc(57px + 52px); z-index:4;
+  .lv-count { font-family:var(--font-mono); font-size:11px; color:var(--text-muted); margin-left:auto; white-space:nowrap; }
+  .lv-table-header {
+    display:grid; grid-template-columns:1fr 140px 100px; padding:9px 28px; gap:12px;
+    border-bottom:1px solid var(--border); font-family:var(--font-mono); font-size:10px;
+    letter-spacing:0.12em; text-transform:uppercase; color:var(--text-muted);
+    background:var(--surface2); position:sticky; top:calc(57px + 48px); z-index:4;
   }
-  .lv-sort-col { cursor:pointer; user-select:none; display:flex; align-items:center; gap:4px; transition:color 0.15s; }
-  .lv-sort-col:hover { color:var(--accent); }
-  .lv-sort-col.active { color:var(--accent); }
-  .lv-sort-arrow { font-size:10px; opacity:0.7; }
-
-  /* 이벤트 컨테이너 */
-  .lv-events-container { padding:0 32px 100px; }
-  .lv-event-row {
-    display:grid; align-items:center; padding:13px 0;
-    border-bottom:1px solid rgba(58,58,58,0.6);
-    grid-template-columns: 36px 2fr 1fr 1fr 90px 80px;
-    gap:12px; cursor:pointer; transition:background 0.12s;
-    border-radius:4px; padding-left:4px; padding-right:4px;
+  .lv-item {
+    display:grid; grid-template-columns:1fr 140px 100px; align-items:center;
+    padding:11px 28px; gap:12px; border-bottom:1px solid var(--border);
+    cursor:pointer; transition:background 0.12s; border-left:3px solid transparent;
   }
-  .lv-event-row:hover { background:var(--surface); }
-
-  .lv-row-check { display:flex; align-items:center; justify-content:center; }
-  .lv-check-circle {
-    width:18px; height:18px; border:1.5px solid var(--border); border-radius:4px;
-    display:flex; align-items:center; justify-content:center; transition:all 0.15s; flex-shrink:0; font-size:11px;
-  }
-
-  .lv-row-title { display:flex; align-items:center; gap:8px; min-width:0; }
-  .lv-color-bar { width:3px; height:28px; border-radius:2px; flex-shrink:0; }
-  .lv-cb-gold   { background:var(--chip-gold-bg); }
-  .lv-cb-blue   { background:var(--chip-blue-bg); }
-  .lv-cb-red    { background:var(--chip-red-bg); }
-  .lv-cb-green  { background:var(--chip-green-bg); }
-  .lv-cb-purple { background:var(--chip-purple-bg); }
-  .lv-title-text { font-size:14px; font-weight:500; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .lv-title-sub  { font-size:11px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
-
-  .lv-row-date   { font-family:var(--font-mono); font-size:12px; color:var(--text-muted); }
-  .lv-row-person { font-size:13px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .lv-row-badge {
-    display:inline-flex; align-items:center; padding:3px 9px; border-radius:5px;
-    font-family:var(--font-mono); font-size:10px; font-weight:600; letter-spacing:0.06em; white-space:nowrap;
-  }
-  .lv-rb-gold  { background:rgba(200,168,112,0.18); color:var(--chip-gold-bg); border:1px solid rgba(200,168,112,0.3); }
-  .lv-rb-blue  { background:rgba(122,174,200,0.18); color:var(--chip-blue-bg); border:1px solid rgba(122,174,200,0.3); }
-  .lv-rb-red   { background:rgba(200,112,112,0.18); color:var(--chip-red-bg);  border:1px solid rgba(200,112,112,0.3); }
-  .lv-rb-green { background:rgba(112,200,112,0.18); color:var(--chip-green-bg);border:1px solid rgba(112,200,112,0.3); }
-  .lv-rb-purple{ background:rgba(155,112,200,0.18); color:var(--chip-purple-bg);border:1px solid rgba(155,112,200,0.3); }
-
-  .lv-row-flags { display:flex; gap:3px; flex-wrap:wrap; font-size:13px; }
-
-  .lv-empty-state { text-align:center; padding:80px 0; color:var(--text-muted); }
-  .lv-empty-icon  { font-size:48px; margin-bottom:16px; opacity:0.4; }
-  .lv-empty-text  { font-size:14px; }
-
-  /* 페이지네이션 */
-  .lv-pagination {
-    display:flex; align-items:center; justify-content:center; gap:6px;
-    padding:20px 32px; font-family:var(--font-mono); font-size:12px;
-  }
-  .lv-page-btn {
-    background:var(--surface2); border:1px solid var(--border); color:var(--text-muted);
-    padding:5px 12px; border-radius:6px; cursor:pointer; transition:all 0.15s; font-size:12px; font-family:var(--font-mono);
-  }
+  .lv-item:hover { background:var(--surface2); }
+  .lv-item.c-gold   { border-left-color:var(--chip-gold-bg); }
+  .lv-item.c-blue   { border-left-color:var(--chip-blue-bg); }
+  .lv-item.c-red    { border-left-color:var(--chip-red-bg); }
+  .lv-item.c-green  { border-left-color:var(--chip-green-bg); }
+  .lv-item.c-purple { border-left-color:var(--chip-purple-bg); }
+  .lv-item-title { font-size:13px; font-weight:500; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:5px; min-width:0; }
+  .lv-item-date  { font-family:var(--font-mono); font-size:11px; color:var(--text-muted); }
+  .lv-item-badge { display:inline-flex; align-items:center; padding:3px 8px; border-radius:4px; font-family:var(--font-mono); font-size:10px; font-weight:600; white-space:nowrap; border:1px solid transparent; }
+  .lv-item-badge.c-gold   { background:rgba(200,168,112,0.18); color:var(--chip-gold-bg);  border-color:rgba(200,168,112,0.3); }
+  .lv-item-badge.c-blue   { background:rgba(122,174,200,0.18); color:var(--chip-blue-bg);  border-color:rgba(122,174,200,0.3); }
+  .lv-item-badge.c-red    { background:rgba(200,112,112,0.18); color:var(--chip-red-bg);   border-color:rgba(200,112,112,0.3); }
+  .lv-item-badge.c-green  { background:rgba(112,200,112,0.18); color:var(--chip-green-bg); border-color:rgba(112,200,112,0.3); }
+  .lv-item-badge.c-purple { background:rgba(155,112,200,0.18); color:var(--chip-purple-bg);border-color:rgba(155,112,200,0.3); }
+  .lv-empty { text-align:center; padding:60px 0; color:var(--text-muted); font-size:14px; }
+  .lv-wrap { padding-bottom:60px; }
+  .lv-pagination { display:flex; align-items:center; justify-content:center; gap:6px; padding:18px 0; font-family:var(--font-mono); font-size:12px; }
+  .lv-page-btn { background:var(--surface2); border:1px solid var(--border); color:var(--text-muted); padding:5px 11px; border-radius:6px; cursor:pointer; transition:all 0.15s; font-size:12px; font-family:var(--font-mono); }
   .lv-page-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .lv-page-btn.lv-act { background:var(--accent); color:#1a1207; border-color:var(--accent); font-weight:700; }
   .lv-page-btn:disabled { opacity:0.35; cursor:not-allowed; }
-  .lv-page-btn.active-page { background:var(--accent); color:#1a1207; border-color:var(--accent); font-weight:700; }
-  .lv-page-info { color:var(--text-muted); }
-
   @media (max-width:900px) and (min-width:601px) {
-    .lv-stats-bar { grid-template-columns:repeat(3,1fr); }
-    .lv-sort-bar, .lv-event-row { grid-template-columns:36px 2fr 90px 80px; gap:8px; }
-    .lv-sort-bar .lv-hide-m, .lv-event-row .lv-hide-m { display:none; }
-    .lv-toolbar { padding:10px 16px; }
-    .lv-events-container { padding:0 16px 80px; }
-    .lv-sort-bar { padding:10px 16px; top:calc(52px + 46px); }
+    .lv-table-header, .lv-item { grid-template-columns:1fr 110px 90px; padding:9px 16px; }
+    .lv-toolbar { padding:10px 16px; top:52px; }
+    .lv-table-header { top:calc(52px + 42px); }
   }
-
-  .pc-week-row {
+    .pc-week-row {
     display:grid; grid-template-columns:repeat(7,1fr);
     gap:1px; border-bottom:1px solid var(--border);
     position:relative;
@@ -1161,29 +1056,13 @@
   </div>
 </div>
 
+
 <!-- ═══ LIST VIEW ═══ -->
 <div id="listView" style="display:none;">
-  <!-- 통계바 -->
-  <div class="lv-stats-bar">
-    <div class="lv-stat-card"><div class="lv-stat-label">전체 일정</div><div class="lv-stat-val" id="lvStatAll">0</div></div>
-    <div class="lv-stat-card"><div class="lv-stat-label">방문의뢰</div><div class="lv-stat-val lv-sv-gold" id="lvStatGold">0</div></div>
-    <div class="lv-stat-card"><div class="lv-stat-label">사내업무</div><div class="lv-stat-val lv-sv-blue" id="lvStatBlue">0</div></div>
-    <div class="lv-stat-card"><div class="lv-stat-label">휴가관련</div><div class="lv-stat-val lv-sv-red"  id="lvStatRed">0</div></div>
-    <div class="lv-stat-card"><div class="lv-stat-label">촬영관련</div><div class="lv-stat-val lv-sv-green" id="lvStatGreen">0</div></div>
-  </div>
-  <!-- 툴바 -->
   <div class="lv-toolbar">
     <div class="lv-search-wrap">
-      <span class="lv-search-icon">&#x1F50D;</span>
-      <input class="lv-search-input" id="lvSearch" placeholder="제목, 이름, 주소 검색..." />
-    </div>
-    <div class="lv-filter-group" id="lvFilterGroup">
-      <button class="lv-filter-btn lv-f-all active"   data-lf="all">   전체</button>
-      <button class="lv-filter-btn lv-f-gold"         data-lf="gold">  <span class="lv-fdot"></span>방문의뢰</button>
-      <button class="lv-filter-btn lv-f-blue"         data-lf="blue">  <span class="lv-fdot"></span>사내업무</button>
-      <button class="lv-filter-btn lv-f-red"          data-lf="red">   <span class="lv-fdot"></span>휴가관련</button>
-      <button class="lv-filter-btn lv-f-green"        data-lf="green"> <span class="lv-fdot"></span>촬영관련</button>
-      <button class="lv-filter-btn lv-f-purple"       data-lf="purple"><span class="lv-fdot"></span>미팅/내방</button>
+      <span style="color:var(--text-muted);font-size:13px;flex-shrink:0">&#128269;</span>
+      <input class="lv-search-input" id="lvSearch" placeholder="제목, 이름 검색..." />
     </div>
     <div class="lv-date-wrap">
       <span class="lv-date-label">기간</span>
@@ -1194,21 +1073,16 @@
       <label class="lv-date-input-wrap" for="lvDateTo">
         <input class="lv-date-input" type="date" id="lvDateTo" />
       </label>
-      <button class="lv-date-clear" id="lvDateClear" style="display:none;">x 초기화</button>
+      <button class="lv-date-clear" id="lvDateClear" style="display:none;">&#x2715; 초기화</button>
     </div>
+    <span class="lv-count" id="lvCount"></span>
   </div>
-  <!-- 정렬 헤더 -->
-  <div class="lv-sort-bar">
-    <div></div>
-    <div class="lv-sort-col active" data-lsort="title">제목 <span class="lv-sort-arrow" id="lvsa-title">&#x2191;</span></div>
-    <div class="lv-sort-col lv-hide-m" data-lsort="startDate">날짜 <span class="lv-sort-arrow" id="lvsa-startDate"></span></div>
-    <div class="lv-sort-col lv-hide-m" data-lsort="name">담당자 <span class="lv-sort-arrow" id="lvsa-name"></span></div>
-    <div class="lv-sort-col" data-lsort="color">분류 <span class="lv-sort-arrow" id="lvsa-color"></span></div>
-    <div>옵션</div>
+  <div class="lv-table-header">
+    <div>일정 이름</div>
+    <div>날짜</div>
+    <div>유형</div>
   </div>
-  <!-- 목록 -->
-  <div class="lv-events-container" id="lvList"></div>
-  <!-- 페이지네이션 -->
+  <div class="lv-wrap" id="lvList"></div>
   <div class="lv-pagination" id="lvPagination"></div>
 </div>
 
@@ -3109,6 +2983,7 @@ document.getElementById('themeBtn').addEventListener('click',()=>{
   const isLight=document.documentElement.classList.toggle('light');
   localStorage.setItem('cal_theme',isLight?'light':'dark');
   applyThemeBtn();
+  if(typeof loadAndApplyThemeColors==='function') loadAndApplyThemeColors();
 });
 
 
@@ -4137,179 +4012,61 @@ function renderAll() {
     else if (pcView==='day') { if(!pcDayDate) pcDayDate=todayStr; renderPcDay(); }
     else if (pcView==='list') renderListView();
   }
-}
-
-/* ══════════════════════════════════════════
+}/* ══════════════════════════════════════════
    LIST VIEW
 ═══════════════════════════════════════════ */
 (function(){
-  const LV_TYPE_LABELS = { gold:'방문의뢰', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방' };
-  const LV_PAGE_SIZE   = 30;
+  var TL = { gold:'\ubc29\ubb38\uc758\ub8f0', blue:'\uc0ac\ub0b4\uc5c5\ubb34', red:'\ud734\uac00\uad00\ub828', green:'\ucd94\uc601\uad00\ub828', purple:'\ubbf8\ud305/\ub0b4\ubc29' };
+  var SI = { car:'\uD83D\uDE97', brief:'\uD83D\uDCBC', 'return':'\u2190', group:'\uD83D\uDC65', urgent:'\uD83D\uDEA8', ladder:'\uD83E\uDEDC' };
+  var SC = { suggest:'\uD83D\uDCAC', hope:'\uD83D\uDE4F', target:'\uD83C\uDFAF' };
+  var PAGE=40, q='', df='', dt='', pg=1;
 
-  let lvSearch   = '';
-  let lvDateFrom = '';
-  let lvDateTo   = '';
-  let lvFilter   = 'all';
-  let lvSortKey  = 'startDate';
-  let lvSortDir  = -1;
-  let lvPage     = 1;
-
-  function lvFiltered() {
-    let evs = events.filter(ev => {
-      if (lvFilter !== 'all' && (ev.color||'gold') !== lvFilter) return false;
-      if (lvDateFrom && ev.startDate < lvDateFrom) return false;
-      if (lvDateTo   && ev.startDate > lvDateTo)   return false;
-      if (lvSearch) {
-        const q = lvSearch.toLowerCase();
-        return (ev.title||'').toLowerCase().includes(q)
-          || (ev.name||'').toLowerCase().includes(q)
-          || (ev.address||'').toLowerCase().includes(q)
-          || (ev.gold?.name||'').toLowerCase().includes(q);
-      }
+  function filtered(){
+    return events.filter(function(ev){
+      if(df&&ev.startDate<df)return false;
+      if(dt&&ev.startDate>dt)return false;
+      if(q){var s=q.toLowerCase();return(ev.title||'').toLowerCase().indexOf(s)>=0||(ev.name||'').toLowerCase().indexOf(s)>=0||((ev.gold&&ev.gold.name)||'').toLowerCase().indexOf(s)>=0;}
       return true;
+    }).sort(function(a,b){var as=a.startDate||'',bs=b.startDate||'';return as<bs?-1:as>bs?1:0;});
+  }
+
+  function syncClear(){ document.getElementById('lvDateClear').style.display=(df||dt)?'':'none'; }
+
+  function renderListView(){
+    var evs=filtered(),total=evs.length,pages=Math.max(1,Math.ceil(total/PAGE));
+    pg=Math.min(pg,pages);
+    var s=(pg-1)*PAGE, pe=evs.slice(s,s+PAGE);
+    document.getElementById('lvCount').textContent='\uc53d '+total+'\uac74';
+    var list=document.getElementById('lvList');
+    list.innerHTML='';
+    if(pe.length===0){list.innerHTML='<div class="lv-empty">\uc77c\uc815\uc774 \uc5c6\uc2b5\ub2c8\ub2e4</div>';return;}
+    pe.forEach(function(ev){
+      var c=ev.color||'gold', idx=events.indexOf(ev), el=document.createElement('div');
+      el.className='lv-item c-'+c;
+      var sd=ev.startDate||'', ed=(ev.endDate&&ev.endDate!==ev.startDate)?' ~ '+ev.endDate:'';
+      var flags=[];
+      (ev.specialOpts||[]).forEach(function(k){if(SI[k])flags.push(SI[k]);});
+      if(ev.schedOpt&&SC[ev.schedOpt])flags.push(SC[ev.schedOpt]);
+      if(ev.locked)flags.push('\uD83D\uDD12');
+      var fsep=flags.length?'<span style="font-size:11px;flex-shrink:0">'+flags.join('')+'</span>':'';
+      el.innerHTML='<div class="lv-item-title"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(ev.title||'(\uc81c\ubaa9 \uc5c6\uc74c)')+'</span>'+fsep+'</div>'+'<div class="lv-item-date">'+sd+ed+'</div>'+'<div><span class="lv-item-badge c-'+c+'">'+(TL[c]||c)+'</span></div>';
+      el.addEventListener('click',(function(i){return function(){if(i>=0)openModal(i);};})(idx));
+      list.appendChild(el);
     });
-    evs.sort((a,b) => {
-      let av='', bv='';
-      if (lvSortKey==='name')  { av=a.gold?.name||a.name||''; bv=b.gold?.name||b.name||''; }
-      else if (lvSortKey==='color') { av=LV_TYPE_LABELS[a.color||'gold']||''; bv=LV_TYPE_LABELS[b.color||'gold']||''; }
-      else { av=a[lvSortKey]||''; bv=b[lvSortKey]||''; }
-      return av<bv ? -lvSortDir : av>bv ? lvSortDir : 0;
-    });
-    return evs;
-  }
-
-  function updateStats() {
-    const cnt = c => events.filter(e=>(e.color||'gold')===c).length;
-    document.getElementById('lvStatAll').textContent   = events.length;
-    document.getElementById('lvStatGold').textContent  = cnt('gold');
-    document.getElementById('lvStatBlue').textContent  = cnt('blue');
-    document.getElementById('lvStatRed').textContent   = cnt('red');
-    document.getElementById('lvStatGreen').textContent = cnt('green');
-  }
-
-  function updateSortUI() {
-    ['title','startDate','name','color'].forEach(k => {
-      const el = document.getElementById('lvsa-'+k);
-      if (!el) return;
-      el.textContent = lvSortKey===k ? (lvSortDir===1 ? '↑' : '↓') : '';
-    });
-    document.querySelectorAll('.lv-sort-col').forEach(c =>
-      c.classList.toggle('active', c.dataset.lsort===lvSortKey)
-    );
-  }
-
-  function syncDateClear() {
-    document.getElementById('lvDateClear').style.display = (lvDateFrom||lvDateTo) ? '' : 'none';
-  }
-
-  function renderListView() {
-    updateStats();
-    updateSortUI();
-
-    const evs  = lvFiltered();
-    const total = evs.length;
-    const totalPages = Math.max(1, Math.ceil(total/LV_PAGE_SIZE));
-    lvPage = Math.min(lvPage, totalPages);
-    const start   = (lvPage-1)*LV_PAGE_SIZE;
-    const pageEvs = evs.slice(start, start+LV_PAGE_SIZE);
-
-    const container = document.getElementById('lvList');
-    container.innerHTML = '';
-
-    if (pageEvs.length===0) {
-      container.innerHTML = '<div class="lv-empty-state"><div class="lv-empty-icon">📭</div><div class="lv-empty-text">일정이 없습니다</div></div>';
-    } else {
-      const SPECIAL_ICONS = { car:'🚗', brief:'💼', return:'←', group:'👥', urgent:'🚨', ladder:'🪜' };
-      const SCHED_ICONS   = { suggest:'💬', hope:'🙏', target:'🎯' };
-      pageEvs.forEach(ev => {
-        const c   = ev.color||'gold';
-        const idx = events.indexOf(ev);
-        const row = document.createElement('div');
-        row.className = 'lv-event-row';
-
-        const dateStr = ev.startDate||'';
-        const endStr  = ev.endDate&&ev.endDate!==ev.startDate ? ' ~ '+ev.endDate : '';
-        const person  = c==='gold' ? (ev.gold?.name||ev.name||'') : (ev.name||'');
-        const flags   = [
-          ...(ev.specialOpts||[]).map(k=>SPECIAL_ICONS[k]||''),
-          ...(ev.schedOpt ? [SCHED_ICONS[ev.schedOpt]||''] : [])
-        ];
-
-        row.innerHTML = `
-          <div class="lv-row-check"><div class="lv-check-circle"></div></div>
-          <div class="lv-row-title">
-            <div class="lv-color-bar lv-cb-${c}"></div>
-            <div>
-              <div class="lv-title-text">${ev.title||'(제목 없음)'}</div>
-              ${ev.address ? `<div class="lv-title-sub">📍 ${ev.address}</div>` : ''}
-            </div>
-          </div>
-          <div class="lv-row-date lv-hide-m">${dateStr}${endStr}</div>
-          <div class="lv-row-person lv-hide-m">${person||'—'}</div>
-          <div><span class="lv-row-badge lv-rb-${c}">${LV_TYPE_LABELS[c]||c}</span></div>
-          <div class="lv-row-flags">${flags.join('')}${ev.locked?'🔒':''}</div>`;
-
-        row.addEventListener('click', () => { if(idx>=0) openModal(idx); });
-        container.appendChild(row);
-      });
-    }
-
-    /* 페이지네이션 */
-    const pg = document.getElementById('lvPagination');
-    pg.innerHTML = '';
-    if (totalPages>1) {
-      const mkBtn = (txt, pg_n, disabled=false, active=false) => {
-        const b = document.createElement('button');
-        b.className = 'lv-page-btn' + (active?' active-page':'');
-        b.textContent = txt; b.disabled = disabled;
-        if (!disabled) b.addEventListener('click',()=>{ lvPage=pg_n; renderListView(); });
-        pg.appendChild(b);
-      };
-      mkBtn('‹', lvPage-1, lvPage<=1);
-      const RANGE=2;
-      for (let p=Math.max(1,lvPage-RANGE); p<=Math.min(totalPages,lvPage+RANGE); p++)
-        mkBtn(p, p, false, p===lvPage);
-      mkBtn('›', lvPage+1, lvPage>=totalPages);
+    var pgEl=document.getElementById('lvPagination');
+    pgEl.innerHTML='';
+    if(pages>1){
+      function mkB(txt,n,dis,act){var b=document.createElement('button');b.className='lv-page-btn'+(act?' lv-act':'');b.textContent=txt;b.disabled=!!dis;if(!dis)b.addEventListener('click',function(){pg=n;renderListView();window.scrollTo(0,0);});pgEl.appendChild(b);}
+      mkB('\u2039',pg-1,pg<=1,false);
+      for(var p=Math.max(1,pg-2);p<=Math.min(pages,pg+2);p++)mkB(p,p,false,p===pg);
+      mkB('\u203a',pg+1,pg>=pages,false);
     }
   }
 
-  /* 이벤트 바인딩 */
-  document.getElementById('lvSearch').addEventListener('input', e=>{
-    lvSearch=e.target.value.trim(); lvPage=1; renderListView();
-  });
-  document.getElementById('lvDateFrom').addEventListener('change', e=>{
-    lvDateFrom=e.target.value; syncDateClear(); lvPage=1; renderListView();
-  });
-  document.getElementById('lvDateTo').addEventListener('change', e=>{
-    lvDateTo=e.target.value; syncDateClear(); lvPage=1; renderListView();
-  });
-  document.getElementById('lvDateClear').addEventListener('click', ()=>{
-    lvDateFrom=''; lvDateTo='';
-    document.getElementById('lvDateFrom').value='';
-    document.getElementById('lvDateTo').value='';
-    syncDateClear(); lvPage=1; renderListView();
-  });
-
-  document.getElementById('lvFilterGroup').addEventListener('click', e=>{
-    const btn=e.target.closest('.lv-filter-btn');
-    if (!btn) return;
-    const key=btn.dataset.lf;
-    lvFilter = (key==='all'||lvFilter===key) ? 'all' : key;
-    document.querySelectorAll('.lv-filter-btn').forEach(b=>{
-      const match = (lvFilter==='all' && b.dataset.lf==='all') || b.dataset.lf===lvFilter;
-      b.classList.toggle('active', match);
-    });
-    lvPage=1; renderListView();
-  });
-
-  document.querySelectorAll('.lv-sort-col').forEach(col=>{
-    col.addEventListener('click', ()=>{
-      const k=col.dataset.lsort; if(!k) return;
-      if (lvSortKey===k) lvSortDir*=-1;
-      else { lvSortKey=k; lvSortDir=-1; }
-      lvPage=1; renderListView();
-    });
-  });
+  document.getElementById('lvSearch').addEventListener('input',function(e){q=e.target.value.trim();pg=1;renderListView();});
+  document.getElementById('lvDateFrom').addEventListener('change',function(e){df=e.target.value;syncClear();pg=1;renderListView();});
+  document.getElementById('lvDateTo').addEventListener('change',function(e){dt=e.target.value;syncClear();pg=1;renderListView();});
+  document.getElementById('lvDateClear').addEventListener('click',function(){df='';dt='';document.getElementById('lvDateFrom').value='';document.getElementById('lvDateTo').value='';syncClear();pg=1;renderListView();});
 
   window.renderListView = renderListView;
 })();
