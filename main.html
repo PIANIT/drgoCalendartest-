@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>DRGO</title>
+<meta name="theme-color" content="#111111" id="metaThemeColor">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --font-main: "Malgun Gothic","맑은 고딕",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  --font-mono: 'DM Mono',"Malgun Gothic","맑은 고딕",monospace;
+  --bg:      #111111;
+  --surface: #1c1c1c;
+  --surface2:#272727;
+  --border:  #3a3a3a;
+  --accent:  #d4bc96;
+  --accent2: #90bcd4;
+  --text:    #f0ebe2;
+  --text-muted: #a09890;
+  --red:     #d48888;
+  --green:   #88d488;
+  --topbar-h: 48px;
+  --tabbar-h: 38px;
+}
+html.light {
+  --bg:#f7f4f0; --surface:#ffffff; --surface2:#efebe4;
+  --border:#d8d0c4; --accent:#9c7d48; --accent2:#3a7a9a;
+  --text:#1e1812; --text-muted:#7a6e60; --red:#a84444; --green:#3a8a3a;
+}
+*{ margin:0; padding:0; box-sizing:border-box; }
+body {
+  background:var(--bg); color:var(--text);
+  font-family:var(--font-main);
+  height:100vh; overflow:hidden;
+  display:flex; flex-direction:column;
+  transition:background .2s, color .2s;
+}
+
+/* ── AUTH OVERLAY ── */
+#authOverlay {
+  display:flex; position:fixed; inset:0; z-index:9999;
+  background:var(--bg); align-items:center; justify-content:center;
+}
+#authOverlay.hidden { display:none; }
+.auth-box {
+  width:100%; max-width:380px; padding:44px 34px 38px;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:20px; box-shadow:0 24px 64px rgba(0,0,0,.55);
+  display:flex; flex-direction:column; align-items:center;
+}
+.auth-brand {
+  font-family:var(--font-mono); font-size:22px; font-weight:500;
+  letter-spacing:.25em; color:var(--accent); margin-bottom:4px;
+}
+.auth-subtitle {
+  font-size:11px; letter-spacing:.18em; color:var(--text-muted);
+  text-transform:uppercase; margin-bottom:32px;
+}
+.auth-label {
+  width:100%; font-size:10px; font-family:var(--font-mono);
+  letter-spacing:.14em; color:var(--text-muted); text-transform:uppercase;
+  margin-bottom:6px;
+}
+.auth-input {
+  width:100%; padding:11px 14px; font-size:14px;
+  background:var(--surface2); border:1.5px solid var(--border);
+  border-radius:9px; color:var(--text); font-family:var(--font-main);
+  outline:none; transition:border-color .2s; margin-bottom:13px;
+}
+.auth-input:focus { border-color:var(--accent); }
+.auth-input.error { border-color:var(--red); animation:shake .35s ease; }
+@keyframes shake {
+  0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)}
+  40%{transform:translateX(8px)}   60%{transform:translateX(-5px)} 80%{transform:translateX(5px)}
+}
+.auth-btn {
+  width:100%; margin-top:4px; padding:12px;
+  background:var(--accent); color:#1a1207; border:none;
+  border-radius:9px; font-size:14px; font-weight:700;
+  font-family:var(--font-main); cursor:pointer;
+  transition:all .2s; letter-spacing:.06em;
+}
+.auth-btn:hover:not(:disabled) { background:#dcc8a4; transform:translateY(-1px); }
+.auth-btn:disabled { opacity:.45; cursor:not-allowed; transform:none; }
+.auth-error { margin-top:10px; font-size:12px; color:var(--red); text-align:center; min-height:18px; }
+
+/* ── TOPBAR ── */
+#topbar {
+  height:var(--topbar-h); flex-shrink:0;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 18px; border-bottom:1px solid var(--border);
+  background:var(--bg); position:relative; z-index:100;
+}
+.topbar-left { display:flex; align-items:center; gap:16px; }
+.brand {
+  font-family:var(--font-mono); font-size:13px; letter-spacing:.22em;
+  color:var(--accent); text-transform:uppercase; user-select:none;
+}
+.topbar-right { display:flex; align-items:center; gap:6px; }
+.tb-btn {
+  background:none; border:1px solid var(--border); color:var(--text-muted);
+  cursor:pointer; height:28px; padding:0 10px; border-radius:5px;
+  font-size:12px; font-family:var(--font-main); display:flex;
+  align-items:center; gap:5px; transition:all .18s; white-space:nowrap;
+}
+.tb-btn:hover { border-color:var(--accent); color:var(--accent); }
+.tb-btn.icon { width:28px; padding:0; justify-content:center; font-size:14px; }
+.user-badge {
+  font-family:var(--font-mono); font-size:11px; color:var(--text-muted);
+  padding:4px 10px; border:1px solid var(--border); border-radius:5px;
+  letter-spacing:.06em;
+}
+
+/* ── TABBAR ── */
+#tabbar {
+  height:var(--tabbar-h); flex-shrink:0;
+  display:flex; align-items:flex-end;
+  padding:0 14px; background:var(--bg);
+  border-bottom:1px solid var(--border);
+  gap:2px; overflow-x:auto; overflow-y:hidden;
+}
+#tabbar::-webkit-scrollbar { display:none; }
+
+.tab-item {
+  display:flex; align-items:center; gap:7px;
+  padding:0 14px; height:32px; border-radius:7px 7px 0 0;
+  cursor:pointer; font-size:12px; font-weight:500;
+  color:var(--text-muted); background:none;
+  border:1px solid transparent; border-bottom:none;
+  transition:all .15s; user-select:none; white-space:nowrap;
+  position:relative; flex-shrink:0;
+}
+.tab-item:hover { color:var(--text); background:var(--surface2); }
+.tab-item.active {
+  color:var(--accent); background:var(--surface);
+  border-color:var(--border); border-bottom-color:var(--surface);
+  margin-bottom:-1px;
+}
+.tab-icon { font-size:13px; }
+.tab-close {
+  background:none; border:none; color:var(--text-muted);
+  cursor:pointer; font-size:13px; width:16px; height:16px;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:3px; transition:all .13s; line-height:1;
+  flex-shrink:0;
+}
+.tab-close:hover { background:rgba(212,136,136,.2); color:var(--red); }
+.tab-add {
+  display:flex; align-items:center; justify-content:center;
+  width:28px; height:28px; border-radius:6px; cursor:pointer;
+  color:var(--text-muted); font-size:17px; transition:all .15s;
+  flex-shrink:0; border:none; background:none; margin-bottom:2px;
+}
+.tab-add:hover { background:var(--surface2); color:var(--accent); }
+
+/* ── ADD MENU POPUP ── */
+#addMenu {
+  display:none; position:fixed; z-index:200;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:10px; box-shadow:0 12px 36px rgba(0,0,0,.45);
+  min-width:180px; overflow:hidden;
+}
+#addMenu.open { display:block; }
+.add-menu-item {
+  display:flex; align-items:center; gap:10px;
+  padding:11px 16px; cursor:pointer; font-size:13px;
+  color:var(--text); transition:background .13s;
+}
+.add-menu-item:hover { background:var(--surface2); }
+.add-menu-item .mi-icon { font-size:16px; }
+.add-menu-item .mi-label { font-weight:500; }
+.add-menu-item .mi-desc { font-size:11px; color:var(--text-muted); margin-top:1px; }
+.add-menu-divider { height:1px; background:var(--border); margin:3px 0; }
+
+/* ── FRAME CONTAINER ── */
+#frameWrap {
+  flex:1; position:relative; overflow:hidden;
+}
+.frame-pane {
+  position:absolute; inset:0;
+  display:none;
+}
+.frame-pane.active { display:block; }
+.frame-pane iframe {
+  width:100%; height:100%; border:none; display:block;
+}
+
+/* ── WELCOME ── */
+#welcomePane {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:16px; color:var(--text-muted);
+}
+.welcome-logo { font-family:var(--font-mono); font-size:36px; letter-spacing:.2em; color:var(--accent); opacity:.6; }
+.welcome-sub  { font-size:13px; letter-spacing:.08em; }
+.welcome-hint { display:flex; gap:10px; margin-top:8px; }
+.welcome-chip {
+  padding:7px 16px; border:1px solid var(--border); border-radius:8px;
+  font-size:12px; color:var(--text-muted); cursor:pointer;
+  transition:all .18s; display:flex; align-items:center; gap:6px;
+}
+.welcome-chip:hover { border-color:var(--accent); color:var(--accent); background:rgba(212,188,150,.06); }
+
+/* ── LOADING SPINNER in tab ── */
+.tab-loading {
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  background:var(--bg); z-index:10;
+}
+.spinner {
+  width:32px; height:32px; border:3px solid var(--border);
+  border-top-color:var(--accent); border-radius:50%;
+  animation:spin .7s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* ── TOAST ── */
+#toast {
+  position:fixed; bottom:22px; left:50%;
+  transform:translateX(-50%) translateY(16px);
+  z-index:9000; background:var(--surface); border:1px solid var(--border);
+  border-radius:9px; padding:10px 18px; font-size:13px; color:var(--text);
+  box-shadow:0 8px 28px rgba(0,0,0,.4); opacity:0;
+  transition:all .25s; pointer-events:none; white-space:nowrap;
+}
+#toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* ── 모바일 ── */
+@media(max-width:600px) {
+  .brand { font-size:11px; letter-spacing:.15em; }
+  .user-badge { display:none; }
+  .tab-item { padding:0 10px; font-size:11px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── AUTH ── -->
+<div id="authOverlay">
+  <div class="auth-box">
+    <div class="auth-brand">DRGO</div>
+    <div class="auth-subtitle">Workspace</div>
+    <div class="auth-label">아이디</div>
+    <input class="auth-input" type="text"     id="authId" placeholder="아이디 입력" autocomplete="username">
+    <div class="auth-label">비밀번호</div>
+    <input class="auth-input" type="password" id="authPw" placeholder="비밀번호 입력" autocomplete="current-password">
+    <button class="auth-btn" id="authBtn">로그인</button>
+    <div class="auth-error" id="authError"></div>
+  </div>
+</div>
+
+<!-- ── TOPBAR ── -->
+<div id="topbar">
+  <div class="topbar-left">
+    <div class="brand">DRGO</div>
+  </div>
+  <div class="topbar-right">
+    <div class="user-badge" id="userBadge">—</div>
+    <button class="tb-btn icon" id="themeBtn" title="테마 전환">🌙</button>
+    <button class="tb-btn" id="logoutBtn">로그아웃</button>
+  </div>
+</div>
+
+<!-- ── TABBAR ── -->
+<div id="tabbar">
+  <!-- 탭들이 JS로 추가됨 -->
+  <button class="tab-add" id="tabAddBtn" title="새 탭 열기">＋</button>
+</div>
+
+<!-- ── ADD MENU ── -->
+<div id="addMenu">
+  <div class="add-menu-item" data-page="calendar">
+    <span class="mi-icon">📅</span>
+    <div><div class="mi-label">캘린더</div><div class="mi-desc">일정 관리</div></div>
+  </div>
+  <div class="add-menu-divider"></div>
+  <div class="add-menu-item" data-page="crm">
+    <span class="mi-icon">👥</span>
+    <div><div class="mi-label">CRM</div><div class="mi-desc">고객 관리</div></div>
+  </div>
+</div>
+
+<!-- ── FRAME WRAP ── -->
+<div id="frameWrap">
+  <div id="welcomePane">
+    <div class="welcome-logo">DRGO</div>
+    <div class="welcome-sub">상단 ＋ 버튼으로 페이지를 열어주세요</div>
+    <div class="welcome-hint">
+      <div class="welcome-chip" data-page="calendar">📅 캘린더 열기</div>
+      <div class="welcome-chip" data-page="crm">👥 CRM 열기</div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getFirestore, doc, getDoc }
+  from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
+/* ── CONFIG ── */
+const firebaseConfig = {
+  apiKey:            "AIzaSyDnEOATYmwq0WJr6pCl-86-Q3ZEQjrrfeY",
+  authDomain:        "drgo-calender.firebaseapp.com",
+  projectId:         "drgo-calender",
+  storageBucket:     "drgo-calender.firebasestorage.app",
+  messagingSenderId: "163730741115",
+  appId:             "1:163730741115:web:73a06d5b1cf1a477734fde"
+};
+
+const SESSION_KEY  = 'cal_auth_ok';
+const SESSION_UID  = 'cal_auth_uid';
+const SESSION_NAME = 'cal_auth_name';
+const SESSION_EXP  = 'cal_auth_exp';
+const AUTH_TTL_MS  = 30 * 24 * 60 * 60 * 1000;
+const TRIES_KEY    = 'cal_auth_tries';
+const LOCK_KEY     = 'cal_auth_lock';
+const MAX_TRIES    = 5;
+const LOCK_MS      = 120000;
+
+async function sha256(msg) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function isAuth() {
+  if (localStorage.getItem(SESSION_KEY) !== '1') return false;
+  const exp = parseInt(localStorage.getItem(SESSION_EXP)||'0');
+  if (exp && Date.now() > exp) {
+    ['cal_auth_ok','cal_auth_uid','cal_auth_name','cal_auth_exp'].forEach(k=>localStorage.removeItem(k));
+    return false;
+  }
+  return true;
+}
+function getLockRemaining() {
+  const l = parseInt(localStorage.getItem(LOCK_KEY)||'0');
+  return Math.max(0, l - Date.now());
+}
+function updateLockUI() {
+  const rem = getLockRemaining();
+  const errEl = document.getElementById('authError');
+  const btn   = document.getElementById('authBtn');
+  if (rem > 0) {
+    btn.disabled = true;
+    errEl.textContent = `잠금 중… ${Math.ceil(rem/1000)}초 후 재시도`;
+    setTimeout(updateLockUI, 1000);
+  } else {
+    btn.disabled = false;
+    if (errEl.textContent.startsWith('잠금')) errEl.textContent = '';
+  }
+}
+
+const _app = initializeApp(firebaseConfig);
+const _db  = getFirestore(_app);
+
+async function tryAuth() {
+  if (getLockRemaining() > 0) return;
+  const idEl  = document.getElementById('authId');
+  const pwEl  = document.getElementById('authPw');
+  const errEl = document.getElementById('authError');
+  const userId = idEl.value.trim();
+  const userPw = pwEl.value;
+  idEl.classList.remove('error'); pwEl.classList.remove('error');
+  if (!userId) { idEl.classList.add('error'); idEl.focus(); errEl.textContent='아이디를 입력하세요.'; return; }
+  if (!userPw) { pwEl.classList.add('error'); pwEl.focus(); errEl.textContent='비밀번호를 입력하세요.'; return; }
+  const btn = document.getElementById('authBtn');
+  btn.disabled=true; btn.textContent='확인 중…';
+  try {
+    const pwHash  = await sha256(userPw);
+    const userDoc = await getDoc(doc(_db,'users',userId));
+    if (userDoc.exists() && userDoc.data().passwordHash === pwHash) {
+      const displayName = userDoc.data().displayName || userId;
+      localStorage.setItem(SESSION_KEY,  '1');
+      localStorage.setItem(SESSION_UID,  userId);
+      localStorage.setItem(SESSION_NAME, displayName);
+      localStorage.setItem(SESSION_EXP,  Date.now() + AUTH_TTL_MS);
+      localStorage.removeItem(TRIES_KEY);
+      localStorage.removeItem(LOCK_KEY);
+      /* CRM용 sessionStorage도 동시 세팅 */
+      sessionStorage.setItem('crm_auth_ok',       '1');
+      sessionStorage.setItem('crm_uid',            userId);
+      sessionStorage.setItem('crm_display_name',   displayName);
+      document.getElementById('authOverlay').classList.add('hidden');
+      initWorkspace(displayName);
+    } else {
+      const tries = parseInt(localStorage.getItem(TRIES_KEY)||'0') + 1;
+      localStorage.setItem(TRIES_KEY, tries);
+      pwEl.value=''; pwEl.classList.add('error');
+      setTimeout(()=>pwEl.classList.remove('error'), 400);
+      if (tries >= MAX_TRIES) {
+        localStorage.setItem(LOCK_KEY, Date.now() + LOCK_MS);
+        updateLockUI();
+      } else {
+        errEl.textContent=`아이디 또는 비밀번호가 틀렸습니다. (${MAX_TRIES-tries}회 남음)`;
+      }
+      btn.disabled=false; btn.textContent='로그인';
+    }
+  } catch(e) {
+    errEl.textContent='연결 오류가 발생했습니다.';
+    btn.disabled=false; btn.textContent='로그인';
+  }
+}
+
+document.getElementById('authBtn').addEventListener('click', tryAuth);
+document.getElementById('authPw').addEventListener('keydown',  e=>{ if(e.key==='Enter') tryAuth(); });
+document.getElementById('authId').addEventListener('keydown',  e=>{ if(e.key==='Enter') document.getElementById('authPw').focus(); });
+
+if (isAuth()) {
+  document.getElementById('authOverlay').classList.add('hidden');
+  /* CRM sessionStorage도 복원 */
+  const uid  = localStorage.getItem(SESSION_UID)  || '';
+  const name = localStorage.getItem(SESSION_NAME) || uid;
+  sessionStorage.setItem('crm_auth_ok',     '1');
+  sessionStorage.setItem('crm_uid',          uid);
+  sessionStorage.setItem('crm_display_name', name);
+  initWorkspace(name);
+} else {
+  updateLockUI();
+  setTimeout(()=>document.getElementById('authId').focus(), 100);
+}
+
+/* ══════════════════════════════
+   WORKSPACE
+══════════════════════════════ */
+function initWorkspace(displayName) {
+  document.getElementById('userBadge').textContent = displayName;
+
+  /* 테마 */
+  const saved = localStorage.getItem('cal_theme');
+  if (saved === 'light') document.documentElement.classList.add('light');
+  syncThemeBtn();
+  document.getElementById('themeBtn').addEventListener('click', ()=>{
+    const isL = document.documentElement.classList.toggle('light');
+    localStorage.setItem('cal_theme', isL ? 'light' : 'dark');
+    syncThemeBtn();
+    syncThemeToFrames();
+    document.getElementById('metaThemeColor').setAttribute('content', isL ? '#f7f4f0' : '#111111');
+  });
+  function syncThemeBtn() {
+    document.getElementById('themeBtn').textContent =
+      document.documentElement.classList.contains('light') ? '☀️' : '🌙';
+  }
+  function syncThemeToFrames() {
+    const theme = document.documentElement.classList.contains('light') ? 'light' : 'dark';
+    document.querySelectorAll('.frame-pane iframe').forEach(f => {
+      try {
+        f.contentDocument?.documentElement?.classList?.toggle('light', theme==='light');
+      } catch(e) {}
+    });
+  }
+
+  /* 로그아웃 */
+  document.getElementById('logoutBtn').addEventListener('click', ()=>{
+    ['cal_auth_ok','cal_auth_uid','cal_auth_name','cal_auth_exp'].forEach(k=>localStorage.removeItem(k));
+    ['crm_auth_ok','crm_uid','crm_display_name'].forEach(k=>sessionStorage.removeItem(k));
+    location.reload();
+  });
+
+  /* ──────────────────────────────
+     TAB MANAGER
+  ────────────────────────────── */
+  const PAGE_META = {
+    calendar: { label:'캘린더', icon:'📅', src:'index.html' },
+    crm:      { label:'CRM',    icon:'👥', src:'crm.html'   },
+  };
+
+  let tabs      = [];   /* [{ id, page, label, icon }] */
+  let activeTab = null;
+  let tabIdSeq  = 0;
+
+  const tabbar   = document.getElementById('tabbar');
+  const addBtn   = document.getElementById('tabAddBtn');
+  const frameWrap= document.getElementById('frameWrap');
+  const welcome  = document.getElementById('welcomePane');
+
+  function genTabId() { return 'tab_' + (++tabIdSeq); }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'), 2000);
+  }
+
+  /* 이미 같은 page의 탭이 열려있는지 확인 */
+  function findTabByPage(page) {
+    return tabs.find(t=>t.page===page) || null;
+  }
+
+  function openTab(page) {
+    const meta = PAGE_META[page];
+    if (!meta) return;
+
+    /* 이미 같은 페이지 탭 있으면 그쪽으로 포커스 */
+    const existing = findTabByPage(page);
+    if (existing) {
+      activateTab(existing.id);
+      showToast(`${meta.label} 탭으로 이동했어요`);
+      return;
+    }
+
+    const id = genTabId();
+    tabs.push({ id, page, label:meta.label, icon:meta.icon });
+
+    /* iframe 생성 */
+    const pane = document.createElement('div');
+    pane.className = 'frame-pane';
+    pane.id = 'pane_' + id;
+
+    /* 로딩 스피너 */
+    const loading = document.createElement('div');
+    loading.className = 'tab-loading';
+    loading.innerHTML = '<div class="spinner"></div>';
+    pane.appendChild(loading);
+
+    const iframe = document.createElement('iframe');
+    iframe.src = meta.src;
+    iframe.title = meta.label;
+    /* iframe이 같은 origin이면 로드 후 스피너 제거 */
+    iframe.addEventListener('load', ()=>{
+      loading.remove();
+      /* iframe 내부 페이지에 이미 로그인 세션 주입 (같은 localStorage 공유) */
+      try {
+        const iwin = iframe.contentWindow;
+        if (iwin) {
+          /* 테마 동기화 */
+          const isLight = document.documentElement.classList.contains('light');
+          iwin.document?.documentElement?.classList?.toggle('light', isLight);
+        }
+      } catch(e) {}
+    });
+    pane.appendChild(iframe);
+    frameWrap.appendChild(pane);
+
+    renderTabs();
+    activateTab(id);
+  }
+
+  function closeTab(id) {
+    const idx = tabs.findIndex(t=>t.id===id);
+    if (idx === -1) return;
+    tabs.splice(idx, 1);
+
+    /* pane 제거 */
+    const pane = document.getElementById('pane_'+id);
+    if (pane) pane.remove();
+
+    /* 다른 탭으로 포커스 */
+    if (activeTab === id) {
+      activeTab = null;
+      if (tabs.length > 0) {
+        const next = tabs[Math.min(idx, tabs.length-1)];
+        activateTab(next.id);
+      } else {
+        renderTabs();
+        showWelcome();
+      }
+    } else {
+      renderTabs();
+    }
+  }
+
+  function activateTab(id) {
+    activeTab = id;
+    /* 모든 pane 숨기고 해당 pane만 표시 */
+    document.querySelectorAll('.frame-pane').forEach(p=>p.classList.remove('active'));
+    const pane = document.getElementById('pane_'+id);
+    if (pane) {
+      pane.classList.add('active');
+      welcome.style.display = 'none';
+    }
+    renderTabs();
+  }
+
+  function showWelcome() {
+    welcome.style.display = '';
+    document.querySelectorAll('.frame-pane').forEach(p=>p.classList.remove('active'));
+  }
+
+  function renderTabs() {
+    /* addBtn 앞의 탭들만 지우고 재렌더 */
+    tabbar.querySelectorAll('.tab-item').forEach(t=>t.remove());
+    tabs.forEach(tab => {
+      const el = document.createElement('div');
+      el.className = 'tab-item' + (tab.id===activeTab?' active':'');
+      el.dataset.id = tab.id;
+      el.innerHTML =
+        `<span class="tab-icon">${tab.icon}</span>` +
+        `<span class="tab-label">${tab.label}</span>` +
+        `<button class="tab-close" data-close="${tab.id}" title="탭 닫기">×</button>`;
+
+      el.addEventListener('click', e=>{
+        if (e.target.closest('.tab-close')) return;
+        activateTab(tab.id);
+      });
+      el.querySelector('.tab-close').addEventListener('click', e=>{
+        e.stopPropagation();
+        closeTab(tab.id);
+      });
+      tabbar.insertBefore(el, addBtn);
+    });
+  }
+
+  /* ── ADD MENU ── */
+  const addMenu = document.getElementById('addMenu');
+
+  addBtn.addEventListener('click', e=>{
+    e.stopPropagation();
+    const rect = addBtn.getBoundingClientRect();
+    addMenu.style.top  = (rect.bottom + 6) + 'px';
+    addMenu.style.left = rect.left + 'px';
+    addMenu.classList.toggle('open');
+  });
+
+  addMenu.querySelectorAll('.add-menu-item').forEach(item=>{
+    item.addEventListener('click', ()=>{
+      addMenu.classList.remove('open');
+      openTab(item.dataset.page);
+    });
+  });
+
+  document.addEventListener('click', e=>{
+    if (!addMenu.contains(e.target) && e.target !== addBtn) {
+      addMenu.classList.remove('open');
+    }
+  });
+
+  /* ── WELCOME CHIPS ── */
+  document.querySelectorAll('.welcome-chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>openTab(chip.dataset.page));
+  });
+
+  /* ── 초기 상태: 웰컴 표시 ── */
+  showWelcome();
+  renderTabs();
+}
+</script>
+</body>
+</html>
