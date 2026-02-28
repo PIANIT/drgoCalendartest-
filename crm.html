@@ -216,6 +216,14 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
 .tl-time{font-size:10px;font-family:var(--font-mono);color:var(--text-muted);margin-bottom:4px;}
 .tl-bubble{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:11px 13px;font-size:13px;color:var(--text);line-height:1.65;white-space:pre-wrap;word-break:break-word;}
 .tl-author{font-size:10px;font-family:var(--font-mono);color:var(--text-muted);margin-top:5px;}
+.tl-direction{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-family:var(--font-mono);padding:2px 7px;border-radius:5px;margin-left:6px;vertical-align:middle;}
+.tl-dir-in {background:rgba(136,212,136,0.15);color:var(--green);border:1px solid rgba(136,212,136,0.3);}
+.tl-dir-out{background:rgba(144,188,212,0.15);color:var(--accent2);border:1px solid rgba(144,188,212,0.3);}
+.taf-direction{display:flex;gap:4px;margin-left:4px;}
+.dir-btn{padding:5px 11px;border-radius:7px;border:1px solid var(--border);background:none;color:var(--text-muted);font-size:11px;font-family:var(--font-main);cursor:pointer;transition:all 0.15s;white-space:nowrap;}
+.dir-btn:hover{border-color:var(--accent);color:var(--text);}
+.dir-btn.active[data-val="inbound"]{background:rgba(136,212,136,0.15);border-color:rgba(136,212,136,0.5);color:var(--green);}
+.dir-btn.active[data-val="outbound"]{background:rgba(144,188,212,0.15);border-color:rgba(144,188,212,0.5);color:var(--accent2);}
 .tl-add{margin-top:12px;border:1px solid var(--border);border-radius:9px;overflow:hidden;}
 .tl-add-head{padding:9px 13px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .taf-label{font-size:10px;font-family:var(--font-mono);color:var(--text-muted);letter-spacing:.1em;}
@@ -508,6 +516,10 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
         <div class="tl-add-head">
           <span class="taf-label">상담 시간</span>
           <input class="taf-dt" type="datetime-local" id="cdEntryTime">
+          <div class="taf-direction" id="cdDirection">
+            <button class="dir-btn active" data-val="inbound" title="인바운드 (고객이 연락)">📥 인바운드</button>
+            <button class="dir-btn" data-val="outbound" title="아웃바운드 (우리가 연락)">📤 아웃바운드</button>
+          </div>
         </div>
         <div class="tl-add-body">
           <textarea class="tl-textarea" id="cdEntryText" placeholder="상담 내용을 입력하세요..."></textarea>
@@ -833,7 +845,7 @@ function initApp(){
       <div class="tl-item">
         <div class="tl-line"><div class="tl-dot"></div><div class="tl-connector"></div></div>
         <div class="tl-content">
-          <div class="tl-time">${fmtDateTime(e.time||e.createdAt)}</div>
+          <div class="tl-time">${fmtDateTime(e.time||e.createdAt)}${e.direction ? `<span class="tl-direction ${e.direction==='inbound'?'tl-dir-in':'tl-dir-out'}">${e.direction==='inbound'?'📥 인바운드':'📤 아웃바운드'}</span>` : ''}</div>
           <div class="tl-bubble">${esc(e.text||'')}</div>
           ${e.author?`<div class="tl-author">— ${esc(e.author)}</div>`:''}
         </div>
@@ -841,13 +853,23 @@ function initApp(){
     `).join('');
   }
 
+  /* ── 인바운드/아웃바운드 토글 ── */
+  document.getElementById('cdDirection').addEventListener('click', e => {
+    const btn = e.target.closest('.dir-btn');
+    if (!btn) return;
+    document.querySelectorAll('#cdDirection .dir-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+
   /* timeline entry submit */
   document.getElementById('cdEntrySubmit').addEventListener('click', async ()=>{
     if(!selectedClient||!editingConsultId) return;
     const text=document.getElementById('cdEntryText').value.trim();
     if(!text){ showToast('내용을 입력하세요','error'); return; }
     const timeVal=document.getElementById('cdEntryTime').value;
-    const entry={ text, author:sessionStorage.getItem(SESSION_UID)||'', time:timeVal?new Date(timeVal):new Date(), createdAt:new Date() };
+    const dirBtn = document.querySelector('#cdDirection .dir-btn.active');
+    const direction = dirBtn ? dirBtn.dataset.val : 'inbound';
+    const entry={ text, author:sessionStorage.getItem('crm_display_name')||sessionStorage.getItem(SESSION_UID)||'', direction, time:timeVal?new Date(timeVal):new Date(), createdAt:new Date() };
     const btn=document.getElementById('cdEntrySubmit');
     btn.disabled=true; btn.textContent='…';
     try{
@@ -974,7 +996,7 @@ function initApp(){
   document.getElementById('newConsultBtn').addEventListener('click',()=>{
     document.getElementById('cTitle').value='';
     document.getElementById('cType').value='visit';
-    document.getElementById('cCounselor').value=sessionStorage.getItem('crm_display_name')||sessionStorage.getItem(SESSION_UID)||'';
+    document.getElementById('cCounselor').value=sessionStorage.getItem(SESSION_UID)||'';
     document.getElementById('cContent').value='';
     document.getElementById('consultModal').classList.add('open');
     setTimeout(()=>document.getElementById('cTitle').focus(),120);
