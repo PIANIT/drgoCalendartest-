@@ -520,6 +520,10 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
         <input class="user-form-input" id="newUserId" placeholder="예: hong" maxlength="30" autocomplete="off" />
       </div>
       <div class="user-form-field">
+        <label class="user-form-label">이름 <span style="color:var(--red);">*</span></label>
+        <input class="user-form-input" id="newUserName" placeholder="예: 홍길동" maxlength="20" autocomplete="off" />
+      </div>
+      <div class="user-form-field">
         <label class="user-form-label">비밀번호</label>
         <input class="user-form-input" id="newUserPw" type="password" placeholder="비밀번호 입력" maxlength="32" autocomplete="new-password" />
       </div>
@@ -1341,7 +1345,8 @@ function initUserMgmt(db) {
 
   document.getElementById('userCreateBtn').addEventListener('click', () => createUser(db));
   document.getElementById('newUserPw').addEventListener('keydown', e => { if (e.key === 'Enter') createUser(db); });
-  document.getElementById('newUserId').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('newUserPw').focus(); });
+  document.getElementById('newUserId').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('newUserName').focus(); });
+  document.getElementById('newUserName').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('newUserPw').focus(); });
 }
 
 async function loadUserList(db) {
@@ -1360,7 +1365,7 @@ async function loadUserList(db) {
       row.className = 'user-row';
       const createdAt = data.createdAt?.toDate ? data.createdAt.toDate().toLocaleDateString('ko-KR') : '—';
       row.innerHTML = `
-        <span class="user-row-id">🔑 ${d.id}</span>
+        <span class="user-row-id">🔑 ${d.id}${data.displayName ? ` <span style="color:var(--accent);font-weight:600;">(${data.displayName})</span>` : ''}</span>
         <span class="user-row-meta">생성: ${createdAt}</span>
         <button class="user-row-del" data-uid="${d.id}">삭제</button>`;
       row.querySelector('.user-row-del').addEventListener('click', () => {
@@ -1383,14 +1388,18 @@ async function loadUserList(db) {
 
 async function createUser(db) {
   const idEl   = document.getElementById('newUserId');
+  const nameEl = document.getElementById('newUserName');
   const pwEl   = document.getElementById('newUserPw');
-  const userId = idEl.value.trim();
-  const userPw = pwEl.value;
+  const userId   = idEl.value.trim();
+  const userName = nameEl.value.trim();
+  const userPw   = pwEl.value;
 
   idEl.classList.remove('error');
+  nameEl.classList.remove('error');
   pwEl.classList.remove('error');
 
   if (!userId) { idEl.classList.add('error'); idEl.focus(); showToast('아이디를 입력하세요', 'error'); return; }
+  if (!userName) { nameEl.classList.add('error'); nameEl.focus(); showToast('이름을 입력하세요', 'error'); return; }
   if (!userPw) { pwEl.classList.add('error'); pwEl.focus(); showToast('비밀번호를 입력하세요', 'error'); return; }
   if (!/^[a-zA-Z0-9_\-가-힣]+$/.test(userId)) {
     idEl.classList.add('error'); idEl.focus();
@@ -1403,13 +1412,14 @@ async function createUser(db) {
       idEl.classList.add('error'); idEl.focus();
       showToast(`"${userId}" 아이디는 이미 존재합니다`, 'error'); return;
     }
-    const pwHash = await sha256(userPw);   // ← 위 AUTH 섹션의 sha256 재사용
+    const pwHash = await sha256(userPw);
     await setDoc(doc(db, 'users', userId), {
       passwordHash: pwHash,
+      displayName: userName,
       createdAt: serverTimestamp()
     });
-    idEl.value = ''; pwEl.value = '';
-    showToast(`계정 "${userId}" 추가 완료`, 'success');
+    idEl.value = ''; nameEl.value = ''; pwEl.value = '';
+    showToast(`계정 "${userId}" (${userName}) 추가 완료`, 'success');
     loadUserList(db);
   } catch(err) {
     showToast('계정 생성 실패: ' + err.message, 'error');

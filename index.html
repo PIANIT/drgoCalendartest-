@@ -1702,6 +1702,7 @@ async function tryAuth() {
     if (userDoc.exists() && userDoc.data().passwordHash === pwHash) {
       localStorage.setItem(SESSION_KEY, '1');
       localStorage.setItem(SESSION_UID, userId);
+      localStorage.setItem('cal_auth_name', userDoc.data().displayName || userId);
       localStorage.setItem(SESSION_EXP, Date.now() + AUTH_TTL_MS);
       localStorage.removeItem(TRIES_KEY);
       localStorage.removeItem(LOCK_KEY);
@@ -2470,7 +2471,7 @@ async function saveEvent(){
     await setDoc(doc(db,'events',docId), evData);
 
     /* ── 로그 기록 ── */
-    const currentUserId = localStorage.getItem('cal_auth_uid') || '(알 수 없음)';
+    const currentUserId = localStorage.getItem('cal_auth_name') || localStorage.getItem('cal_auth_uid') || '(알 수 없음)';
     const logsCol = collection(db, 'eventLogs');
     if (isNew) {
       await addDoc(logsCol, {
@@ -3239,7 +3240,7 @@ async function openLogOverlay() {
           <span class="log-type-badge ${isCreate ? 'log-type-create' : 'log-type-update'}">
             ${isCreate ? '생성' : '수정'}
           </span>
-          <span class="log-user">🔑 ${log.userId || '(알 수 없음)'}</span>
+          <span class="log-user">👤 ${log.userId || '(알 수 없음)'}</span>
           <span class="log-time">${timeStr}</span>
         </div>`;
 
@@ -3645,6 +3646,7 @@ document.getElementById('discordTestBtn').addEventListener('click', async () => 
 document.getElementById('logoutBtn').addEventListener('click', () => {
   localStorage.removeItem('cal_auth_ok');
   localStorage.removeItem('cal_auth_uid');
+  localStorage.removeItem('cal_auth_name');
   localStorage.removeItem('cal_auth_exp');
   location.reload();
 });
@@ -3704,6 +3706,7 @@ document.getElementById('changePwSubmit').addEventListener('click', async () => 
     /* 변경 후 재로그인 유도 */
     localStorage.removeItem('cal_auth_ok');
     localStorage.removeItem('cal_auth_uid');
+    localStorage.removeItem('cal_auth_name');
     localStorage.removeItem('cal_auth_exp');
     alert('비밀번호가 변경되었습니다. 새 비밀번호로 다시 로그인해주세요.');
     location.reload();

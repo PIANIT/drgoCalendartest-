@@ -592,6 +592,7 @@ async function tryAuth(){
     const uDoc=await getDoc(doc(tmpDb,'users',userId));
     if(uDoc.exists()&&uDoc.data().passwordHash===pwHash){
       sessionStorage.setItem(SESSION_KEY,'1'); sessionStorage.setItem(SESSION_UID,userId);
+      sessionStorage.setItem('crm_display_name', uDoc.data().displayName || userId);
       localStorage.removeItem(TRIES_KEY); localStorage.removeItem(LOCK_KEY);
       document.getElementById('authOverlay').classList.add('hidden');
       initApp();
@@ -973,7 +974,7 @@ function initApp(){
   document.getElementById('newConsultBtn').addEventListener('click',()=>{
     document.getElementById('cTitle').value='';
     document.getElementById('cType').value='visit';
-    document.getElementById('cCounselor').value=sessionStorage.getItem(SESSION_UID)||'';
+    document.getElementById('cCounselor').value=sessionStorage.getItem('crm_display_name')||sessionStorage.getItem(SESSION_UID)||'';
     document.getElementById('cContent').value='';
     document.getElementById('consultModal').classList.add('open');
     setTimeout(()=>document.getElementById('cTitle').focus(),120);
