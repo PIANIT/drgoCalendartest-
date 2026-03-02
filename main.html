@@ -279,6 +279,11 @@ body {
     <span class="mi-icon">👥</span>
     <div><div class="mi-label">CRM</div><div class="mi-desc">고객 관리</div></div>
   </div>
+  <div class="add-menu-divider"></div>
+  <div class="add-menu-item" data-page="wiki">
+    <span class="mi-icon">📖</span>
+    <div><div class="mi-label">위키</div><div class="mi-desc">사내 매뉴얼</div></div>
+  </div>
 </div>
 
 <!-- ── FRAME WRAP ── -->
@@ -289,6 +294,7 @@ body {
     <div class="welcome-hint">
       <div class="welcome-chip" data-page="calendar">📅 캘린더 열기</div>
       <div class="welcome-chip" data-page="crm">👥 CRM 열기</div>
+      <div class="welcome-chip" data-page="wiki">📖 위키 열기</div>
     </div>
   </div>
 </div>
@@ -463,6 +469,7 @@ function initWorkspace(displayName) {
   const PAGE_META = {
     calendar: { label:'캘린더', icon:'📅', src:'index.html' },
     crm:      { label:'CRM',    icon:'👥', src:'crm.html'   },
+    wiki:     { label:'위키',   icon:'📖', src:'wiki.html'  },
   };
 
   let tabs      = [];   /* [{ id, page, label, icon }] */

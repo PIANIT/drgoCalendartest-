@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>DRGO 위키</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --font-main: "Malgun Gothic","맑은 고딕",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  --font-mono: 'DM Mono',"Malgun Gothic","맑은 고딕",monospace;
+  --bg:       #111111;
+  --surface:  #1c1c1c;
+  --surface2: #272727;
+  --border:   #3a3a3a;
+  --accent:   #d4bc96;
+  --accent2:  #90bcd4;
+  --text:     #f0ebe2;
+  --text-muted: #a09890;
+  --red:      #d48888;
+  --green:    #88d488;
+  --purple:   #b88dd4;
+}
+html.light {
+  --bg:#f7f4f0; --surface:#ffffff; --surface2:#efebe4;
+  --border:#d8d0c4; --accent:#9c7d48; --accent2:#3a7a9a;
+  --text:#1e1812; --text-muted:#7a6e60; --red:#a84444; --green:#3a8a3a;
+  --purple:#8a4aaa;
+}
+*{ margin:0; padding:0; box-sizing:border-box; }
+body {
+  background:var(--bg); color:var(--text);
+  font-family:var(--font-main);
+  height:100vh; overflow:hidden;
+  display:flex; flex-direction:column;
+}
+
+/* ── HEADER ── */
+#wikiHeader {
+  height:50px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 20px; border-bottom:1px solid var(--border);
+  background:var(--surface);
+}
+.wiki-title {
+  font-family:var(--font-mono); font-size:13px; letter-spacing:.18em;
+  color:var(--accent); display:flex; align-items:center; gap:8px;
+}
+.header-right { display:flex; align-items:center; gap:8px; }
+.hdr-btn {
+  background:none; border:1px solid var(--border); color:var(--text-muted);
+  cursor:pointer; height:30px; padding:0 12px; border-radius:6px;
+  font-size:12px; font-family:var(--font-main); display:flex;
+  align-items:center; gap:5px; transition:all .18s; white-space:nowrap;
+}
+.hdr-btn:hover { border-color:var(--accent); color:var(--accent); }
+.hdr-btn.primary {
+  background:var(--accent); color:#1a1207; border-color:var(--accent); font-weight:700;
+}
+.hdr-btn.primary:hover { background:#dcc8a4; }
+#searchInput {
+  height:30px; padding:0 12px; border-radius:6px;
+  background:var(--surface2); border:1px solid var(--border);
+  color:var(--text); font-size:12px; font-family:var(--font-main);
+  outline:none; width:200px; transition:border-color .2s;
+}
+#searchInput:focus { border-color:var(--accent); }
+#searchInput::placeholder { color:var(--text-muted); }
+
+/* ── LAYOUT ── */
+#layout {
+  flex:1; display:flex; overflow:hidden;
+}
+
+/* ── SIDEBAR ── */
+#sidebar {
+  width:260px; flex-shrink:0; border-right:1px solid var(--border);
+  display:flex; flex-direction:column; overflow:hidden;
+  background:var(--surface);
+}
+.sidebar-section-header {
+  padding:10px 16px 6px;
+  font-size:10px; letter-spacing:.14em; color:var(--text-muted);
+  font-family:var(--font-mono); text-transform:uppercase; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+}
+#articleList {
+  flex:1; overflow-y:auto; padding:6px;
+}
+#articleList::-webkit-scrollbar { width:4px; }
+#articleList::-webkit-scrollbar-track { background:transparent; }
+#articleList::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+.article-item {
+  display:flex; align-items:flex-start; gap:8px;
+  padding:9px 10px; border-radius:7px; cursor:pointer;
+  transition:background .13s; border:1px solid transparent;
+}
+.article-item:hover { background:var(--surface2); }
+.article-item.active { background:rgba(212,188,150,.10); border-color:rgba(212,188,150,.2); }
+.article-item-icon { font-size:14px; flex-shrink:0; margin-top:1px; }
+.article-item-body { flex:1; min-width:0; }
+.article-item-title {
+  font-size:12px; font-weight:500; color:var(--text);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.article-item.active .article-item-title { color:var(--accent); }
+.article-item-meta { font-size:10px; color:var(--text-muted); margin-top:2px; }
+.article-item-cat {
+  display:inline-block; font-size:9px; padding:1px 6px; border-radius:3px;
+  background:rgba(144,188,212,.15); color:var(--accent2);
+  font-family:var(--font-mono); letter-spacing:.06em; margin-bottom:2px;
+}
+
+.empty-list {
+  padding:32px 16px; text-align:center;
+  color:var(--text-muted); font-size:12px; line-height:1.6;
+}
+
+/* ── MAIN AREA ── */
+#mainArea {
+  flex:1; display:flex; flex-direction:column; overflow:hidden;
+  background:var(--bg);
+}
+
+/* ── WELCOME / 빈 상태 ── */
+#wikiWelcome {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:12px;
+  color:var(--text-muted);
+}
+.welcome-big { font-family:var(--font-mono); font-size:32px; letter-spacing:.2em; color:var(--accent); opacity:.5; }
+.welcome-desc { font-size:13px; }
+
+/* ── ARTICLE VIEW ── */
+#articleView {
+  display:none; flex:1; flex-direction:column; overflow:hidden;
+}
+#articleView.show { display:flex; }
+
+.article-view-header {
+  padding:20px 32px 14px; border-bottom:1px solid var(--border);
+  background:var(--surface); flex-shrink:0;
+}
+.article-view-category {
+  font-size:10px; font-family:var(--font-mono); letter-spacing:.12em;
+  color:var(--accent2); text-transform:uppercase; margin-bottom:6px;
+}
+.article-view-title {
+  font-size:20px; font-weight:700; color:var(--text); line-height:1.3;
+}
+.article-view-meta {
+  margin-top:6px; font-size:11px; color:var(--text-muted);
+  display:flex; align-items:center; gap:12px;
+}
+.article-view-actions {
+  margin-top:10px; display:flex; gap:6px;
+}
+
+.article-view-body {
+  flex:1; overflow-y:auto; padding:28px 32px;
+  line-height:1.75; font-size:14px;
+}
+.article-view-body::-webkit-scrollbar { width:5px; }
+.article-view-body::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+/* 본문 내 이미지 */
+.article-view-body img {
+  max-width:100%; height:auto; border-radius:8px;
+  border:1px solid var(--border); display:block; margin:12px 0;
+}
+.article-view-body .img-block {
+  margin:16px 0;
+}
+.article-view-body .img-caption {
+  font-size:11px; color:var(--text-muted); margin-top:5px; text-align:center;
+  font-style:italic;
+}
+
+/* ── MODAL ── */
+.modal-backdrop {
+  display:none; position:fixed; inset:0; z-index:1000;
+  background:rgba(0,0,0,.65); backdrop-filter:blur(4px);
+  align-items:center; justify-content:center;
+}
+.modal-backdrop.open { display:flex; }
+.modal-box {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; box-shadow:0 24px 64px rgba(0,0,0,.5);
+  width:90%; max-width:760px; max-height:92vh;
+  display:flex; flex-direction:column; overflow:hidden;
+}
+.modal-box.wide { max-width:900px; }
+.modal-header {
+  padding:18px 22px 14px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between; flex-shrink:0;
+}
+.modal-title { font-size:15px; font-weight:700; color:var(--text); }
+.modal-close {
+  background:none; border:none; color:var(--text-muted); cursor:pointer;
+  font-size:20px; width:30px; height:30px; display:flex;
+  align-items:center; justify-content:center; border-radius:6px;
+  transition:all .15s; line-height:1;
+}
+.modal-close:hover { background:rgba(212,136,136,.2); color:var(--red); }
+.modal-body { flex:1; overflow-y:auto; padding:20px 22px; }
+.modal-body::-webkit-scrollbar { width:5px; }
+.modal-body::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+.modal-footer {
+  padding:14px 22px; border-top:1px solid var(--border);
+  display:flex; justify-content:flex-end; gap:8px; flex-shrink:0;
+}
+
+/* ── FORM ── */
+.form-row { margin-bottom:14px; }
+.form-label {
+  display:block; font-size:11px; font-family:var(--font-mono);
+  letter-spacing:.12em; color:var(--text-muted); margin-bottom:6px;
+  text-transform:uppercase;
+}
+.form-input, .form-select {
+  width:100%; padding:9px 12px; font-size:13px;
+  background:var(--surface2); border:1.5px solid var(--border);
+  border-radius:8px; color:var(--text); font-family:var(--font-main);
+  outline:none; transition:border-color .2s;
+}
+.form-input:focus, .form-select:focus { border-color:var(--accent); }
+.form-select option { background:var(--surface); }
+
+/* ── EDITOR ── */
+#editorToolbar {
+  display:flex; gap:4px; flex-wrap:wrap;
+  padding:8px 10px; background:var(--surface2);
+  border:1.5px solid var(--border); border-bottom:none;
+  border-radius:8px 8px 0 0;
+}
+.toolbar-btn {
+  background:none; border:1px solid transparent; color:var(--text-muted);
+  cursor:pointer; padding:3px 8px; border-radius:5px; font-size:12px;
+  font-family:var(--font-main); transition:all .13s;
+  display:flex; align-items:center; gap:4px; height:26px;
+}
+.toolbar-btn:hover { background:var(--border); color:var(--text); }
+.toolbar-sep { width:1px; background:var(--border); margin:3px 2px; }
+
+#articleEditor {
+  width:100%; min-height:340px; max-height:460px;
+  padding:14px; font-size:14px; line-height:1.75;
+  background:var(--surface2); border:1.5px solid var(--border);
+  border-top:none; border-radius:0 0 8px 8px;
+  color:var(--text); font-family:var(--font-main);
+  outline:none; overflow-y:auto; resize:none;
+}
+#articleEditor:focus { border-color:var(--accent); }
+#articleEditor:empty:before {
+  content:attr(data-placeholder); color:var(--text-muted); pointer-events:none;
+}
+#articleEditor img {
+  max-width:100%; height:auto; border-radius:6px;
+  border:1px solid var(--border); display:block; margin:8px 0;
+}
+.editor-img-wrap {
+  position:relative; display:inline-block;
+}
+
+/* ── 이미지 삽입 영역 ── */
+.img-drop-area {
+  border:2px dashed var(--border); border-radius:8px;
+  padding:24px; text-align:center; cursor:pointer;
+  transition:all .2s; color:var(--text-muted); font-size:13px;
+  margin-top:8px;
+}
+.img-drop-area:hover, .img-drop-area.dragover {
+  border-color:var(--accent); color:var(--accent);
+  background:rgba(212,188,150,.05);
+}
+.img-drop-area input { display:none; }
+
+/* ── 카테고리 칩 ── */
+.cat-chips { display:flex; gap:6px; flex-wrap:wrap; margin-top:4px; }
+.cat-chip {
+  padding:4px 10px; border-radius:12px; font-size:11px;
+  border:1px solid var(--border); cursor:pointer; transition:all .15s;
+  color:var(--text-muted); background:none;
+  font-family:var(--font-main);
+}
+.cat-chip.selected {
+  background:rgba(212,188,150,.15); border-color:var(--accent); color:var(--accent);
+}
+
+/* ── 확인 모달 ── */
+.confirm-modal .modal-box { max-width:380px; }
+.confirm-text { font-size:13px; color:var(--text); line-height:1.6; }
+
+/* ── 반응형 ── */
+@media(max-width:768px) {
+  #sidebar { width:200px; }
+  .article-view-body { padding:18px 16px; }
+  .article-view-header { padding:14px 16px 10px; }
+}
+@media(max-width:560px) {
+  #sidebar { display:none; }
+}
+
+/* ── TOAST ── */
+#wikiToast {
+  position:fixed; bottom:20px; left:50%;
+  transform:translateX(-50%) translateY(16px);
+  z-index:5000; background:var(--surface); border:1px solid var(--border);
+  border-radius:9px; padding:10px 18px; font-size:13px; color:var(--text);
+  box-shadow:0 8px 28px rgba(0,0,0,.4); opacity:0;
+  transition:all .25s; pointer-events:none; white-space:nowrap;
+}
+#wikiToast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div id="wikiHeader">
+  <div class="wiki-title">
+    <span>📖</span>
+    <span>DRGO WIKI</span>
+  </div>
+  <div class="header-right">
+    <input type="text" id="searchInput" placeholder="🔍 제목 검색…">
+    <button class="hdr-btn primary" id="newArticleBtn">＋ 새 문서</button>
+  </div>
+</div>
+
+<!-- ── LAYOUT ── -->
+<div id="layout">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sidebar-section-header">
+      <span id="articleCount">문서 목록</span>
+    </div>
+    <div id="articleList">
+      <div class="empty-list">📄 문서가 없습니다<br>새 문서를 작성해 보세요</div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="mainArea">
+    <!-- 웰컴 -->
+    <div id="wikiWelcome">
+      <div class="welcome-big">WIKI</div>
+      <div class="welcome-desc">좌측 목록에서 문서를 선택하거나 새 문서를 작성하세요</div>
+    </div>
+
+    <!-- 문서 뷰 -->
+    <div id="articleView">
+      <div class="article-view-header">
+        <div class="article-view-category" id="viewCategory"></div>
+        <div class="article-view-title" id="viewTitle"></div>
+        <div class="article-view-meta" id="viewMeta"></div>
+        <div class="article-view-actions">
+          <button class="hdr-btn" id="editBtn">✏️ 편집</button>
+          <button class="hdr-btn" id="deleteBtn" style="color:var(--red); border-color:var(--red);">🗑 삭제</button>
+        </div>
+      </div>
+      <div class="article-view-body" id="viewBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── 새/편집 MODAL ── -->
+<div class="modal-backdrop" id="editModal">
+  <div class="modal-box wide">
+    <div class="modal-header">
+      <div class="modal-title" id="editModalTitle">새 문서 작성</div>
+      <button class="modal-close" id="editModalClose">×</button>
+    </div>
+    <div class="modal-body">
+      <!-- 카테고리 -->
+      <div class="form-row">
+        <label class="form-label">카테고리</label>
+        <div class="cat-chips" id="catChips"></div>
+        <input type="text" class="form-input" id="newCatInput"
+          placeholder="새 카테고리 입력 후 Enter" style="margin-top:8px; display:none;">
+      </div>
+      <!-- 제목 -->
+      <div class="form-row">
+        <label class="form-label">제목</label>
+        <input type="text" class="form-input" id="articleTitle" placeholder="문서 제목을 입력하세요">
+      </div>
+      <!-- 에디터 -->
+      <div class="form-row">
+        <label class="form-label">내용 <span style="color:var(--text-muted);font-size:10px;">(이미지 버튼으로 본문에 이미지 삽입 가능)</span></label>
+        <div id="editorToolbar">
+          <button class="toolbar-btn" data-cmd="bold" title="굵게"><b>B</b></button>
+          <button class="toolbar-btn" data-cmd="italic" title="기울임"><i>I</i></button>
+          <button class="toolbar-btn" data-cmd="underline" title="밑줄"><u>U</u></button>
+          <div class="toolbar-sep"></div>
+          <button class="toolbar-btn" data-cmd="h2" title="제목2">H2</button>
+          <button class="toolbar-btn" data-cmd="h3" title="제목3">H3</button>
+          <div class="toolbar-sep"></div>
+          <button class="toolbar-btn" data-cmd="insertUnorderedList" title="목록">• 목록</button>
+          <button class="toolbar-btn" data-cmd="insertOrderedList" title="번호목록">1. 목록</button>
+          <div class="toolbar-sep"></div>
+          <button class="toolbar-btn" data-cmd="insertHorizontalRule" title="구분선">― 선</button>
+          <div class="toolbar-sep"></div>
+          <button class="toolbar-btn" id="imgInsertBtn" title="이미지 삽입">🖼 이미지</button>
+        </div>
+        <div id="articleEditor" contenteditable="true" data-placeholder="내용을 입력하세요…"></div>
+        <!-- 이미지 업로드 히든 input -->
+        <input type="file" id="imgFileInput" accept="image/*" style="display:none" multiple>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="hdr-btn" id="cancelEditBtn">취소</button>
+      <button class="hdr-btn primary" id="saveArticleBtn">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 삭제 확인 MODAL ── -->
+<div class="modal-backdrop confirm-modal" id="confirmModal">
+  <div class="modal-box" style="max-width:360px;">
+    <div class="modal-header">
+      <div class="modal-title">문서 삭제</div>
+      <button class="modal-close" id="confirmClose">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="confirm-text">이 문서를 삭제하시겠습니까?<br>삭제된 문서는 복구할 수 없습니다.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="hdr-btn" id="confirmCancel">취소</button>
+      <button class="hdr-btn" id="confirmDelete" style="background:var(--red);color:#fff;border-color:var(--red);">삭제</button>
+    </div>
+  </div>
+</div>
+
+<div id="wikiToast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import {
+  getFirestore, collection, doc,
+  getDocs, addDoc, updateDoc, deleteDoc,
+  query, orderBy, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyDnEOATYmwq0WJr6pCl-86-Q3ZEQjrrfeY",
+  authDomain:        "drgo-calender.firebaseapp.com",
+  projectId:         "drgo-calender",
+  storageBucket:     "drgo-calender.firebasestorage.app",
+  messagingSenderId: "163730741115",
+  appId:             "1:163730741115:web:73a06d5b1cf1a477734fde"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+const COL = 'wiki_articles';
+
+/* ── STATE ── */
+let articles       = [];
+let categories     = new Set(['일반','운영','영업','기술']);
+let selectedCat    = null;
+let currentId      = null;  // 현재 열람 중인 문서 ID
+let editingId      = null;  // 편집 중인 문서 ID (null = 신규)
+let searchQuery    = '';
+
+/* ── HELPERS ── */
+function toast(msg) {
+  const t = document.getElementById('wikiToast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+function formatDate(ts) {
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString('ko-KR', { year:'numeric', month:'2-digit', day:'2-digit' })
+         .replace(/\. /g,'.').replace('.','년 ').replace('.','월 ').replace('.','일');
+}
+
+/* ── LOAD ── */
+async function loadArticles() {
+  try {
+    const q   = query(collection(db, COL), orderBy('createdAt','desc'));
+    const snap = await getDocs(q);
+    articles = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    // 카테고리 수집
+    articles.forEach(a => { if (a.category) categories.add(a.category); });
+    renderList();
+  } catch(e) {
+    console.error(e);
+    toast('데이터 로드 실패');
+  }
+}
+
+/* ── RENDER LIST ── */
+function renderList() {
+  const list  = document.getElementById('articleList');
+  const count = document.getElementById('articleCount');
+  let filtered = articles;
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    filtered = filtered.filter(a => a.title?.toLowerCase().includes(q)
+                                  || a.category?.toLowerCase().includes(q));
+  }
+  count.textContent = `문서 ${filtered.length}건`;
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty-list">${searchQuery ? '🔍 검색 결과 없음' : '📄 문서가 없습니다<br>새 문서를 작성해 보세요'}</div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(a => `
+    <div class="article-item${a.id===currentId?' active':''}" data-id="${a.id}">
+      <div class="article-item-icon">📄</div>
+      <div class="article-item-body">
+        ${a.category ? `<div class="article-item-cat">${a.category}</div>` : ''}
+        <div class="article-item-title">${escHtml(a.title||'(제목 없음)')}</div>
+        <div class="article-item-meta">${formatDate(a.updatedAt || a.createdAt)}</div>
+      </div>
+    </div>
+  `).join('');
+  list.querySelectorAll('.article-item').forEach(el => {
+    el.addEventListener('click', () => openArticle(el.dataset.id));
+  });
+}
+
+/* ── OPEN ARTICLE ── */
+function openArticle(id) {
+  const art = articles.find(a => a.id === id);
+  if (!art) return;
+  currentId = id;
+  document.getElementById('wikiWelcome').style.display = 'none';
+  const view = document.getElementById('articleView');
+  view.classList.add('show');
+  document.getElementById('viewCategory').textContent = art.category || '';
+  document.getElementById('viewTitle').textContent    = art.title    || '';
+  document.getElementById('viewMeta').innerHTML =
+    `<span>✏️ ${formatDate(art.updatedAt || art.createdAt)}</span>` +
+    (art.author ? `<span>👤 ${escHtml(art.author)}</span>` : '');
+  document.getElementById('viewBody').innerHTML = art.content || '';
+  renderList();
+}
+
+/* ── EDIT MODAL ── */
+function openEditModal(id) {
+  editingId = id || null;
+  const art = id ? articles.find(a => a.id === id) : null;
+  document.getElementById('editModalTitle').textContent = art ? '문서 편집' : '새 문서 작성';
+  document.getElementById('articleTitle').value = art?.title || '';
+  document.getElementById('articleEditor').innerHTML = art?.content || '';
+  selectedCat = art?.category || null;
+  renderCatChips();
+  document.getElementById('editModal').classList.add('open');
+  setTimeout(() => document.getElementById('articleTitle').focus(), 100);
+}
+function closeEditModal() {
+  document.getElementById('editModal').classList.remove('open');
+  editingId = null;
+  document.getElementById('articleEditor').innerHTML = '';
+  document.getElementById('articleTitle').value = '';
+}
+
+/* ── CATEGORIES ── */
+function renderCatChips() {
+  const wrap = document.getElementById('catChips');
+  const cats = [...categories];
+  wrap.innerHTML = cats.map(c =>
+    `<button class="cat-chip${c===selectedCat?' selected':''}" data-cat="${c}">${c}</button>`
+  ).join('') +
+  `<button class="cat-chip" id="addCatChip" style="border-style:dashed;">＋ 추가</button>`;
+
+  wrap.querySelectorAll('.cat-chip[data-cat]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedCat = selectedCat === btn.dataset.cat ? null : btn.dataset.cat;
+      renderCatChips();
+    });
+  });
+  document.getElementById('addCatChip').addEventListener('click', () => {
+    const inp = document.getElementById('newCatInput');
+    inp.style.display = inp.style.display === 'none' ? 'block' : 'none';
+    if (inp.style.display !== 'none') inp.focus();
+  });
+}
+document.getElementById('newCatInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const v = e.target.value.trim();
+    if (v) { categories.add(v); selectedCat = v; renderCatChips(); }
+    e.target.value = ''; e.target.style.display = 'none';
+  }
+});
+
+/* ── EDITOR TOOLBAR ── */
+document.querySelectorAll('.toolbar-btn[data-cmd]').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.preventDefault();
+    const cmd = btn.dataset.cmd;
+    const editor = document.getElementById('articleEditor');
+    editor.focus();
+    if (cmd === 'h2') {
+      document.execCommand('formatBlock', false, 'h2');
+    } else if (cmd === 'h3') {
+      document.execCommand('formatBlock', false, 'h3');
+    } else {
+      document.execCommand(cmd, false, null);
+    }
+  });
+});
+
+/* ── IMAGE INSERT ── */
+document.getElementById('imgInsertBtn').addEventListener('click', () => {
+  document.getElementById('imgFileInput').click();
+});
+
+document.getElementById('imgFileInput').addEventListener('change', async e => {
+  const files = Array.from(e.target.files);
+  const editor = document.getElementById('articleEditor');
+  editor.focus();
+  for (const file of files) {
+    await insertImageFile(file, editor);
+  }
+  e.target.value = '';
+});
+
+// 에디터 내 drag & drop 이미지
+const editor = document.getElementById('articleEditor');
+editor.addEventListener('dragover', e => { e.preventDefault(); });
+editor.addEventListener('drop', async e => {
+  e.preventDefault();
+  const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+  for (const file of files) {
+    await insertImageFile(file, editor);
+  }
+});
+
+// 클립보드 붙여넣기 이미지
+editor.addEventListener('paste', async e => {
+  const items = Array.from(e.clipboardData?.items || []);
+  const imgItems = items.filter(i => i.type.startsWith('image/'));
+  if (!imgItems.length) return;
+  e.preventDefault();
+  for (const item of imgItems) {
+    const file = item.getAsFile();
+    if (file) await insertImageFile(file, editor);
+  }
+});
+
+async function insertImageFile(file, editorEl) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const src = ev.target.result;
+      // selection 위치에 이미지 삽입
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0 && editorEl.contains(sel.anchorNode)) {
+        const range = sel.getRangeAt(0);
+        const img = document.createElement('img');
+        img.src = src;
+        img.style.maxWidth = '100%';
+        range.deleteContents();
+        range.insertNode(img);
+        // 커서를 이미지 뒤로
+        range.setStartAfter(img);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      } else {
+        editorEl.innerHTML += `<img src="${src}" style="max-width:100%;">`;
+      }
+      resolve();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ── SAVE ── */
+document.getElementById('saveArticleBtn').addEventListener('click', saveArticle);
+async function saveArticle() {
+  const title   = document.getElementById('articleTitle').value.trim();
+  const content = document.getElementById('articleEditor').innerHTML.trim();
+  if (!title)   { toast('제목을 입력하세요'); return; }
+  if (!content || content === '') { toast('내용을 입력하세요'); return; }
+
+  const author = sessionStorage.getItem('crm_display_name')
+               || localStorage.getItem('cal_auth_name') || '';
+  const data = {
+    title, content,
+    category: selectedCat || '일반',
+    author,
+    updatedAt: serverTimestamp(),
+  };
+
+  try {
+    if (editingId) {
+      await updateDoc(doc(db, COL, editingId), data);
+      toast('문서가 수정되었습니다');
+    } else {
+      data.createdAt = serverTimestamp();
+      const ref = await addDoc(collection(db, COL), data);
+      editingId = ref.id;
+    }
+    closeEditModal();
+    await loadArticles();
+    openArticle(editingId);
+  } catch(e) {
+    console.error(e);
+    toast('저장 실패');
+  }
+}
+
+/* ── DELETE ── */
+let deletingId = null;
+document.getElementById('deleteBtn').addEventListener('click', () => {
+  deletingId = currentId;
+  document.getElementById('confirmModal').classList.add('open');
+});
+document.getElementById('confirmDelete').addEventListener('click', async () => {
+  if (!deletingId) return;
+  try {
+    await deleteDoc(doc(db, COL, deletingId));
+    toast('문서가 삭제되었습니다');
+    currentId = null;
+    document.getElementById('articleView').classList.remove('show');
+    document.getElementById('wikiWelcome').style.display = '';
+  } catch(e) {
+    toast('삭제 실패');
+  }
+  document.getElementById('confirmModal').classList.remove('open');
+  deletingId = null;
+  await loadArticles();
+});
+document.getElementById('confirmCancel').addEventListener('click', () => {
+  document.getElementById('confirmModal').classList.remove('open');
+});
+document.getElementById('confirmClose').addEventListener('click', () => {
+  document.getElementById('confirmModal').classList.remove('open');
+});
+
+/* ── EDIT ── */
+document.getElementById('editBtn').addEventListener('click', () => {
+  if (currentId) openEditModal(currentId);
+});
+
+/* ── NEW ── */
+document.getElementById('newArticleBtn').addEventListener('click', () => openEditModal(null));
+
+/* ── MODAL CLOSE ── */
+document.getElementById('editModalClose').addEventListener('click', closeEditModal);
+document.getElementById('cancelEditBtn').addEventListener('click', closeEditModal);
+document.getElementById('editModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('editModal')) closeEditModal();
+});
+
+/* ── SEARCH ── */
+document.getElementById('searchInput').addEventListener('input', e => {
+  searchQuery = e.target.value.trim();
+  renderList();
+});
+
+/* ── ESC ── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.getElementById('editModal').classList.remove('open');
+    document.getElementById('confirmModal').classList.remove('open');
+  }
+});
+
+/* ── UTILS ── */
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ── INIT ── */
+loadArticles();
+renderCatChips();
+</script>
+</body>
+</html>
