@@ -216,10 +216,18 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
 .tl-time{font-size:10px;font-family:var(--font-mono);color:var(--text-muted);margin-bottom:4px;}
 .tl-bubble{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:11px 13px;font-size:13px;color:var(--text);line-height:1.65;white-space:pre-wrap;word-break:break-word;}
 .tl-author{font-size:10px;font-family:var(--font-mono);color:var(--text-muted);margin-top:5px;}
+.tl-item-actions{display:flex;gap:5px;margin-top:6px;}
+.tl-edit-btn{font-size:10px;padding:2px 8px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;font-family:var(--font-mono);transition:all .15s;}
+.tl-edit-btn:hover{border-color:var(--accent);color:var(--accent);}
+.tl-edit-btn.del:hover{border-color:var(--red,#c87070);color:var(--red,#c87070);}
+.tl-edit-area{width:100%;min-height:60px;padding:9px 11px;background:var(--surface3);border:1px solid var(--accent);border-radius:9px;color:var(--text);font-size:13px;line-height:1.65;resize:vertical;font-family:var(--font-main);box-sizing:border-box;margin-top:4px;}
+.tl-edit-actions{display:flex;gap:6px;margin-top:6px;}
+.tl-save-btn{font-size:11px;padding:4px 12px;border-radius:6px;border:none;background:var(--accent);color:#1a1207;cursor:pointer;font-weight:700;}
+.tl-cancel-btn{font-size:11px;padding:4px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;}
 .tl-add{margin-top:12px;border:1px solid var(--border);border-radius:9px;overflow:hidden;}
-.tl-add-head{padding:9px 13px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.tl-add-head{padding:9px 13px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap;cursor:pointer;}
 .taf-label{font-size:10px;font-family:var(--font-mono);color:var(--text-muted);letter-spacing:.1em;}
-.taf-dt{padding:5px 9px;background:var(--surface3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:11px;font-family:var(--font-mono);outline:none;transition:border-color .2s;}
+.taf-dt{padding:5px 9px;background:var(--surface3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:11px;font-family:var(--font-mono);outline:none;transition:border-color .2s;flex:1;min-width:180px;cursor:pointer;}
 .taf-dt:focus{border-color:var(--accent);}
 .tl-add-body{display:flex;align-items:flex-end;}
 .tl-textarea{flex:1;padding:11px 13px;background:var(--surface);border:none;color:var(--text);font-family:var(--font-main);font-size:13px;resize:none;outline:none;min-height:68px;line-height:1.6;}
@@ -1167,19 +1175,100 @@ function initApp(){
       const da=ta.toDate?ta.toDate():new Date(ta), db2=tb.toDate?tb.toDate():new Date(tb);
       return da-db2;
     });
-    el.innerHTML=sorted.map(e=>`
-      <div class="tl-item">
+    el.innerHTML=sorted.map((e,i)=>`
+      <div class="tl-item" data-idx="${i}">
         <div class="tl-line"><div class="tl-dot"></div><div class="tl-connector"></div></div>
         <div class="tl-content">
           <div class="tl-time">${fmtDateTime(e.time||e.createdAt)}</div>
-          <div class="tl-bubble">${esc(e.text||'')}</div>
+          <div class="tl-bubble" data-view="true">${esc(e.text||'')}</div>
           ${e.author?`<div class="tl-author">— ${esc(e.author)}</div>`:''}
+          <div class="tl-item-actions">
+            <button class="tl-edit-btn" data-action="edit" data-idx="${i}">✏️ 수정</button>
+            <button class="tl-edit-btn del" data-action="del" data-idx="${i}">🗑 삭제</button>
+          </div>
         </div>
       </div>
     `).join('');
+    /* 수정/삭제 이벤트 바인딩 */
+    el.querySelectorAll('[data-action]').forEach(btn=>{
+      btn.addEventListener('click', ()=>handleTlAction(btn.dataset.action, parseInt(btn.dataset.idx), sorted));
+    });
   }
 
   /* timeline entry submit */
+  /* 상담시간 영역 클릭 시 datetime 입력창 포커스 및 열기 */
+  document.querySelector('.tl-add-head').addEventListener('click', (e)=>{
+    const dtInput = document.getElementById('cdEntryTime');
+    if(e.target !== dtInput){ dtInput.focus(); try{ dtInput.showPicker(); }catch(_){} }
+  });
+
+  /* ── 타임라인 항목 수정/삭제 ── */
+  async function handleTlAction(action, idx, sorted){
+    if(!selectedClient||!editingConsultId) return;
+    const cdoc=doc(db,`crm_clients/${selectedClient._id}/consultations`,editingConsultId);
+    const snap=await getDoc(cdoc);
+    if(!snap.exists()) return;
+    const entries=[...(snap.data().entries||[])];
+
+    if(action==='del'){
+      const ok=await showConfirm('항목 삭제','이 상담 내용을 삭제하시겠습니까?','🗑️');
+      if(!ok) return;
+      const target=sorted[idx];
+      const removeIdx=entries.findIndex(e=>
+        (e.text===target.text) &&
+        (fmtDateTime(e.time||e.createdAt)===fmtDateTime(target.time||target.createdAt))
+      );
+      if(removeIdx>=0) entries.splice(removeIdx,1);
+      await updateDoc(cdoc,{entries});
+      consultations=consultations.map(c=>c._id===editingConsultId?{...c,entries}:c);
+      renderTimeline(entries);
+      showToast('삭제되었습니다');
+      return;
+    }
+
+    if(action==='edit'){
+      const tlEl=document.getElementById('cdTimeline');
+      const itemEl=tlEl.querySelector(`.tl-item[data-idx="${idx}"]`);
+      if(!itemEl) return;
+      const bubbleEl=itemEl.querySelector('.tl-bubble');
+      const actionsEl=itemEl.querySelector('.tl-item-actions');
+      const origText=sorted[idx].text||'';
+      bubbleEl.style.display='none';
+      if(actionsEl) actionsEl.style.display='none';
+      const editArea=document.createElement('textarea');
+      editArea.className='tl-edit-area';
+      editArea.value=origText;
+      const editActions=document.createElement('div');
+      editActions.className='tl-edit-actions';
+      editActions.innerHTML=`<button class="tl-save-btn">저장</button><button class="tl-cancel-btn">취소</button>`;
+      const content=itemEl.querySelector('.tl-content');
+      content.appendChild(editArea);
+      content.appendChild(editActions);
+      editArea.focus();
+      editArea.setSelectionRange(editArea.value.length,editArea.value.length);
+      editActions.querySelector('.tl-save-btn').addEventListener('click', async ()=>{
+        const newText=editArea.value.trim();
+        if(!newText){ showToast('내용을 입력하세요','error'); return; }
+        const target=sorted[idx];
+        const editIdx=entries.findIndex(e=>
+          (e.text===target.text) &&
+          (fmtDateTime(e.time||e.createdAt)===fmtDateTime(target.time||target.createdAt))
+        );
+        if(editIdx>=0){ entries[editIdx]={...entries[editIdx],text:newText}; }
+        await updateDoc(cdoc,{entries});
+        consultations=consultations.map(c=>c._id===editingConsultId?{...c,entries}:c);
+        renderTimeline(entries);
+        showToast('수정되었습니다','success');
+      });
+      editActions.querySelector('.tl-cancel-btn').addEventListener('click', ()=>{
+        bubbleEl.style.display='';
+        if(actionsEl) actionsEl.style.display='';
+        editArea.remove();
+        editActions.remove();
+      });
+    }
+  }
+
   document.getElementById('cdEntrySubmit').addEventListener('click', async ()=>{
     if(!selectedClient||!editingConsultId) return;
     const text=document.getElementById('cdEntryText').value.trim();
