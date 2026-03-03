@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>캘린더 관리자 — DB Manager</title>
+<title>DB Manager — DRGO Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -447,6 +447,145 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
   header { padding:12px 16px; }
   .sort-bar { padding:10px 16px; }
 }
+
+/* ── DB SECTION TABS ── */
+#dbTabBar {
+  display:flex; align-items:center; gap:0;
+  padding:0 32px; border-bottom:1px solid var(--border);
+  background:var(--bg); position:sticky; top:57px; z-index:9; overflow-x:auto;
+}
+#dbTabBar::-webkit-scrollbar { display:none; }
+.db-tab {
+  padding:12px 20px; font-size:12px; font-weight:600; font-family:var(--font-mono);
+  letter-spacing:0.1em; text-transform:uppercase; color:var(--text-muted);
+  border-bottom:2px solid transparent; cursor:pointer; white-space:nowrap;
+  transition:all 0.15s; display:flex; align-items:center; gap:7px;
+}
+.db-tab:hover { color:var(--text); }
+.db-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+.db-tab-count {
+  background:var(--surface2); color:var(--text-muted); border:1px solid var(--border);
+  font-size:10px; padding:1px 7px; border-radius:10px; font-family:var(--font-mono);
+}
+.db-tab.active .db-tab-count { background:rgba(212,188,150,0.15); border-color:var(--accent); color:var(--accent); }
+
+/* ── SECTION WRAPPER ── */
+.db-section { display:none; }
+.db-section.active { display:block; }
+
+/* ── LOG MODAL (신규/삭제) ── */
+.log-modal-overlay {
+  display:none; position:fixed; inset:0; z-index:500;
+  background:rgba(0,0,0,0.75); backdrop-filter:blur(5px);
+  align-items:center; justify-content:center; padding:20px;
+}
+.log-modal-overlay.open { display:flex; }
+.log-modal-box {
+  background:var(--surface); border:1px solid var(--border); border-radius:16px;
+  width:100%; max-width:620px; max-height:82vh; display:flex; flex-direction:column;
+  animation:modalIn 0.2s ease; overflow:hidden;
+}
+.log-modal-head {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:16px 22px; border-bottom:1px solid var(--border); flex-shrink:0;
+}
+.log-modal-head-title { font-size:14px; font-weight:700; display:flex; align-items:center; gap:8px; }
+.log-modal-head-sub { font-size:11px; color:var(--text-muted); font-family:var(--font-mono); margin-top:2px; }
+.log-modal-body { overflow-y:auto; padding:14px 20px 16px; flex:1; display:flex; flex-direction:column; gap:10px; }
+.log-entry {
+  background:var(--surface2); border-radius:10px; border:1px solid var(--border); overflow:hidden;
+}
+.log-entry-head {
+  display:flex; align-items:center; gap:8px; padding:10px 14px;
+  border-bottom:1px solid var(--border); background:rgba(255,255,255,0.02); flex-wrap:wrap;
+}
+.log-badge-create { background:rgba(136,212,136,0.2); color:var(--green); border:1px solid rgba(136,212,136,0.3); font-family:var(--font-mono); font-size:10px; padding:2px 8px; border-radius:4px; letter-spacing:0.1em; }
+.log-badge-delete { background:rgba(212,136,136,0.2); color:var(--red); border:1px solid rgba(212,136,136,0.3); font-family:var(--font-mono); font-size:10px; padding:2px 8px; border-radius:4px; letter-spacing:0.1em; }
+.log-badge-update { background:rgba(144,188,212,0.2); color:var(--accent2); border:1px solid rgba(144,188,212,0.3); font-family:var(--font-mono); font-size:10px; padding:2px 8px; border-radius:4px; letter-spacing:0.1em; }
+.log-user-tag { font-family:var(--font-mono); font-size:12px; color:var(--accent); font-weight:600; }
+.log-time-tag { font-family:var(--font-mono); font-size:11px; color:var(--text-muted); margin-left:auto; white-space:nowrap; }
+.log-entry-body { padding:10px 14px; font-size:12px; color:var(--text-muted); }
+.log-entry-title { font-size:13px; color:var(--text); font-weight:500; margin-bottom:4px; }
+.log-changes-wrap { display:flex; flex-direction:column; gap:6px; margin-top:6px; }
+.log-change-row { display:grid; grid-template-columns:80px 1fr; gap:8px; align-items:start; }
+.log-field-name { font-family:var(--font-mono); font-size:10px; letter-spacing:0.08em; color:var(--text-muted); text-transform:uppercase; padding-top:4px; word-break:keep-all; }
+.log-before { font-size:12px; color:var(--red); background:rgba(212,136,136,0.1); border-radius:4px; padding:3px 8px; text-decoration:line-through; opacity:0.8; white-space:pre-wrap; word-break:break-word; }
+.log-after  { font-size:12px; color:var(--green); background:rgba(136,212,136,0.1); border-radius:4px; padding:3px 8px; white-space:pre-wrap; word-break:break-word; }
+.log-empty-msg { text-align:center; padding:40px 0; color:var(--text-muted); font-size:13px; }
+.log-pg-bar { display:flex; align-items:center; justify-content:center; gap:8px; padding:10px 20px 14px; border-top:1px solid var(--border); flex-shrink:0; }
+.log-pg-btn { background:none; border:1px solid var(--border); color:var(--text-muted); width:28px; height:28px; border-radius:6px; cursor:pointer; font-size:12px; display:flex; align-items:center; justify-content:center; transition:all 0.15s; }
+.log-pg-btn:hover:not(:disabled) { border-color:var(--accent); color:var(--accent); }
+.log-pg-btn:disabled { opacity:0.3; cursor:default; }
+.log-pg-info { font-family:var(--font-mono); font-size:11px; color:var(--text-muted); min-width:70px; text-align:center; }
+
+/* ── CRM / WIKI 테이블 ── */
+.generic-toolbar {
+  display:flex; align-items:center; gap:12px; padding:16px 32px;
+  border-bottom:1px solid var(--border); flex-wrap:wrap;
+}
+.generic-sort-bar {
+  display:grid; align-items:center; padding:10px 32px;
+  border-bottom:1px solid var(--border); font-family:var(--font-mono);
+  font-size:11px; color:var(--text-muted); letter-spacing:0.1em; text-transform:uppercase;
+  gap:10px;
+}
+.gsb-clients { grid-template-columns:36px 2fr 1fr 1fr 80px 80px; }
+.gsb-wiki    { grid-template-columns:36px 2fr 1fr 1fr 80px 80px; }
+.generic-container { padding:0 32px 100px; }
+.generic-row {
+  display:grid; align-items:center; padding:12px 4px;
+  border-bottom:1px solid rgba(58,58,58,0.6);
+  gap:10px; cursor:pointer; transition:background 0.12s; border-radius:4px;
+}
+.generic-row:hover { background:var(--surface); }
+.generic-row.selected { background:rgba(212,188,150,0.08); }
+.gr-clients { grid-template-columns:36px 2fr 1fr 1fr 80px 80px; }
+.gr-wiki    { grid-template-columns:36px 2fr 1fr 1fr 80px 80px; }
+.gr-name { font-size:14px; font-weight:500; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.gr-sub  { font-size:11px; color:var(--text-muted); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.gr-cell { font-size:12px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* ── 백업 옵션 모달 ── */
+.backup-modal { max-width:480px; }
+.backup-option-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 14px; background:var(--surface2); border-radius:8px; border:1px solid var(--border);
+  margin-bottom:8px;
+}
+.backup-option-label { font-size:13px; color:var(--text); display:flex; flex-direction:column; gap:2px; }
+.backup-option-sub { font-size:11px; color:var(--text-muted); }
+.backup-toggle {
+  position:relative; width:42px; height:24px; flex-shrink:0;
+}
+.backup-toggle input { opacity:0; width:0; height:0; position:absolute; }
+.backup-toggle-track {
+  position:absolute; inset:0; border-radius:12px; background:var(--surface3); border:1px solid var(--border);
+  cursor:pointer; transition:all 0.2s;
+}
+.backup-toggle input:checked ~ .backup-toggle-track { background:var(--accent); border-color:var(--accent); }
+.backup-toggle-thumb {
+  position:absolute; top:3px; left:3px; width:16px; height:16px;
+  background:#fff; border-radius:50%; transition:transform 0.2s; pointer-events:none;
+}
+.backup-toggle input:checked ~ .backup-toggle-track .backup-toggle-thumb { transform:translateX(18px); }
+.backup-section-select { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+.backup-sect-btn {
+  padding:7px 14px; border-radius:7px; border:1px solid var(--border);
+  background:var(--surface2); color:var(--text-muted); font-size:12px;
+  cursor:pointer; transition:all 0.15s; font-family:var(--font-main); font-weight:500;
+}
+.backup-sect-btn:hover { border-color:var(--accent); color:var(--accent); }
+.backup-sect-btn.on { border-color:var(--accent); background:rgba(212,188,150,0.15); color:var(--accent); font-weight:600; }
+.backup-warn { font-size:11px; color:var(--text-muted); padding:8px 12px; background:var(--surface2); border-radius:8px; border:1px solid var(--border); line-height:1.6; }
+
+@media (max-width:900px) {
+  #dbTabBar { padding:0 16px; }
+  .generic-toolbar { padding:12px 16px; }
+  .generic-container { padding:0 16px 100px; }
+  .generic-sort-bar { padding:10px 16px; }
+  .gsb-clients, .gr-clients { grid-template-columns:36px 2fr 80px 80px; }
+  .gsb-wiki, .gr-wiki { grid-template-columns:36px 2fr 80px 80px; }
+}
 </style>
 </head>
 <body>
@@ -480,7 +619,7 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
 </header>
 
 <!-- ═══ STATS ═══ -->
-<div class="stats-bar" id="statsBar">
+<div class="stats-bar" id="statsBar" style="grid-template-columns:repeat(8,1fr);">
   <div class="stat-card">
     <div class="stat-label">전체 일정</div>
     <div class="stat-value" id="st-total">—</div>
@@ -504,6 +643,109 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
   <div class="stat-card">
     <div class="stat-label">미팅/내방</div>
     <div class="stat-value purple" id="st-purple">—</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">CRM 고객</div>
+    <div class="stat-value" id="st-crm">—</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">위키 문서</div>
+    <div class="stat-value" id="st-wiki">—</div>
+  </div>
+</div>
+
+<!-- ═══ DB SECTION TABS ═══ -->
+<div id="dbTabBar">
+  <div class="db-tab active" data-db="calendar">📅 캘린더 <span class="db-tab-count" id="cnt-cal">—</span></div>
+  <div class="db-tab" data-db="crm">👥 CRM <span class="db-tab-count" id="cnt-crm">—</span></div>
+  <div class="db-tab" data-db="wiki">📖 위키 <span class="db-tab-count" id="cnt-wiki">—</span></div>
+</div>
+
+<!-- ═══ LOG MODALS ═══ -->
+<!-- 신규등록 로그 -->
+<div class="log-modal-overlay" id="createLogOverlay">
+  <div class="log-modal-box">
+    <div class="log-modal-head">
+      <div>
+        <div class="log-modal-head-title">🆕 신규 등록 내역 <span id="createLogSection" style="font-size:11px;color:var(--text-muted);"></span></div>
+        <div class="log-modal-head-sub" id="createLogCount"></div>
+      </div>
+      <button class="icon-btn" id="createLogClose">✕</button>
+    </div>
+    <div class="log-modal-body" id="createLogBody"></div>
+    <div class="log-pg-bar" id="createLogPgBar" style="display:none;">
+      <button class="log-pg-btn" id="clPgPrev">‹</button>
+      <span class="log-pg-info" id="clPgInfo"></span>
+      <button class="log-pg-btn" id="clPgNext">›</button>
+    </div>
+  </div>
+</div>
+
+<!-- 삭제 로그 -->
+<div class="log-modal-overlay" id="deleteLogOverlay">
+  <div class="log-modal-box">
+    <div class="log-modal-head">
+      <div>
+        <div class="log-modal-head-title">🗑 삭제 내역 <span id="deleteLogSection" style="font-size:11px;color:var(--text-muted);"></span></div>
+        <div class="log-modal-head-sub" id="deleteLogCount"></div>
+      </div>
+      <button class="icon-btn" id="deleteLogClose">✕</button>
+    </div>
+    <div class="log-modal-body" id="deleteLogBody"></div>
+    <div class="log-pg-bar" id="deleteLogPgBar" style="display:none;">
+      <button class="log-pg-btn" id="dlPgPrev">‹</button>
+      <span class="log-pg-info" id="dlPgInfo"></span>
+      <button class="log-pg-btn" id="dlPgNext">›</button>
+    </div>
+  </div>
+</div>
+
+<!-- 백업 옵션 모달 -->
+<div class="modal-overlay" id="backupModalOverlay">
+  <div class="modal backup-modal">
+    <div class="modal-strip" style="background:var(--accent);"></div>
+    <div class="modal-header">
+      <div class="modal-header-info">
+        <div class="modal-badge">데이터 백업</div>
+        <div class="modal-event-title">백업 옵션 선택</div>
+      </div>
+      <button class="modal-close" id="backupModalClose">✕</button>
+    </div>
+    <div class="modal-body" style="padding:20px 24px;">
+      <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;">백업 대상</div>
+      <div class="backup-section-select" id="backupSectBtns">
+        <button class="backup-sect-btn on" data-sect="calendar">📅 캘린더</button>
+        <button class="backup-sect-btn on" data-sect="crm">👥 CRM</button>
+        <button class="backup-sect-btn on" data-sect="wiki">📖 위키</button>
+      </div>
+      <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-muted);margin:14px 0 10px;">백업 옵션</div>
+      <div class="backup-option-row">
+        <div class="backup-option-label">선택 항목만 백업
+          <span class="backup-option-sub">현재 선택된 행만 백업 (선택 없으면 전체)</span>
+        </div>
+        <label class="backup-toggle">
+          <input type="checkbox" id="backupSelOnly">
+          <div class="backup-toggle-track"><div class="backup-toggle-thumb"></div></div>
+        </label>
+      </div>
+      <div class="backup-option-row">
+        <div class="backup-option-label">이미지 포함 백업 (ZIP)
+          <span class="backup-option-sub">base64 이미지를 개별 파일로 추출 + JSON</span>
+        </div>
+        <label class="backup-toggle">
+          <input type="checkbox" id="backupWithImages">
+          <div class="backup-toggle-track"><div class="backup-toggle-thumb"></div></div>
+        </label>
+      </div>
+      <div class="backup-warn" id="backupWarnText">📦 JSON 파일로 백업됩니다.</div>
+    </div>
+    <div class="modal-footer">
+      <span class="modal-id" id="backupEstimate"></span>
+      <div style="display:flex;gap:10px;">
+        <button class="action-btn" id="backupCancelBtn">취소</button>
+        <button class="action-btn primary" id="backupRunBtn">📤 백업 실행</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -535,6 +777,8 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
   </div>
 </div>
 
+<!-- ═══ CALENDAR SECTION ═══ -->
+<div class="db-section active" id="sec-calendar">
 <!-- ═══ TOOLBAR ═══ -->
 <div class="toolbar">
   <div class="search-wrap">
@@ -563,8 +807,10 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
     <button class="date-range-clear" id="dateRangeClear" style="display:none;">✕ 초기화</button>
   </div>
   <div class="toolbar-right">
-    <button class="action-btn" id="exportBtn">📤 백업 (JSON)</button>
-    <button class="action-btn" id="importBtn">📥 복원 (JSON)</button>
+    <button class="action-btn" id="calLogCreateBtn">🆕 신규 등록</button>
+    <button class="action-btn" id="calLogDeleteBtn">🗑 삭제 내역</button>
+    <button class="action-btn" id="exportBtn">📤 백업</button>
+    <button class="action-btn" id="importBtn">📥 복원</button>
     <button class="action-btn danger" id="bulkDeleteBtn" style="display:none;">🗑 선택 삭제</button>
   </div>
 </div>
@@ -592,6 +838,70 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
   <span class="sel-count" id="selCount" style="display:none;margin-left:8px;"></span>
   <span class="page-info" id="pageInfo"></span>
 </div>
+
+</div><!-- /sec-calendar -->
+
+<!-- ═══ CRM SECTION ═══ -->
+<div class="db-section" id="sec-crm">
+  <div class="generic-toolbar">
+    <div class="search-wrap" style="flex:1;min-width:180px;max-width:320px;">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="crmSearch" placeholder="이름, 전화번호, 플랫폼 검색…">
+    </div>
+    <div class="toolbar-right" style="margin-left:auto;">
+      <button class="action-btn" id="crmLogCreateBtn">🆕 신규 등록</button>
+      <button class="action-btn" id="crmLogDeleteBtn">🗑 삭제 내역</button>
+      <button class="action-btn danger" id="crmBulkDeleteBtn" style="display:none;">🗑 선택 삭제</button>
+    </div>
+  </div>
+  <div class="generic-sort-bar gsb-clients">
+    <div></div>
+    <div>고객명</div>
+    <div>전화번호</div>
+    <div>플랫폼</div>
+    <div>유형</div>
+    <div>작업</div>
+  </div>
+  <div class="generic-container" id="crmList"></div>
+  <div class="pagination" id="crmPagination" style="display:none;">
+    <button class="page-btn" id="crmPagePrev" disabled>‹</button>
+    <div id="crmPageNums" style="display:flex;gap:6px;"></div>
+    <button class="page-btn" id="crmPageNext" disabled>›</button>
+    <span class="sel-count" id="crmSelCount" style="display:none;margin-left:8px;"></span>
+    <span class="page-info" id="crmPageInfo"></span>
+  </div>
+</div><!-- /sec-crm -->
+
+<!-- ═══ WIKI SECTION ═══ -->
+<div class="db-section" id="sec-wiki">
+  <div class="generic-toolbar">
+    <div class="search-wrap" style="flex:1;min-width:180px;max-width:320px;">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="wikiSearch" placeholder="제목, 작성자, 태그 검색…">
+    </div>
+    <div class="toolbar-right" style="margin-left:auto;">
+      <button class="action-btn" id="wikiLogCreateBtn">🆕 신규 등록</button>
+      <button class="action-btn" id="wikiLogDeleteBtn">🗑 삭제 내역</button>
+      <button class="action-btn danger" id="wikiBulkDeleteBtn" style="display:none;">🗑 선택 삭제</button>
+    </div>
+  </div>
+  <div class="generic-sort-bar gsb-wiki">
+    <div></div>
+    <div>제목</div>
+    <div>작성자</div>
+    <div>수정일</div>
+    <div>태그</div>
+    <div>작업</div>
+  </div>
+  <div class="generic-container" id="wikiList"></div>
+  <div class="pagination" id="wikiPagination" style="display:none;">
+    <button class="page-btn" id="wikiPagePrev" disabled>‹</button>
+    <div id="wikiPageNums" style="display:flex;gap:6px;"></div>
+    <button class="page-btn" id="wikiPageNext" disabled>›</button>
+    <span class="sel-count" id="wikiSelCount" style="display:none;margin-left:8px;"></span>
+    <span class="page-info" id="wikiPageInfo"></span>
+  </div>
+</div><!-- /sec-wiki -->
 
 <!-- ═══ DETAIL MODAL ═══ -->
 <div class="modal-overlay" id="detailOverlay">
@@ -665,7 +975,7 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getFirestore, collection, doc, deleteDoc, setDoc, getDoc, getDocs, onSnapshot, serverTimestamp }
+import { getFirestore, collection, doc, deleteDoc, setDoc, addDoc, getDoc, getDocs, onSnapshot, query, where, orderBy, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 /* ══════════════════════════════
@@ -879,8 +1189,9 @@ function initApp() {
     });
   });
 
-  /* -- 백업 -- */
-  document.getElementById('exportBtn').addEventListener('click', exportJSON);
+  /* -- 백업 모달 -- */
+  _backupDb = db;
+  document.getElementById('exportBtn').addEventListener('click', () => openBackupModal('calendar'));
 
   /* -- 복원 -- */
   document.getElementById('importBtn').addEventListener('click', () => {
@@ -954,11 +1265,63 @@ function initApp() {
   /* -- ESC -- */
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
-      document.getElementById('detailOverlay').classList.remove('open');
-      document.getElementById('importOverlay').classList.remove('open');
-      document.getElementById('confirmOverlay').classList.remove('open');
+      ['detailOverlay','importOverlay','confirmOverlay','createLogOverlay','deleteLogOverlay','backupModalOverlay'].forEach(id => {
+        document.getElementById(id)?.classList.remove('open');
+      });
     }
   });
+
+  /* ─── DB 탭 전환 ─── */
+  document.querySelectorAll('.db-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.db-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const db_sec = tab.dataset.db;
+      document.querySelectorAll('.db-section').forEach(s => s.classList.remove('active'));
+      document.getElementById('sec-' + db_sec)?.classList.add('active');
+      /* 페이지네이션 고정 바 숨김/표시 */
+      const calPagi = document.getElementById('pagination');
+      const crmPagi = document.getElementById('crmPagination');
+      const wikiPagi= document.getElementById('wikiPagination');
+      if(calPagi) calPagi.style.display = db_sec==='calendar' ? '' : 'none';
+      if(crmPagi) crmPagi.style.display = db_sec==='crm' ? '' : 'none';
+      if(wikiPagi)wikiPagi.style.display= db_sec==='wiki' ? '' : 'none';
+    });
+  });
+  /* 초기: CRM/위키 페이지네이션 숨김 */
+  document.getElementById('crmPagination').style.display = 'none';
+  document.getElementById('wikiPagination').style.display = 'none';
+
+  /* ─── 로그 버튼 (캘린더) ─── */
+  document.getElementById('calLogCreateBtn').addEventListener('click', () => openLogModal('create','calendar',db));
+  document.getElementById('calLogDeleteBtn').addEventListener('click', () => openLogModal('delete','calendar',db));
+  document.getElementById('createLogClose').addEventListener('click', () => document.getElementById('createLogOverlay').classList.remove('open'));
+  document.getElementById('deleteLogClose').addEventListener('click', () => document.getElementById('deleteLogOverlay').classList.remove('open'));
+  document.getElementById('createLogOverlay').addEventListener('click', e => { if(e.target===document.getElementById('createLogOverlay')) document.getElementById('createLogOverlay').classList.remove('open'); });
+  document.getElementById('deleteLogOverlay').addEventListener('click', e => { if(e.target===document.getElementById('deleteLogOverlay')) document.getElementById('deleteLogOverlay').classList.remove('open'); });
+
+  /* ─── 백업 모달 ─── */
+  document.getElementById('backupModalClose').addEventListener('click', () => document.getElementById('backupModalOverlay').classList.remove('open'));
+  document.getElementById('backupCancelBtn').addEventListener('click',  () => document.getElementById('backupModalOverlay').classList.remove('open'));
+  document.getElementById('backupModalOverlay').addEventListener('click', e => { if(e.target===document.getElementById('backupModalOverlay')) document.getElementById('backupModalOverlay').classList.remove('open'); });
+  document.querySelectorAll('.backup-sect-btn').forEach(btn => {
+    btn.addEventListener('click', () => { btn.classList.toggle('on'); updateBackupEstimate(db); });
+  });
+  document.getElementById('backupSelOnly').addEventListener('change', () => updateBackupEstimate(db));
+  document.getElementById('backupWithImages').addEventListener('change', () => {
+    const hasImg = document.getElementById('backupWithImages').checked;
+    document.getElementById('backupWarnText').textContent = hasImg
+      ? '🖼 JSON + 이미지 파일을 ZIP으로 압축하여 저장합니다. 용량이 클 수 있습니다.'
+      : '📦 JSON 파일로 백업됩니다.';
+    updateBackupEstimate(db);
+  });
+  document.getElementById('backupRunBtn').addEventListener('click', () => runBackup(db));
+
+  /* ─── CRM 섹션 초기화 ─── */
+  initCrmSection(db);
+
+  /* ─── 위키 섹션 초기화 ─── */
+  initWikiSection(db);
 
   /* -- 행 삭제 버튼 (이벤트 위임으로 renderList 이후도 동작) -- */
   document.getElementById('eventList').addEventListener('click', e => {
@@ -974,6 +1337,8 @@ function initApp() {
     if (!ev) return;
     showConfirm('🗑 일정 삭제', `"${ev.title||'(제목 없음)'}" 일정을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`, async () => {
       try {
+        /* 삭제 로그 기록 */
+        await recordLog(db, 'events', id, 'delete', { title:ev.title||'(제목 없음)', color:ev.color, startDate:ev.startDate });
         await deleteDoc(doc(db, 'events', id));
         document.getElementById('detailOverlay').classList.remove('open');
         showToast('일정이 삭제되었습니다', 'success');
@@ -1038,6 +1403,9 @@ function updateStats() {
   document.getElementById('st-red').textContent   = allEvents.filter(e=>e.color==='red').length;
   document.getElementById('st-green').textContent = allEvents.filter(e=>e.color==='green').length;
   document.getElementById('st-purple').textContent= allEvents.filter(e=>e.color==='purple').length;
+  document.getElementById('st-crm').textContent   = _crmAll.length || '—';
+  document.getElementById('st-wiki').textContent  = _wikiAll.length || '—';
+  document.getElementById('cnt-cal').textContent  = allEvents.length;
 }
 
 function renderList() {
@@ -1213,7 +1581,7 @@ function makeSection(title, fields) {
 }
 
 /* ══════════════════════════════
-   EXPORT / IMPORT
+   EXPORT / IMPORT / BACKUP
 ══════════════════════════════ */
 function stripTimestamps(obj) {
   if (obj === null || obj === undefined) return obj;
@@ -1225,19 +1593,234 @@ function stripTimestamps(obj) {
   return result;
 }
 
-function exportJSON() {
-  const toExport = filteredEvents.map(ev => {
-    const { _id, ...rest } = ev;
-    return { _id, ...stripTimestamps(rest) };
+let _backupDb = null;
+let _backupCalData = [];
+
+function openBackupModal(section) {
+  _backupDb = arguments[1] || _backupDb;
+  /* 현재 섹션 버튼 활성화 */
+  document.querySelectorAll('.backup-sect-btn').forEach(b => {
+    if (b.dataset.sect === section) b.classList.add('on');
   });
-  const blob    = new Blob([JSON.stringify(toExport, null, 2)], { type: 'application/json' });
-  const url     = URL.createObjectURL(blob);
-  const a       = document.createElement('a');
+  document.getElementById('backupModalOverlay').classList.add('open');
+  updateBackupEstimate(_backupDb);
+}
+
+function updateBackupEstimate(db) {
+  const sects = [...document.querySelectorAll('.backup-sect-btn.on')].map(b=>b.dataset.sect);
+  const selOnly = document.getElementById('backupSelOnly').checked;
+  const withImg = document.getElementById('backupWithImages').checked;
+  let count = 0;
+  if (sects.includes('calendar')) count += selOnly && selectedIds.size > 0 ? selectedIds.size : filteredEvents.length;
+  const warn = [];
+  if (sects.length === 0) warn.push('⚠️ 백업 대상을 하나 이상 선택하세요.');
+  else warn.push(`대상: ${sects.map(s=>({calendar:'캘린더',crm:'CRM',wiki:'위키'}[s]||s)).join(', ')}`);
+  if (selOnly && selectedIds.size > 0) warn.push(`선택 항목: ${selectedIds.size}개`);
+  if (withImg) warn.push('🖼 이미지 포함 ZIP 백업');
+  document.getElementById('backupEstimate').textContent = warn.join(' · ');
+}
+
+async function runBackup(db) {
+  const sects   = [...document.querySelectorAll('.backup-sect-btn.on')].map(b=>b.dataset.sect);
+  const selOnly = document.getElementById('backupSelOnly').checked;
+  const withImg = document.getElementById('backupWithImages').checked;
+  if (sects.length === 0) { showToast('백업 대상을 선택하세요', 'error'); return; }
+
   const now     = new Date();
   const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
-  a.href = url; a.download = `calendar_backup_${dateStr}.json`;
-  a.click(); URL.revokeObjectURL(url);
-  showToast(`${toExport.length}개 일정 백업 완료`, 'success');
+
+  document.getElementById('backupModalOverlay').classList.remove('open');
+
+  /* 캘린더 */
+  let calData = [];
+  if (sects.includes('calendar')) {
+    const pool = selOnly && selectedIds.size > 0
+      ? filteredEvents.filter(e => selectedIds.has(e._id))
+      : filteredEvents;
+    calData = pool.map(ev => { const {_id,...rest}=ev; return {_id,...stripTimestamps(rest)}; });
+  }
+
+  /* CRM */
+  let crmData = [];
+  if (sects.includes('crm')) {
+    try {
+      const snap = await getDocs(collection(db,'crm_clients'));
+      const clients = snap.docs.map(d=>({_id:d.id,...stripTimestamps(d.data())}));
+      /* 서브컬렉션 */
+      for (const cl of clients) {
+        const subs = {};
+        for (const sub of ['consultations','visit_requests','visit_reports','sales_records']) {
+          const ss = await getDocs(collection(db,`crm_clients/${cl._id}/${sub}`));
+          if (!ss.empty) subs[sub] = ss.docs.map(d=>({_id:d.id,...stripTimestamps(d.data())}));
+        }
+        if (Object.keys(subs).length) cl._subcollections = subs;
+      }
+      crmData = selOnly && _crmSelectedIds.size > 0
+        ? clients.filter(c => _crmSelectedIds.has(c._id)) : clients;
+    } catch(e) { showToast('CRM 백업 오류: '+e.message,'error'); }
+  }
+
+  /* 위키 */
+  let wikiData = [];
+  if (sects.includes('wiki')) {
+    try {
+      const snap = await getDocs(collection(db,'wiki_articles'));
+      const articles = snap.docs.map(d=>({_id:d.id,...stripTimestamps(d.data())}));
+      wikiData = selOnly && _wikiSelectedIds.size > 0
+        ? articles.filter(a => _wikiSelectedIds.has(a._id)) : articles;
+    } catch(e) { showToast('위키 백업 오류: '+e.message,'error'); }
+  }
+
+  const backupObj = {};
+  if (calData.length)  backupObj.calendar = calData;
+  if (crmData.length)  backupObj.crm      = crmData;
+  if (wikiData.length) backupObj.wiki     = wikiData;
+  backupObj._meta = { exportedAt: now.toISOString(), sections: sects };
+
+  if (!withImg) {
+    /* 단순 JSON */
+    const blob = new Blob([JSON.stringify(backupObj, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `drgo_backup_${dateStr}.json`;
+    a.click(); URL.revokeObjectURL(a.href);
+    const total = (calData.length||0)+(crmData.length||0)+(wikiData.length||0);
+    showToast(`백업 완료 (${total}건)`, 'success');
+  } else {
+    /* ZIP - JSZip CDN 동적 로드 */
+    await loadJSZip();
+    const zip = new JSZip();
+    zip.file('backup.json', JSON.stringify(backupObj, null, 2));
+    let imgCount = 0;
+    function extractImages(data, prefix) {
+      if (!data) return;
+      const walk = (obj, path) => {
+        if (!obj || typeof obj !== 'object') return;
+        if (Array.isArray(obj)) { obj.forEach((v,i)=>walk(v,path+'_'+i)); return; }
+        for (const [k,v] of Object.entries(obj)) {
+          if (typeof v === 'string' && v.startsWith('data:image/')) {
+            const ext = v.split(';')[0].split('/')[1]||'jpg';
+            zip.file(`images/${prefix}_${imgCount++}.${ext}`, v.split(',')[1], {base64:true});
+            obj[k] = `images/${prefix}_${imgCount-1}.${ext}`;
+          } else walk(v, path+'_'+k);
+        }
+      };
+      (Array.isArray(data)?data:[data]).forEach((item,i)=>walk(item,prefix+'_'+i));
+    }
+    if (calData.length)  extractImages(calData,  'cal');
+    if (crmData.length)  extractImages(crmData,  'crm');
+    if (wikiData.length) extractImages(wikiData, 'wiki');
+    zip.file('backup_with_images.json', JSON.stringify(backupObj, null, 2));
+    const blob = await zip.generateAsync({type:'blob', compression:'DEFLATE', compressionOptions:{level:6}});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `drgo_backup_${dateStr}.zip`;
+    a.click(); URL.revokeObjectURL(a.href);
+    showToast(`ZIP 백업 완료 (이미지 ${imgCount}장)`, 'success');
+  }
+}
+
+async function loadJSZip() {
+  if (window.JSZip) return;
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+    s.onload=res; s.onerror=rej;
+    document.head.appendChild(s);
+  });
+}
+
+/* ─── 로그 기록 공통 함수 ─── */
+async function recordLog(db, collectionName, docId, type, meta={}) {
+  try {
+    const uid = localStorage.getItem('cal_auth_uid') || localStorage.getItem('cal_auth_name') || 'admin';
+    await addDoc(collection(db,'eventLogs'), {
+      eventId: docId, collection: collectionName, type,
+      userId: uid, meta, createdAt: serverTimestamp()
+    });
+  } catch(e) { console.warn('로그 기록 실패:', e); }
+}
+
+/* ─── 로그 모달 공통 오픈 ─── */
+let _logPage={create:1,delete:1}, _logData={create:[],delete:[]};
+const LOG_PER = 8;
+
+async function openLogModal(type, section, db) {
+  const overlayId = type==='create' ? 'createLogOverlay' : 'deleteLogOverlay';
+  const bodyId    = type==='create' ? 'createLogBody'    : 'deleteLogBody';
+  const sectEl    = document.getElementById(type==='create'?'createLogSection':'deleteLogSection');
+  const cntEl     = document.getElementById(type==='create'?'createLogCount'  :'deleteLogCount');
+  const overlay   = document.getElementById(overlayId);
+  const body      = document.getElementById(bodyId);
+  const sectLabel = {calendar:'캘린더',crm:'CRM',wiki:'위키'}[section]||section;
+  if(sectEl) sectEl.textContent = `— ${sectLabel}`;
+  overlay.classList.add('open');
+  body.innerHTML = '<div class="log-empty-msg">로딩 중…</div>';
+
+  try {
+    const colMap = {calendar:'events',crm:'crm_clients',wiki:'wiki_articles'};
+    let snap;
+    try {
+      const q = query(collection(db,'eventLogs'), where('type','==',type), where('collection','==',colMap[section]||'events'), orderBy('createdAt','desc'));
+      snap = await getDocs(q);
+    } catch {
+      snap = await getDocs(collection(db,'eventLogs'));
+    }
+    _logData[type] = snap.docs.map(d=>({id:d.id,...d.data()}))
+      .filter(l=>l.type===type)
+      .sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+    if(cntEl) cntEl.textContent = `총 ${_logData[type].length}건`;
+    _logPage[type]=1;
+    renderLogModal(type);
+  } catch(err) {
+    body.innerHTML = `<div class="log-empty-msg">⚠️ 로드 실패: ${err.message}</div>`;
+  }
+}
+
+function renderLogModal(type) {
+  const bodyId  = type==='create' ? 'createLogBody'    : 'deleteLogBody';
+  const pgBarId = type==='create' ? 'createLogPgBar'   : 'deleteLogPgBar';
+  const pgInfoId= type==='create' ? 'clPgInfo'         : 'dlPgInfo';
+  const prevId  = type==='create' ? 'clPgPrev'         : 'dlPgPrev';
+  const nextId  = type==='create' ? 'clPgNext'         : 'dlPgNext';
+  const body    = document.getElementById(bodyId);
+  const data    = _logData[type];
+  const page    = _logPage[type];
+  const total   = data.length;
+  const totalPg = Math.max(1,Math.ceil(total/LOG_PER));
+  const slice   = data.slice((page-1)*LOG_PER, page*LOG_PER);
+  body.innerHTML='';
+  body.scrollTop=0;
+  if(!slice.length){ body.innerHTML='<div class="log-empty-msg">📭 기록이 없습니다</div>'; }
+  slice.forEach(log=>{
+    const ts=log.createdAt;
+    const timeStr=ts?.toDate?ts.toDate().toLocaleString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+    const entry=document.createElement('div'); entry.className='log-entry';
+    const badgeCls = type==='create'?'log-badge-create':'log-badge-delete';
+    const badgeLabel = type==='create'?'신규등록':'삭제';
+    const meta = log.meta||{};
+    entry.innerHTML=`<div class="log-entry-head">
+      <span class="${badgeCls}">${badgeLabel}</span>
+      <span class="log-user-tag">👤 ${log.userId||'(알 수 없음)'}</span>
+      <span class="log-time-tag">${timeStr}</span>
+    </div>
+    <div class="log-entry-body">
+      <div class="log-entry-title">${meta.title||meta.name||meta.articleTitle||log.eventId||'—'}</div>
+      ${meta.startDate?`<div style="font-size:11px;color:var(--text-muted);">📅 ${meta.startDate}</div>`:''}
+      ${meta.color?`<div style="font-size:11px;color:var(--text-muted);">분류: ${({gold:'방문의뢰',blue:'사내업무',red:'휴가관련',green:'촬영관련',purple:'미팅/내방'}[meta.color])||meta.color}</div>`:''}
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);margin-top:4px;">ID: ${log.eventId||'—'}</div>
+    </div>`;
+    body.appendChild(entry);
+  });
+  const pgBar=document.getElementById(pgBarId);
+  pgBar.style.display=totalPg>1?'flex':'none';
+  if(totalPg>1){
+    document.getElementById(pgInfoId).textContent=`${page} / ${totalPg}`;
+    document.getElementById(prevId).disabled=page<=1;
+    document.getElementById(nextId).disabled=page>=totalPg;
+    document.getElementById(prevId).onclick=()=>{_logPage[type]--;renderLogModal(type);};
+    document.getElementById(nextId).onclick=()=>{_logPage[type]++;renderLogModal(type);};
+  }
 }
 
 function handleImportFile(file) {
@@ -1433,6 +2016,198 @@ function showToast(msg, type='info') {
   t.className   = 'toast show ' + type;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+/* ══════════════════════════════════════════
+   CRM 섹션
+══════════════════════════════════════════ */
+let _crmAll=[], _crmFiltered=[], _crmSelectedIds=new Set(), _crmPage=1;
+const CRM_PAGE=25;
+
+function initCrmSection(db) {
+  /* 실시간 리스너 */
+  onSnapshot(collection(db,'crm_clients'), snap => {
+    _crmAll = snap.docs.map(d=>({_id:d.id,...d.data()}));
+    renderCrm();
+    document.getElementById('cnt-crm').textContent = _crmAll.length;
+  }, err=>showToast('CRM 로드 실패: '+err.message,'error'));
+
+  document.getElementById('crmSearch').addEventListener('input', e => {
+    const q=e.target.value.toLowerCase();
+    _crmFiltered=_crmAll.filter(c=>
+      (c.name||'').toLowerCase().includes(q)||
+      (c.phone||'').toLowerCase().includes(q)||
+      (c.platform||'').toLowerCase().includes(q)||
+      (c.address||'').toLowerCase().includes(q)
+    );
+    _crmPage=1; renderCrm();
+  });
+
+  document.getElementById('crmPagePrev').addEventListener('click',()=>{ if(_crmPage>1){_crmPage--;renderCrm();} });
+  document.getElementById('crmPageNext').addEventListener('click',()=>{ const tp=Math.ceil((_crmFiltered.length||_crmAll.length)/CRM_PAGE); if(_crmPage<tp){_crmPage++;renderCrm();} });
+
+  document.getElementById('crmLogCreateBtn').addEventListener('click',()=>openLogModal('create','crm',db));
+  document.getElementById('crmLogDeleteBtn').addEventListener('click',()=>openLogModal('delete','crm',db));
+
+  document.getElementById('crmBulkDeleteBtn').addEventListener('click',()=>{
+    if(!_crmSelectedIds.size) return;
+    showConfirm('🗑 선택 삭제',`CRM 고객 ${_crmSelectedIds.size}개를 삭제하시겠습니까?`,async()=>{
+      for(const id of _crmSelectedIds){
+        try{ await recordLog(db,'crm_clients',id,'delete',{name:(_crmAll.find(c=>c._id===id)||{}).name||'?'}); await deleteDoc(doc(db,'crm_clients',id)); }catch{}
+      }
+      _crmSelectedIds.clear(); showToast('삭제 완료','success');
+    });
+  });
+}
+
+function renderCrm() {
+  const data   = (_crmFiltered.length||document.getElementById('crmSearch').value) ? _crmFiltered : _crmAll;
+  const total  = data.length;
+  const tpages = Math.max(1,Math.ceil(total/CRM_PAGE));
+  _crmPage     = Math.min(_crmPage,tpages);
+  const slice  = data.slice((_crmPage-1)*CRM_PAGE, _crmPage*CRM_PAGE);
+  const list   = document.getElementById('crmList');
+  const TYPE_M = {unknown:'미정',individual:'개인',business:'사업자',team:'팀'};
+  list.innerHTML='';
+  if(!slice.length){ list.innerHTML='<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">CRM 데이터가 없습니다</div></div>'; }
+  slice.forEach(c=>{
+    const isSel=_crmSelectedIds.has(c._id);
+    const row=document.createElement('div');
+    row.className='generic-row gr-clients'+(isSel?' selected':'');
+    row.innerHTML=`
+      <div class="row-check"><div class="check-circle">${isSel?'✓':''}</div></div>
+      <div><div class="gr-name">${c.name||'(이름 없음)'}</div>${c.nick?`<div class="gr-sub">@${c.nick}</div>`:''}</div>
+      <div class="gr-cell">${c.phone||'—'}</div>
+      <div class="gr-cell">${c.platform||'—'}</div>
+      <div><span class="row-badge" style="background:var(--surface2);color:var(--text-muted);border:1px solid var(--border);">${TYPE_M[c.type]||c.type||'—'}</span></div>
+      <div class="row-actions">
+        <button class="row-action-btn del" data-crmdelid="${c._id}" title="삭제">🗑</button>
+      </div>`;
+    row.addEventListener('click',e=>{
+      if(e.target.closest('.row-action-btn')) return;
+      if(_crmSelectedIds.has(c._id)) _crmSelectedIds.delete(c._id); else _crmSelectedIds.add(c._id);
+      document.getElementById('crmBulkDeleteBtn').style.display=_crmSelectedIds.size?'':'none';
+      document.getElementById('crmSelCount').style.display=_crmSelectedIds.size?'':'none';
+      if(_crmSelectedIds.size) document.getElementById('crmSelCount').textContent=`${_crmSelectedIds.size}개 선택됨`;
+      renderCrm();
+    });
+    row.querySelector('[data-crmdelid]')?.addEventListener('click',async e=>{
+      e.stopPropagation();
+      showConfirm('🗑 CRM 삭제',`"${c.name||'?'}" 고객을 삭제하시겠습니까?`,async()=>{
+        await recordLog(db,'crm_clients',c._id,'delete',{name:c.name||'?'});
+        await deleteDoc(doc(db,'crm_clients',c._id));
+        showToast('삭제 완료','success');
+      });
+    });
+    list.appendChild(row);
+  });
+  /* 페이지네이션 */
+  const pagi=document.getElementById('crmPagination');
+  pagi.style.display = document.querySelector('.db-tab.active')?.dataset?.db==='crm' ? '' : 'none';
+  document.getElementById('crmPagePrev').disabled=_crmPage<=1;
+  document.getElementById('crmPageNext').disabled=_crmPage>=tpages;
+  const nums=document.getElementById('crmPageNums'); nums.innerHTML='';
+  for(let p=Math.max(1,_crmPage-2);p<=Math.min(tpages,_crmPage+2);p++){
+    const btn=document.createElement('button');btn.className='page-btn'+(p===_crmPage?' active':'');
+    btn.textContent=p;btn.onclick=()=>{_crmPage=p;renderCrm();};nums.appendChild(btn);
+  }
+  document.getElementById('crmPageInfo').textContent=`${(_crmPage-1)*CRM_PAGE+1}–${Math.min(_crmPage*CRM_PAGE,total)} / ${total}건`;
+  document.getElementById('cnt-crm').textContent=_crmAll.length;
+}
+
+/* ══════════════════════════════════════════
+   위키 섹션
+══════════════════════════════════════════ */
+let _wikiAll=[], _wikiFiltered=[], _wikiSelectedIds=new Set(), _wikiPage=1;
+const WIKI_PAGE=25;
+
+function initWikiSection(db) {
+  onSnapshot(collection(db,'wiki_articles'), snap => {
+    _wikiAll = snap.docs.map(d=>({_id:d.id,...d.data()}));
+    renderWiki();
+    document.getElementById('cnt-wiki').textContent=_wikiAll.length;
+  }, err=>showToast('위키 로드 실패: '+err.message,'error'));
+
+  document.getElementById('wikiSearch').addEventListener('input',e=>{
+    const q=e.target.value.toLowerCase();
+    _wikiFiltered=_wikiAll.filter(a=>
+      (a.title||'').toLowerCase().includes(q)||
+      (a.authorName||a.authorId||'').toLowerCase().includes(q)||
+      (a.tags||[]).some(t=>t.toLowerCase().includes(q))
+    );
+    _wikiPage=1; renderWiki();
+  });
+
+  document.getElementById('wikiPagePrev').addEventListener('click',()=>{ if(_wikiPage>1){_wikiPage--;renderWiki();} });
+  document.getElementById('wikiPageNext').addEventListener('click',()=>{ const tp=Math.ceil((_wikiFiltered.length||_wikiAll.length)/WIKI_PAGE); if(_wikiPage<tp){_wikiPage++;renderWiki();} });
+
+  document.getElementById('wikiLogCreateBtn').addEventListener('click',()=>openLogModal('create','wiki',db));
+  document.getElementById('wikiLogDeleteBtn').addEventListener('click',()=>openLogModal('delete','wiki',db));
+
+  document.getElementById('wikiBulkDeleteBtn').addEventListener('click',()=>{
+    if(!_wikiSelectedIds.size) return;
+    showConfirm('🗑 선택 삭제',`위키 문서 ${_wikiSelectedIds.size}개를 삭제하시겠습니까?`,async()=>{
+      for(const id of _wikiSelectedIds){
+        try{ await recordLog(db,'wiki_articles',id,'delete',{title:(_wikiAll.find(a=>a._id===id)||{}).title||'?'}); await deleteDoc(doc(db,'wiki_articles',id)); }catch{}
+      }
+      _wikiSelectedIds.clear(); showToast('삭제 완료','success');
+    });
+  });
+}
+
+function renderWiki() {
+  const data  = (_wikiFiltered.length||document.getElementById('wikiSearch').value) ? _wikiFiltered : _wikiAll;
+  const total = data.length;
+  const tpages=Math.max(1,Math.ceil(total/WIKI_PAGE));
+  _wikiPage   =Math.min(_wikiPage,tpages);
+  const slice =data.slice((_wikiPage-1)*WIKI_PAGE,_wikiPage*WIKI_PAGE);
+  const list  =document.getElementById('wikiList');
+  list.innerHTML='';
+  if(!slice.length){ list.innerHTML='<div class="empty-state"><div class="empty-icon">📖</div><div class="empty-text">위키 데이터가 없습니다</div></div>'; }
+  slice.forEach(a=>{
+    const isSel=_wikiSelectedIds.has(a._id);
+    const row=document.createElement('div');
+    row.className='generic-row gr-wiki'+(isSel?' selected':'');
+    const updDate=a.updatedAt?.toDate?a.updatedAt.toDate().toLocaleDateString('ko-KR'):(a.updatedAt?.seconds?new Date(a.updatedAt.seconds*1000).toLocaleDateString('ko-KR'):'—');
+    const tags=(a.tags||[]).slice(0,3).map(t=>`<span style="font-size:10px;padding:2px 7px;border-radius:4px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);">${t}</span>`).join('');
+    row.innerHTML=`
+      <div class="row-check"><div class="check-circle">${isSel?'✓':''}</div></div>
+      <div><div class="gr-name">${a.title||'(제목 없음)'}</div>${a.desc?`<div class="gr-sub">${String(a.desc).slice(0,40)}…</div>`:''}</div>
+      <div class="gr-cell">${a.authorName||a.authorId||'—'}</div>
+      <div class="gr-cell" style="font-family:var(--font-mono);font-size:11px;">${updDate}</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;">${tags||'—'}</div>
+      <div class="row-actions">
+        <button class="row-action-btn del" data-wikidelid="${a._id}" title="삭제">🗑</button>
+      </div>`;
+    row.addEventListener('click',e=>{
+      if(e.target.closest('.row-action-btn')) return;
+      if(_wikiSelectedIds.has(a._id)) _wikiSelectedIds.delete(a._id); else _wikiSelectedIds.add(a._id);
+      document.getElementById('wikiBulkDeleteBtn').style.display=_wikiSelectedIds.size?'':'none';
+      document.getElementById('wikiSelCount').style.display=_wikiSelectedIds.size?'':'none';
+      if(_wikiSelectedIds.size) document.getElementById('wikiSelCount').textContent=`${_wikiSelectedIds.size}개 선택됨`;
+      renderWiki();
+    });
+    row.querySelector('[data-wikidelid]')?.addEventListener('click',async e=>{
+      e.stopPropagation();
+      showConfirm('🗑 위키 삭제',`"${a.title||'?'}" 문서를 삭제하시겠습니까?`,async()=>{
+        await recordLog(db,'wiki_articles',a._id,'delete',{title:a.title||'?'});
+        await deleteDoc(doc(db,'wiki_articles',a._id));
+        showToast('삭제 완료','success');
+      });
+    });
+    list.appendChild(row);
+  });
+  const pagi=document.getElementById('wikiPagination');
+  pagi.style.display=document.querySelector('.db-tab.active')?.dataset?.db==='wiki'?'':'none';
+  document.getElementById('wikiPagePrev').disabled=_wikiPage<=1;
+  document.getElementById('wikiPageNext').disabled=_wikiPage>=tpages;
+  const nums=document.getElementById('wikiPageNums'); nums.innerHTML='';
+  for(let p=Math.max(1,_wikiPage-2);p<=Math.min(tpages,_wikiPage+2);p++){
+    const btn=document.createElement('button');btn.className='page-btn'+(p===_wikiPage?' active':'');
+    btn.textContent=p;btn.onclick=()=>{_wikiPage=p;renderWiki();};nums.appendChild(btn);
+  }
+  document.getElementById('wikiPageInfo').textContent=`${(_wikiPage-1)*WIKI_PAGE+1}–${Math.min(_wikiPage*WIKI_PAGE,total)} / ${total}건`;
+  document.getElementById('cnt-wiki').textContent=_wikiAll.length;
 }
 </script>
 <!-- ═══ PROGRESS OVERLAY ═══ -->
