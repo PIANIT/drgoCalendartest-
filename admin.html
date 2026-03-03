@@ -1027,6 +1027,7 @@ const TRIES_KEY   = 'cal_admin_tries';
 const LOCK_KEY    = 'cal_admin_lock';
 const MAX_TRIES   = 5;
 const LOCK_MS     = 120000;
+const AUTH_EXPIRE_MS = 30 * 24 * 60 * 60 * 1000; /* 30일 */
 
 const TYPE_LABELS    = { gold:'방문의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방' };
 const SPECIAL_LABELS = { car:'🚗차량', brief:'💼제품', return:'←', group:'👥2인', urgent:'🚨긴급', ladder:'🪜사다리' };
@@ -1056,7 +1057,16 @@ async function sha256(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
-function isAuth()     { return sessionStorage.getItem(SESSION_KEY) === '1'; }
+function isAuth() {
+  const raw = localStorage.getItem(SESSION_KEY);
+  if (!raw) return false;
+  try {
+    const { ok, exp } = JSON.parse(raw);
+    if (ok === '1' && Date.now() < exp) return true;
+    localStorage.removeItem(SESSION_KEY); // 만료 시 삭제
+    return false;
+  } catch { return false; }
+}
 function getLockRem() { return Math.max(0, parseInt(localStorage.getItem(LOCK_KEY)||'0') - Date.now()); }
 
 function updateLockUI() {
@@ -1081,7 +1091,7 @@ async function tryAuth() {
   if (!inp.value) return;
   const hash = await sha256(inp.value);
   if (hash === ADMIN_HASH) {
-    sessionStorage.setItem(SESSION_KEY, '1');
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ ok:'1', exp: Date.now() + AUTH_EXPIRE_MS }));
     localStorage.removeItem(TRIES_KEY);
     localStorage.removeItem(LOCK_KEY);
     document.getElementById('authOverlay').classList.add('hidden');
