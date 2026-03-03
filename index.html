@@ -2722,6 +2722,14 @@ const GOLD_FIELD_LABELS = {
   delivery:'수령 방법', balance:'잔금 여부', balance_amount:'잔금 금액',
   estimate_amount:'견적 총액',
 };
+const TEAL_FIELD_LABELS = {
+  mode:'유형(원격/방송룸)',
+  name:'이름/닉네임',
+  platform:'방송 플랫폼',
+  content:'의뢰/이용 내용',
+  desc:'메모',
+};
+const TEAL_MODE_LABELS = { remote:'원격', studio:'방송룸 이용' };
 const COLOR_LABELS = {gold:'개인의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방'};
 const SPECIAL_LABELS_LOG = { car:'🚗 차량', brief:'💼 제품', return:'← 반납', group:'👥 2인', urgent:'🚨 긴급', ladder:'▤ 사다리' };
 const SCHED_LABELS_LOG   = { suggest:'💬 제안', hope:'🙏 희망', target:'🎯 목표' };
@@ -2752,7 +2760,7 @@ function calcChanges(prev, next) {
 
     let pvDisp = pv, nvDisp = nv;
     if (f==='color')        { pvDisp=COLOR_LABELS[pv]||pv;  nvDisp=COLOR_LABELS[nv]||nv; }
-    if (f==='teal')         { pvDisp=JSON.stringify(pv); nvDisp=JSON.stringify(nv); }
+    /* teal 상세 필드는 별도 블록에서 처리 */
     if (f==='allDay')       { pvDisp=pv==='true'?'종일':'시간지정'; nvDisp=nv==='true'?'종일':'시간지정'; }
     if (f==='schedOpt')     { pvDisp=SCHED_LABELS_LOG[pv]||pv||'(없음)'; nvDisp=SCHED_LABELS_LOG[nv]||nv||'(없음)'; }
     if (f==='locked')       { pvDisp=pv==='true'?'잠금':'해제'; nvDisp=nv==='true'?'잠금':'해제'; }
@@ -2797,6 +2805,19 @@ function calcChanges(prev, next) {
       const removed = pImgs.filter(n=>!nImgs.includes(n));
       if (added.length)   changes.push({ field:label, before:'—', after:`🖼️ 이미지 첨부됨 (${added.join(', ')})` });
       if (removed.length) changes.push({ field:label, before:`🖼️ ${removed.join(', ')}`, after:'🗑️ 이미지 삭제됨' });
+    }
+  }
+
+  /* ── 원격/방송룸(teal) 전용 필드 ── */
+  const pt = prev.teal||{}, nt = next.teal||{};
+  if (prev.color==='teal' || next.color==='teal') {
+    for (const f of Object.keys(TEAL_FIELD_LABELS)) {
+      const pv = (pt[f]===undefined||pt[f]===null)?'':String(pt[f]);
+      const nv = (nt[f]===undefined||nt[f]===null)?'':String(nt[f]);
+      if (pv === nv) continue;
+      let pvDisp = pv, nvDisp = nv;
+      if (f==='mode') { pvDisp=TEAL_MODE_LABELS[pv]||pv||'(없음)'; nvDisp=TEAL_MODE_LABELS[nv]||nv||'(없음)'; }
+      changes.push({ field: TEAL_FIELD_LABELS[f], before: pvDisp||'(없음)', after: nvDisp||'(없음)' });
     }
   }
 
