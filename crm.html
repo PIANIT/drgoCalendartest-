@@ -193,7 +193,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
 .form-input.error{border-color:var(--red);animation:shake .35s ease;}
 .form-select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M5 6L0 0h10z' fill='%23a09890'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
 .form-select option{background:var(--surface);}
-.form-textarea{resize:none;min-height:76px;line-height:1.6;overflow:hidden;}
+.form-textarea{resize:vertical;min-height:76px;line-height:1.6;}
 .btn-cancel{padding:9px 18px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-muted);font-family:var(--font-main);font-size:13px;cursor:pointer;transition:all .15s;}
 .btn-cancel:hover{border-color:var(--red);color:var(--red);}
 .btn-save{padding:9px 22px;background:var(--accent);color:#1a1207;border:none;border-radius:8px;font-family:var(--font-main);font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;}
@@ -216,28 +216,10 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
 .tl-time{font-size:10px;font-family:var(--font-mono);color:var(--text-muted);margin-bottom:4px;}
 .tl-bubble{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:11px 13px;font-size:13px;color:var(--text);line-height:1.65;white-space:pre-wrap;word-break:break-word;}
 .tl-author{font-size:10px;font-family:var(--font-mono);color:var(--text-muted);margin-top:5px;}
-.tl-item-actions{display:flex;gap:5px;margin-top:6px;}
-.tl-edit-btn{font-size:10px;padding:2px 8px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;font-family:var(--font-mono);transition:all .15s;}
-.tl-edit-btn:hover{border-color:var(--accent);color:var(--accent);}
-.tl-edit-btn.del:hover{border-color:var(--red,#c87070);color:var(--red,#c87070);}
-.tl-edit-area{width:100%;min-height:60px;padding:9px 11px;background:var(--surface3);border:1px solid var(--accent);border-radius:9px;color:var(--text);font-size:13px;line-height:1.65;resize:vertical;font-family:var(--font-main);box-sizing:border-box;margin-top:4px;}
-.tl-edit-actions{display:flex;gap:6px;margin-top:6px;}
-.tl-save-btn{font-size:11px;padding:4px 12px;border-radius:6px;border:none;background:var(--accent);color:#1a1207;cursor:pointer;font-weight:700;}
-.tl-cancel-btn{font-size:11px;padding:4px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;}
-.crm-confirm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9000;backdrop-filter:blur(2px);align-items:center;justify-content:center;padding:20px;}
-.crm-confirm-overlay.open{display:flex;}
-.crm-confirm-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 28px 20px;max-width:360px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.4);animation:popIn .18s ease;}
-.crm-confirm-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px;}
-.crm-confirm-desc{font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:20px;}
-.crm-confirm-btns{display:flex;gap:10px;justify-content:flex-end;}
-.crm-confirm-cancel{padding:9px 18px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--text-muted);font-family:var(--font-main);font-size:13px;cursor:pointer;transition:all .15s;}
-.crm-confirm-cancel:hover{border-color:var(--accent);color:var(--accent);}
-.crm-confirm-leave{padding:9px 18px;border-radius:8px;border:none;background:var(--red);color:#fff;font-family:var(--font-main);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
-.crm-confirm-leave:hover{filter:brightness(1.12);}
 .tl-add{margin-top:12px;border:1px solid var(--border);border-radius:9px;overflow:hidden;}
-.tl-add-head{padding:9px 13px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap;cursor:pointer;}
+.tl-add-head{padding:9px 13px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .taf-label{font-size:10px;font-family:var(--font-mono);color:var(--text-muted);letter-spacing:.1em;}
-.taf-dt{padding:5px 9px;background:var(--surface3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:11px;font-family:var(--font-mono);outline:none;transition:border-color .2s;flex:1;min-width:180px;cursor:pointer;}
+.taf-dt{padding:5px 9px;background:var(--surface3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:11px;font-family:var(--font-mono);outline:none;transition:border-color .2s;}
 .taf-dt:focus{border-color:var(--accent);}
 .tl-add-body{display:flex;align-items:flex-end;}
 .tl-textarea{flex:1;padding:11px 13px;background:var(--surface);border:none;color:var(--text);font-family:var(--font-main);font-size:13px;resize:none;outline:none;min-height:68px;line-height:1.6;}
@@ -281,84 +263,6 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
   .modal{border-radius:18px 18px 0 0;max-height:92vh;}
   .form-row{grid-template-columns:1fr;}
 }
-
-  /* ── 색상 설정 패널 ── */
-  .settings-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:5000; backdrop-filter:blur(3px); }
-  .settings-overlay.open { display:block; }
-  .settings-panel { position:fixed; top:0; right:0; bottom:0; width:320px; max-width:92vw; background:var(--surface); border-left:1px solid var(--border); z-index:5001; display:flex; flex-direction:column; transform:translateX(100%); transition:transform 0.28s cubic-bezier(.4,0,.2,1); overflow:hidden; }
-  .settings-panel.open { transform:translateX(0); }
-  .settings-panel-header { display:flex; align-items:center; justify-content:space-between; padding:20px 20px 16px; border-bottom:1px solid var(--border); background:var(--surface); flex-shrink:0; }
-  .settings-panel-title { font-size:15px; font-weight:700; letter-spacing:0.04em; color:var(--text); }
-  .settings-panel-body { padding:20px; display:flex; flex-direction:column; gap:16px; overflow-y:auto; flex:1; min-height:0; }
-  .settings-section-title { font-size:11px; font-family:var(--font-mono); letter-spacing:0.12em; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px; }
-  .color-setting-row { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-radius:8px; background:var(--surface2); border:1px solid var(--border); gap:10px; }
-  .color-setting-label { font-size:13px; font-weight:500; color:var(--text); flex:1; }
-  .color-setting-swatch { width:28px; height:28px; border-radius:6px; flex-shrink:0; border:2px solid rgba(255,255,255,0.15); cursor:pointer; transition:transform 0.15s, box-shadow 0.15s; position:relative; overflow:hidden; }
-  .color-setting-swatch:hover { transform:scale(1.1); box-shadow:0 2px 8px rgba(0,0,0,0.35); }
-  .color-setting-swatch input[type=color] { position:absolute; inset:-4px; width:calc(100% + 8px); height:calc(100% + 8px); opacity:0; cursor:pointer; border:none; padding:0; }
-  .settings-reset-btn { padding:10px; border-radius:8px; border:1px solid var(--border); background:none; color:var(--text-muted); font-family:var(--font-main); font-size:13px; cursor:pointer; transition:all 0.15s; width:100%; }
-  .settings-reset-btn:hover { border-color:var(--red); color:var(--red); background:rgba(200,100,100,0.07); }
-  .settings-btn { background:none; border:1px solid var(--border); color:var(--text-muted); cursor:pointer; width:32px; height:32px; border-radius:6px; font-size:16px; display:flex; align-items:center; justify-content:center; transition:all 0.2s; flex-shrink:0; }
-  .settings-btn:hover { border-color:var(--accent); color:var(--accent); }
-  @media(max-width:600px) {
-    .settings-panel { width:100%; border-left:none; top:auto; bottom:0; left:0; right:0; height:60vh; max-height:60vh; border-radius:20px 20px 0 0; transform:translateY(100%); }
-    .settings-panel.open { transform:translateY(0); }
-  }
-
-
-/* ── 공통 카드 탭 ── */
-.generic-tab{display:flex;flex-direction:column;flex:1;overflow:hidden;}
-.generic-toolbar{padding:12px 26px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
-.generic-list{flex:1;overflow-y:auto;padding:14px 26px;display:flex;flex-direction:column;gap:10px;}
-.generic-list::-webkit-scrollbar{width:3px;}
-.generic-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
-.generic-empty{padding:40px;text-align:center;color:var(--text-muted);font-size:13px;}
-.item-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;overflow:hidden;transition:border-color .15s;cursor:pointer;}
-.item-card:hover{border-color:var(--accent);}
-.item-card-header{padding:12px 14px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
-.item-card-title{font-size:14px;font-weight:600;color:var(--text);}
-.item-card-meta{display:flex;align-items:center;gap:7px;margin-top:4px;flex-wrap:wrap;font-size:11px;color:var(--text-muted);}
-.item-card-body{padding:0 14px 10px;font-size:12px;color:var(--text-muted);line-height:1.6;white-space:pre-wrap;word-break:break-word;}
-.item-card-footer{padding:8px 14px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface2);font-size:11px;color:var(--text-muted);}
-.item-date{font-size:11px;font-family:var(--font-mono);color:var(--text-muted);white-space:nowrap;flex-shrink:0;}
-.status-chip{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-family:var(--font-mono);font-weight:600;letter-spacing:.04em;}
-.status-pending{background:rgba(212,188,150,.15);color:var(--accent);}
-.status-done{background:rgba(136,212,136,.15);color:var(--green);}
-.status-cancel{background:rgba(212,136,136,.15);color:var(--red);}
-.amount-badge{font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--green);}
-.balance-badge{color:var(--red);}
-.refund-badge{color:var(--text-muted);}
-.sales-summary{display:flex;gap:10px;padding:12px 26px;border-bottom:1px solid var(--border);flex-wrap:wrap;flex-shrink:0;}
-.sales-sum-card{flex:1;min-width:80px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:10px 14px;}
-.sales-sum-label{font-size:10px;font-family:var(--font-mono);color:var(--text-muted);letter-spacing:.08em;margin-bottom:4px;}
-.sales-sum-value{font-size:15px;font-weight:700;color:var(--text);}
-.sales-sum-value.green{color:var(--green);}
-.sales-sum-value.red{color:var(--red);}
-/* 캘린더 검색 */
-.cal-search-wrap{position:relative;margin-bottom:14px;}
-.cal-search-input{width:100%;padding:9px 13px 9px 34px;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-main);font-size:13px;outline:none;transition:border-color .2s;}
-.cal-search-input:focus{border-color:var(--accent);}
-.cal-search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:12px;pointer-events:none;}
-.cal-result-list{display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;margin-bottom:14px;}
-.cal-result-item{padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;cursor:pointer;transition:all .15s;font-size:12px;}
-.cal-result-item:hover{border-color:var(--accent);background:rgba(212,188,150,.06);}
-.cal-result-title{font-weight:600;color:var(--text);margin-bottom:2px;}
-.cal-result-meta{color:var(--text-muted);font-family:var(--font-mono);font-size:10px;}
-.cal-linked-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:rgba(212,188,150,.12);border:1px solid rgba(212,188,150,.3);border-radius:6px;font-size:11px;color:var(--accent);font-family:var(--font-mono);}
-.cal-loading{text-align:center;padding:12px;color:var(--text-muted);font-size:12px;}
-.field-readonly{padding:9px 12px;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;color:var(--text-muted);font-size:13px;min-height:38px;}
-.quote-images-wrap{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
-.quote-img-thumb{width:80px;height:60px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer;transition:transform .15s;}
-.quote-img-thumb:hover{transform:scale(1.05);}
-#lightbox{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.88);align-items:center;justify-content:center;cursor:zoom-out;}
-#lightbox.open{display:flex;}
-#lightboxImg{max-width:92vw;max-height:88vh;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.6);}
-
-
-.vr-img-tab{padding:4px 12px;border-radius:14px;border:1px solid var(--border);background:none;color:var(--text-muted);font-size:11px;font-family:var(--font-mono);cursor:pointer;transition:all .15s;}
-.vr-img-tab.active{border-color:var(--accent);color:var(--accent);background:rgba(212,188,150,.12);}
-.vr-img-tab:hover{border-color:var(--accent);color:var(--accent);}
-
 </style>
 </head>
 <body>
@@ -396,11 +300,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
     </div>
   </div>
   <div class="header-right">
-    <div id="userBadge" style="display:none;align-items:center;gap:5px;padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;font-size:11px;color:var(--text-muted);">
-      <span>👤</span><span id="userNameDisplay" style="color:var(--accent);font-weight:500;"></span>
-    </div>
-    <button class="icon-btn" id="logoutBtnHeader" title="로그아웃" style="font-size:13px;">🚪</button>
-    <button class="settings-btn" id="settingsBtn" title="색상 설정">⚙️</button>
+    <a href="index.html" style="text-decoration:none;"><button class="icon-btn" title="캘린더로 이동">📅</button></a>
     <button class="icon-btn" id="themeBtn" title="테마 전환">🌙</button>
     <button class="add-btn" id="addClientBtn">+ 고객 등록</button>
   </div>
@@ -455,9 +355,6 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
       <div class="detail-tabs">
         <div class="dtab active" data-tab="info">기본 정보</div>
         <div class="dtab" data-tab="consult">상담 내역 <span id="consultTabCount" style="font-size:11px;color:var(--text-muted);"></span></div>
-        <div class="dtab" data-tab="visit_req">방문의뢰 <span id="visitReqTabCount" style="font-size:11px;color:var(--text-muted);"></span></div>
-        <div class="dtab" data-tab="visit_rep">방문보고 <span id="visitRepTabCount" style="font-size:11px;color:var(--text-muted);"></span></div>
-        <div class="dtab" data-tab="sales">매출기록 <span id="salesTabCount" style="font-size:11px;color:var(--text-muted);"></span></div>
       </div>
 
       <!-- INFO -->
@@ -472,34 +369,6 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
           <button class="new-consult-btn" id="newConsultBtn">+ 상담 등록</button>
         </div>
         <div class="consult-list" id="consultList"></div>
-      </div>
-
-      <!-- 방문의뢰 -->
-      <div id="tabVisitReq" class="generic-tab" style="display:none;">
-        <div class="generic-toolbar">
-          <div class="consult-count" id="visitReqCountLabel"></div>
-          <button class="new-consult-btn" id="newVisitReqBtn">+ 방문의뢰 등록</button>
-        </div>
-        <div class="generic-list" id="visitReqList"></div>
-      </div>
-
-      <!-- 방문보고 -->
-      <div id="tabVisitRep" class="generic-tab" style="display:none;">
-        <div class="generic-toolbar">
-          <div class="consult-count" id="visitRepCountLabel"></div>
-          <button class="new-consult-btn" id="newVisitRepBtn">+ 방문보고 등록</button>
-        </div>
-        <div class="generic-list" id="visitRepList"></div>
-      </div>
-
-      <!-- 매출기록 -->
-      <div id="tabSales" class="generic-tab" style="display:none;">
-        <div class="sales-summary" id="salesSummary"></div>
-        <div class="generic-toolbar">
-          <div class="consult-count" id="salesCountLabel"></div>
-          <button class="new-consult-btn" id="newSalesBtn">+ 매출 등록</button>
-        </div>
-        <div class="generic-list" id="salesList"></div>
       </div>
     </div>
   </div>
@@ -555,8 +424,8 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
         <input class="form-input" id="fStreamTopic" type="text" placeholder="게임, 토크, 먹방...">
       </div>
       <div class="form-group">
-        <label class="form-label">장소 / 주소</label>
-        <input class="form-input" id="fAddress" type="text" placeholder="방문 의뢰 시 장소 또는 주소">
+        <label class="form-label">주소</label>
+        <input class="form-input" id="fAddress" type="text" placeholder="방문 의뢰 시 주소">
       </div>
       <div class="form-group">
         <label class="form-label">PC 사양</label>
@@ -653,183 +522,6 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
   </div>
 </div>
 
-
-<!-- ═══ 방문의뢰 모달 ═══ -->
-<div class="modal-overlay" id="visitReqModal">
-  <div class="modal modal-lg">
-    <div class="modal-header">
-      <div class="modal-title" id="visitReqModalTitle">방문의뢰 등록</div>
-      <button class="modal-close" id="visitReqModalClose">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-section-head">📅 캘린더 일정 연동</div>
-      <div class="cal-search-wrap"><span class="cal-search-icon">🔍</span><input class="cal-search-input" id="vrCalSearch" placeholder="일정 제목, 날짜, 이름으로 검색…"></div>
-      <div id="vrCalResults" class="cal-result-list" style="display:none;"></div>
-      <div id="vrLinkedBadge" style="margin-bottom:14px;display:none;">
-        <span class="cal-linked-badge">📅 <span id="vrLinkedTitle"></span></span>
-        <button id="vrUnlinkBtn" style="margin-left:8px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:11px;">연결 해제</button>
-      </div>
-      <div class="form-section-head">기본 정보</div>
-      <div class="form-row">
-        <div><label class="form-label">방문 일자 <span class="req">*</span></label><input class="form-input" type="date" id="vrDate"></div>
-        <div><label class="form-label">상태</label><select class="form-select" id="vrStatus"><option value="pending">예정</option><option value="done">완료</option><option value="cancel">취소</option></select></div>
-      </div>
-      <div class="form-row">
-        <div><label class="form-label">담당자</label><input class="form-input" id="vrAssignee" placeholder="담당자 이름"></div>
-        <div><label class="form-label">방문 유형</label><select class="form-select" id="vrType"><option value="visit">방문</option><option value="remote">원격</option><option value="rental">렌탈</option></select></div>
-      </div>
-      <div id="vrCalInfo" style="display:none;">
-        <div class="form-section-head">캘린더 연동 정보</div>
-        <div class="form-row">
-          <div><label class="form-label">의뢰자명</label><div class="field-readonly" id="vrCalName">—</div></div>
-          <div><label class="form-label">연락처</label><div class="field-readonly" id="vrCalPhone">—</div></div>
-        </div>
-        <div class="form-row">
-          <div><label class="form-label">견적 총액</label><div class="field-readonly" id="vrCalEstimate">—</div></div>
-          <div><label class="form-label">잔금</label><div class="field-readonly" id="vrCalBalance">—</div></div>
-        </div>
-        <div style="margin-bottom:14px;">
-          <label class="form-label">첨부 이미지 <span id="vrImgCount" style="color:var(--accent);font-size:11px;"></span></label>
-          <div id="vrImgTabs" style="display:none;margin-bottom:8px;display:flex;gap:6px;flex-wrap:wrap;">
-            <button id="vrImgTab_quote" class="vr-img-tab active" data-type="quote">견적서</button>
-            <button id="vrImgTab_ref"   class="vr-img-tab" data-type="ref">참고 이미지</button>
-            <button id="vrImgTab_room"  class="vr-img-tab" data-type="room">공간 이미지</button>
-          </div>
-          <div class="quote-images-wrap" id="vrQuoteImages"></div>
-          <div class="quote-images-wrap" id="vrRefImages"   style="display:none;"></div>
-          <div class="quote-images-wrap" id="vrRoomImages"  style="display:none;"></div>
-        </div>
-      </div>
-      <div class="form-section-head">의뢰 내용</div>
-      <div class="form-group"><label class="form-label">제목 <span class="req">*</span></label><input class="form-input" id="vrTitle" placeholder="방문의뢰 제목"></div>
-      <div class="form-group"><label class="form-label">방문 주소</label><input class="form-input" id="vrAddress" placeholder="방문 주소"></div>
-      <div class="form-group"><label class="form-label">장비 목록 <span style="font-size:10px;color:var(--accent);">캘린더 연동 시 자동입력</span></label><textarea class="form-textarea" id="vrEquipment" placeholder="장비 목록" style="min-height:70px;"></textarea></div>
-      <div class="form-group"><label class="form-label">의뢰 주제 <span style="font-size:10px;color:var(--accent);">캘린더 연동 시 자동입력</span></label><input class="form-input" id="vrReqTopic" placeholder="의뢰 주제"></div>
-      <div class="form-group"><label class="form-label">요청 내용 <span style="font-size:10px;color:var(--accent);">캘린더 연동 시 자동입력</span></label><textarea class="form-textarea" id="vrContent" placeholder="방문 의뢰 내용을 입력하세요" style="min-height:90px;"></textarea></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-danger" id="visitReqDeleteBtn" style="display:none;margin-right:auto;">삭제</button>
-      <button class="btn-cancel" id="visitReqCancelBtn">취소</button>
-      <button class="btn-save" id="visitReqSaveBtn">저장</button>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ 방문보고 모달 ═══ -->
-<div class="modal-overlay" id="visitRepModal">
-  <div class="modal modal-lg">
-    <div class="modal-header">
-      <div class="modal-title" id="visitRepModalTitle">방문보고 등록</div>
-      <button class="modal-close" id="visitRepModalClose">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-section-head">📅 캘린더 일정 연동</div>
-      <div class="cal-search-wrap"><span class="cal-search-icon">🔍</span><input class="cal-search-input" id="repCalSearch" placeholder="일정 제목, 날짜, 이름으로 검색…"></div>
-      <div id="repCalResults" class="cal-result-list" style="display:none;"></div>
-      <div id="repLinkedBadge" style="margin-bottom:14px;display:none;">
-        <span class="cal-linked-badge">📅 <span id="repLinkedTitle"></span></span>
-        <button id="repUnlinkBtn" style="margin-left:8px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:11px;">연결 해제</button>
-      </div>
-      <div class="form-section-head">기본 정보</div>
-      <div class="form-row">
-        <div><label class="form-label">방문 일자 <span class="req">*</span></label><input class="form-input" type="date" id="repDate"></div>
-        <div><label class="form-label">작성자</label><input class="form-input" id="repAuthor" placeholder="보고서 작성자"></div>
-      </div>
-      <div id="repCalInfo" style="display:none;">
-        <div class="form-section-head">캘린더 연동 정보</div>
-        <div class="form-row">
-          <div><label class="form-label">의뢰자명</label><div class="field-readonly" id="repCalName">—</div></div>
-          <div><label class="form-label">연락처</label><div class="field-readonly" id="repCalPhone">—</div></div>
-        </div>
-      </div>
-      <div class="form-section-head">보고 내용</div>
-      <div class="form-group"><label class="form-label">제목 <span class="req">*</span></label><input class="form-input" id="repTitle" placeholder="방문보고 제목"></div>
-      <div class="form-group"><label class="form-label">방문 결과</label>
-        <select class="form-select" id="repResult" style="margin-bottom:10px;">
-          <option value="success">정상 완료</option><option value="partial">부분 완료</option><option value="fail">미완료</option><option value="followup">후속 방문 필요</option>
-        </select>
-      </div>
-      <div class="form-group"><label class="form-label">보고 내용</label><textarea class="form-textarea" id="repContent" placeholder="방문 결과 및 내용을 상세하게 입력하세요" style="min-height:110px;"></textarea></div>
-      <div class="form-group"><label class="form-label">특이사항</label><textarea class="form-textarea" id="repNote" placeholder="특이사항, 후속 조치 필요사항 등"></textarea></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-danger" id="visitRepDeleteBtn" style="display:none;margin-right:auto;">삭제</button>
-      <button class="btn-cancel" id="visitRepCancelBtn">취소</button>
-      <button class="btn-save" id="visitRepSaveBtn">저장</button>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ 나가기 확인 팝업 ═══ -->
-<div class="crm-confirm-overlay" id="crmConfirmOverlay">
-  <div class="crm-confirm-box">
-    <div class="crm-confirm-title">⚠️ 저장하지 않은 변경사항</div>
-    <div class="crm-confirm-desc">수정된 내용이 있습니다.<br>저장하지 않고 정말 나가시겠습니까?</div>
-    <div class="crm-confirm-btns">
-      <button class="crm-confirm-cancel" id="crmConfirmCancel">계속 편집</button>
-      <button class="crm-confirm-leave"  id="crmConfirmLeave">나가기</button>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ 매출기록 모달 ═══ -->
-<div class="modal-overlay" id="salesModal">
-  <div class="modal modal-lg">
-    <div class="modal-header">
-      <div class="modal-title" id="salesModalTitle">매출 등록</div>
-      <button class="modal-close" id="salesModalClose">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-section-head">📅 캘린더 일정 연동</div>
-      <div class="cal-search-wrap"><span class="cal-search-icon">🔍</span><input class="cal-search-input" id="slCalSearch" placeholder="일정 제목, 날짜, 이름으로 검색…"></div>
-      <div id="slCalResults" class="cal-result-list" style="display:none;"></div>
-      <div id="slLinkedBadge" style="margin-bottom:14px;display:none;">
-        <span class="cal-linked-badge">📅 <span id="slLinkedTitle"></span></span>
-        <button id="slUnlinkBtn" style="margin-left:8px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:11px;">연결 해제</button>
-      </div>
-      <div id="slCalInfo" style="display:none;">
-        <div class="form-section-head">캘린더 연동 견적 정보</div>
-        <div class="form-row">
-          <div><label class="form-label">견적 총액</label><div class="field-readonly" id="slCalEstimate">—</div></div>
-          <div><label class="form-label">잔금</label><div class="field-readonly" id="slCalBalance">—</div></div>
-        </div>
-        <div style="margin-bottom:14px;"><label class="form-label">견적서 이미지</label><div class="quote-images-wrap" id="slQuoteImages"></div></div>
-      </div>
-      <div class="form-section-head">매출 정보</div>
-      <div class="form-row">
-        <div><label class="form-label">매출 일자 <span class="req">*</span></label><input class="form-input" type="date" id="slDate"></div>
-        <div><label class="form-label">매출 유형</label>
-          <select class="form-select" id="slType">
-            <option value="visit">방문의뢰</option><option value="remote">원격</option><option value="rental">렌탈</option><option value="design">디자인</option><option value="other">기타</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group"><label class="form-label">제목 <span class="req">*</span></label><input class="form-input" id="slTitle" placeholder="매출 건 제목"></div>
-      <div class="form-row">
-        <div><label class="form-label">매출 금액 (원) <span class="req">*</span></label><input class="form-input" type="number" id="slAmount" placeholder="0" min="0"></div>
-        <div><label class="form-label">잔금 (원)</label><input class="form-input" type="number" id="slBalance" placeholder="0" min="0"></div>
-      </div>
-      <div class="form-row">
-        <div><label class="form-label">환불 금액 (원)</label><input class="form-input" type="number" id="slRefund" placeholder="0" min="0"></div>
-        <div><label class="form-label">결제 상태</label>
-          <select class="form-select" id="slPayStatus">
-            <option value="paid">결제 완료</option><option value="partial">부분 결제</option><option value="unpaid">미결제</option><option value="refunded">환불</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group"><label class="form-label">메모</label><textarea class="form-textarea" id="slNote" placeholder="특이사항, 환불 사유 등"></textarea></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-danger" id="salesDeleteBtn" style="display:none;margin-right:auto;">삭제</button>
-      <button class="btn-cancel" id="salesCancelBtn">취소</button>
-      <button class="btn-save" id="salesSaveBtn">저장</button>
-    </div>
-  </div>
-</div>
-
-<!-- 라이트박스 -->
-<div id="lightbox"><img id="lightboxImg" src="" alt=""></div>
-
 <!-- CONFIRM -->
 <div class="confirm-overlay" id="confirmOverlay">
   <div class="confirm-box">
@@ -861,28 +553,16 @@ const firebaseConfig = {
   appId:             "1:163730741115:web:73a06d5b1cf1a477734fde"
 };
 
-/* ── AUTH (cal_auth_* localStorage 기반, main.html과 공유) ── */
-const AUTH_KEY  = 'cal_auth_ok';
-const AUTH_UID  = 'cal_auth_uid';
-const AUTH_NAME = 'cal_auth_name';
-const AUTH_EXP  = 'cal_auth_exp';
-const AUTH_TTL  = 30 * 24 * 60 * 60 * 1000;
-const TRIES_KEY = 'cal_auth_tries';
-const LOCK_KEY  = 'cal_auth_lock';
-const MAX_TRIES = 5, LOCK_MS = 120000;
+/* ── AUTH ── */
+const SESSION_KEY='crm_auth_ok', SESSION_UID='crm_uid';
+const TRIES_KEY='crm_tries', LOCK_KEY='crm_lock';
+const MAX_TRIES=5, LOCK_MS=120000;
 
 async function sha256(msg){
   const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(msg));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
-function isAuth(){
-  if(localStorage.getItem(AUTH_KEY)!=='1') return false;
-  const exp=parseInt(localStorage.getItem(AUTH_EXP)||'0');
-  if(Date.now()>exp){ clearAuth(); return false; }
-  return true;
-}
-function clearAuth(){[AUTH_KEY,AUTH_UID,AUTH_NAME,AUTH_EXP].forEach(k=>localStorage.removeItem(k));}
-function getDisplayName(){ return localStorage.getItem(AUTH_NAME)||localStorage.getItem(AUTH_UID)||''; }
+function isAuth(){ return sessionStorage.getItem(SESSION_KEY)==='1'; }
 function getLockRemaining(){ const l=localStorage.getItem(LOCK_KEY); return l?Math.max(0,parseInt(l)-Date.now()):0; }
 function updateLockUI(){
   const rem=getLockRemaining();
@@ -896,15 +576,6 @@ function updateLockUI(){
     if(btn.disabled && errEl.textContent.includes('잠금')){ btn.disabled=false; errEl.textContent=''; }
   }
 }
-function updateHeaderUser(){
-  const name=getDisplayName();
-  if(name){
-    document.getElementById('userNameDisplay').textContent=name;
-    document.getElementById('userBadge').style.display='flex';
-  } else {
-    document.getElementById('userBadge').style.display='none';
-  }
-}
 async function tryAuth(){
   if(getLockRemaining()>0) return;
   const idEl=document.getElementById('authIdInput'), pwEl=document.getElementById('authPwInput'), errEl=document.getElementById('authError');
@@ -916,22 +587,14 @@ async function tryAuth(){
   btn.disabled=true; btn.textContent='확인 중…';
   try{
     const pwHash=await sha256(userPw);
-    const tmpApp=initializeApp(firebaseConfig,'crm_auth_tmp_'+Date.now());
+    const tmpApp=initializeApp(firebaseConfig,'auth_tmp');
     const tmpDb=getFirestore(tmpApp);
     const uDoc=await getDoc(doc(tmpDb,'users',userId));
     if(uDoc.exists()&&uDoc.data().passwordHash===pwHash){
-      const displayName=uDoc.data().displayName||userId;
-      localStorage.setItem(AUTH_KEY,'1');
-      localStorage.setItem(AUTH_UID,userId);
-      localStorage.setItem(AUTH_NAME,displayName);
-      localStorage.setItem(AUTH_EXP,Date.now()+AUTH_TTL);
+      sessionStorage.setItem(SESSION_KEY,'1'); sessionStorage.setItem(SESSION_UID,userId);
+      sessionStorage.setItem('crm_display_name', uDoc.data().displayName || userId);
       localStorage.removeItem(TRIES_KEY); localStorage.removeItem(LOCK_KEY);
-      /* crm sessionStorage도 동시 설정 (호환성) */
-      sessionStorage.setItem('crm_auth_ok','1');
-      sessionStorage.setItem('crm_uid',userId);
-      sessionStorage.setItem('crm_display_name',displayName);
       document.getElementById('authOverlay').classList.add('hidden');
-      updateHeaderUser();
       initApp();
     } else {
       const tries=parseInt(localStorage.getItem(TRIES_KEY)||'0')+1;
@@ -947,26 +610,8 @@ document.getElementById('authBtn').addEventListener('click',tryAuth);
 document.getElementById('authPwInput').addEventListener('keydown',e=>{ if(e.key==='Enter') tryAuth(); });
 document.getElementById('authIdInput').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('authPwInput').focus(); });
 
-/* 헤더 로그아웃 버튼 */
-document.getElementById('logoutBtnHeader').addEventListener('click',()=>{
-  clearAuth();
-  sessionStorage.removeItem('crm_auth_ok');
-  sessionStorage.removeItem('crm_uid');
-  sessionStorage.removeItem('crm_display_name');
-  location.reload();
-});
-
-if(isAuth()){
-  /* main.html에서 로그인된 세션 복원 */
-  const uid=localStorage.getItem(AUTH_UID)||'';
-  const name=localStorage.getItem(AUTH_NAME)||uid;
-  sessionStorage.setItem('crm_auth_ok','1');
-  sessionStorage.setItem('crm_uid',uid);
-  sessionStorage.setItem('crm_display_name',name);
-  document.getElementById('authOverlay').classList.add('hidden');
-  updateHeaderUser();
-  initApp();
-} else { updateLockUI(); setTimeout(()=>document.getElementById('authIdInput').focus(),100); }
+if(isAuth()){ document.getElementById('authOverlay').classList.add('hidden'); initApp(); }
+else{ updateLockUI(); setTimeout(()=>document.getElementById('authIdInput').focus(),100); }
 
 /* ════════════════════
    MAIN APP
@@ -975,19 +620,12 @@ function initApp(){
   const app=initializeApp(firebaseConfig);
   const db=getFirestore(app);
   const clientsCol=collection(db,'crm_clients');
-  const cCol  =id=>collection(db,`crm_clients/${id}/consultations`);
-  const vrCol =id=>collection(db,`crm_clients/${id}/visit_requests`);
-  const repCol=id=>collection(db,`crm_clients/${id}/visit_reports`);
-  const slCol =id=>collection(db,`crm_clients/${id}/sales_records`);
-  const eventsCol=collection(db,'events');
+  const cCol=id=>collection(db,`crm_clients/${id}/consultations`);
 
   let clients=[], filteredType='all', searchQuery='';
   let selectedClient=null, currentTab='info';
   let consultations=[], consultUnsub=null;
   let editingClientId=null, editingConsultId=null;
-  let visitReqs=[], visitReps=[], salesRecs=[];
-  let vrUnsub=null, repUnsub=null, slUnsub=null;
-  let editingVrId=null, editingRepId=null, editingSlId=null;
 
   /* theme */
   const savedTheme=localStorage.getItem('cal_theme');
@@ -1069,9 +707,9 @@ function initApp(){
     }
     el.innerHTML=list.map(c=>`
       <div class="client-item${selectedClient&&selectedClient._id===c._id?' active':''}" data-id="${c._id}">
-        <div class="client-avatar">${avatarChar(c.name)}</div>
+        <div class="client-avatar">${avatarChar(c.nick||c.name)}</div>
         <div class="client-info">
-          <div class="client-name">${esc(c.name||'(이름 없음)')}${c.nick?` <span style="font-weight:400;color:var(--text-muted);font-size:11px;">/ ${esc(c.nick)}</span>`:''}</div>
+          <div class="client-name">${esc(c.nick||'(닉네임 없음)')}${c.name?` <span style="font-weight:400;color:var(--text-muted);font-size:11px;">/ ${esc(c.name)}</span>`:''}</div>
           <div class="client-meta">${esc(c.phone||'')}${c.platform?' · '+esc(c.platform):''}</div>
         </div>
         <span class="type-chip ${TYPE_CLASS[c.type]||'type-unknown'}">${TYPE_MAP[c.type]||'미정'}</span>
@@ -1093,9 +731,6 @@ function initApp(){
     document.getElementById('detailNick').textContent=selectedClient.nick?`"${selectedClient.nick}"`:'';
     switchTab('info');
     loadConsultations(id);
-    loadVisitReqs(id);
-    loadVisitReps(id);
-    loadSales(id);
   }
 
   /* ── RENDER INFO ── */
@@ -1112,7 +747,7 @@ function initApp(){
       ${field('방송주소 / ID',esc(c.streamId))}
       ${fieldFull('방종 주제',c.streamTopic)}
       ${sec('방문 정보')}
-      ${fieldFull('장소',c.address)}
+      ${fieldFull('주소',c.address)}
       ${sec('장비 정보')}
       ${fieldFull('PC 사양',c.pcSpec)}
       ${fieldFull('장비 목록',c.equipment)}
@@ -1126,11 +761,8 @@ function initApp(){
   function switchTab(tab){
     currentTab=tab;
     document.querySelectorAll('.dtab').forEach(d=>d.classList.toggle('active',d.dataset.tab===tab));
-    document.getElementById('tabInfo').style.display    =tab==='info'     ?'block':'none';
-    document.getElementById('tabConsult').style.display =tab==='consult'  ?'flex' :'none';
-    document.getElementById('tabVisitReq').style.display=tab==='visit_req'?'flex' :'none';
-    document.getElementById('tabVisitRep').style.display=tab==='visit_rep'?'flex' :'none';
-    document.getElementById('tabSales').style.display   =tab==='sales'    ?'flex' :'none';
+    document.getElementById('tabInfo').style.display   =tab==='info'   ?'block':'none';
+    document.getElementById('tabConsult').style.display=tab==='consult'?'flex' :'none';
     if(tab==='info'&&selectedClient) renderInfo(selectedClient);
   }
   document.querySelectorAll('.dtab').forEach(d=>d.addEventListener('click',()=>switchTab(d.dataset.tab)));
@@ -1187,7 +819,6 @@ function initApp(){
     document.getElementById('cdEntryTime').value=nowLocalStr();
     document.getElementById('cdEntryText').value='';
     document.getElementById('consultDetailModal').classList.add('open');
-    setTimeout(()=>{ document.querySelectorAll('#consultDetailModal .form-textarea,.tl-textarea').forEach(autoResize); },30);
   }
 
   function renderTimeline(entries){
@@ -1198,106 +829,25 @@ function initApp(){
       const da=ta.toDate?ta.toDate():new Date(ta), db2=tb.toDate?tb.toDate():new Date(tb);
       return da-db2;
     });
-    el.innerHTML=sorted.map((e,i)=>`
-      <div class="tl-item" data-idx="${i}">
+    el.innerHTML=sorted.map(e=>`
+      <div class="tl-item">
         <div class="tl-line"><div class="tl-dot"></div><div class="tl-connector"></div></div>
         <div class="tl-content">
           <div class="tl-time">${fmtDateTime(e.time||e.createdAt)}</div>
-          <div class="tl-bubble" data-view="true">${esc(e.text||'')}</div>
+          <div class="tl-bubble">${esc(e.text||'')}</div>
           ${e.author?`<div class="tl-author">— ${esc(e.author)}</div>`:''}
-          <div class="tl-item-actions">
-            <button class="tl-edit-btn" data-action="edit" data-idx="${i}">✏️ 수정</button>
-            <button class="tl-edit-btn del" data-action="del" data-idx="${i}">🗑 삭제</button>
-          </div>
         </div>
       </div>
     `).join('');
-    /* 수정/삭제 이벤트 바인딩 */
-    el.querySelectorAll('[data-action]').forEach(btn=>{
-      btn.addEventListener('click', ()=>handleTlAction(btn.dataset.action, parseInt(btn.dataset.idx), sorted));
-    });
   }
 
   /* timeline entry submit */
-  /* 상담시간 영역 클릭 시 datetime 입력창 포커스 및 열기 */
-  document.querySelector('.tl-add-head').addEventListener('click', (e)=>{
-    const dtInput = document.getElementById('cdEntryTime');
-    if(e.target !== dtInput){ dtInput.focus(); try{ dtInput.showPicker(); }catch(_){} }
-  });
-
-  /* ── 타임라인 항목 수정/삭제 ── */
-  async function handleTlAction(action, idx, sorted){
-    if(!selectedClient||!editingConsultId) return;
-    const cdoc=doc(db,`crm_clients/${selectedClient._id}/consultations`,editingConsultId);
-    const snap=await getDoc(cdoc);
-    if(!snap.exists()) return;
-    const entries=[...(snap.data().entries||[])];
-
-    if(action==='del'){
-      const ok=await showConfirm('항목 삭제','이 상담 내용을 삭제하시겠습니까?','🗑️');
-      if(!ok) return;
-      const target=sorted[idx];
-      const removeIdx=entries.findIndex(e=>
-        (e.text===target.text) &&
-        (fmtDateTime(e.time||e.createdAt)===fmtDateTime(target.time||target.createdAt))
-      );
-      if(removeIdx>=0) entries.splice(removeIdx,1);
-      await updateDoc(cdoc,{entries});
-      consultations=consultations.map(c=>c._id===editingConsultId?{...c,entries}:c);
-      renderTimeline(entries);
-      showToast('삭제되었습니다');
-      return;
-    }
-
-    if(action==='edit'){
-      const tlEl=document.getElementById('cdTimeline');
-      const itemEl=tlEl.querySelector(`.tl-item[data-idx="${idx}"]`);
-      if(!itemEl) return;
-      const bubbleEl=itemEl.querySelector('.tl-bubble');
-      const actionsEl=itemEl.querySelector('.tl-item-actions');
-      const origText=sorted[idx].text||'';
-      bubbleEl.style.display='none';
-      if(actionsEl) actionsEl.style.display='none';
-      const editArea=document.createElement('textarea');
-      editArea.className='tl-edit-area';
-      editArea.value=origText;
-      const editActions=document.createElement('div');
-      editActions.className='tl-edit-actions';
-      editActions.innerHTML=`<button class="tl-save-btn">저장</button><button class="tl-cancel-btn">취소</button>`;
-      const content=itemEl.querySelector('.tl-content');
-      content.appendChild(editArea);
-      content.appendChild(editActions);
-      editArea.focus();
-      editArea.setSelectionRange(editArea.value.length,editArea.value.length);
-      editActions.querySelector('.tl-save-btn').addEventListener('click', async ()=>{
-        const newText=editArea.value.trim();
-        if(!newText){ showToast('내용을 입력하세요','error'); return; }
-        const target=sorted[idx];
-        const editIdx=entries.findIndex(e=>
-          (e.text===target.text) &&
-          (fmtDateTime(e.time||e.createdAt)===fmtDateTime(target.time||target.createdAt))
-        );
-        if(editIdx>=0){ entries[editIdx]={...entries[editIdx],text:newText}; }
-        await updateDoc(cdoc,{entries});
-        consultations=consultations.map(c=>c._id===editingConsultId?{...c,entries}:c);
-        renderTimeline(entries);
-        showToast('수정되었습니다','success');
-      });
-      editActions.querySelector('.tl-cancel-btn').addEventListener('click', ()=>{
-        bubbleEl.style.display='';
-        if(actionsEl) actionsEl.style.display='';
-        editArea.remove();
-        editActions.remove();
-      });
-    }
-  }
-
   document.getElementById('cdEntrySubmit').addEventListener('click', async ()=>{
     if(!selectedClient||!editingConsultId) return;
     const text=document.getElementById('cdEntryText').value.trim();
     if(!text){ showToast('내용을 입력하세요','error'); return; }
     const timeVal=document.getElementById('cdEntryTime').value;
-    const entry={ text, author:getDisplayName(), time:timeVal?new Date(timeVal):new Date(), createdAt:new Date() };
+    const entry={ text, author:sessionStorage.getItem('crm_display_name')||sessionStorage.getItem(SESSION_UID)||'', time:timeVal?new Date(timeVal):new Date(), createdAt:new Date() };
     const btn=document.getElementById('cdEntrySubmit');
     btn.disabled=true; btn.textContent='…';
     try{
@@ -1337,91 +887,6 @@ function initApp(){
     if(selectedClient){ const updated=clients.find(c=>c._id===selectedClient._id); if(updated){ selectedClient=updated; if(currentTab==='info') renderInfo(updated); } }
   },err=>{ clearTimeout(loadTO); setLoading(false); console.error(err); showToast('DB 연결 오류','error'); });
 
-
-  /* ── textarea 자동 높이 조절 ── */
-  function autoResize(el){
-    if(!el) return;
-    el.style.height='auto';
-    el.style.height=(el.scrollHeight+2)+'px';
-  }
-  function bindAutoResize(el){
-    if(!el||el._autoResize) return;
-    el._autoResize=true;
-    el.addEventListener('input',()=>autoResize(el));
-    autoResize(el);
-  }
-  function bindAllAutoResize(){
-    document.querySelectorAll('.form-textarea,.tl-textarea').forEach(bindAutoResize);
-  }
-
-  /* ══════════════════════════════════════════
-     CRM Dirty Check + 나가기 확인
-  ══════════════════════════════════════════ */
-  let _crmSnapshot = null;
-  let _crmConfirmCb = null;
-  let _currentModalId = null; /* 현재 열린 모달 추적 */
-
-  /* 모달별 감시 필드 정의 */
-  const MODAL_FIELDS = {
-    clientModal:   ['fName','fNick','fPhone','fType','fPlatform','fStreamId','fStreamTopic','fAddress','fPcSpec','fEquipment','fNote'],
-    consultModal:  ['cTitle','cType','cCounselor','cContent'],
-    visitReqModal: ['vrTitle','vrDate','vrStatus','vrAssignee','vrType','vrAddress','vrEquipment','vrReqTopic','vrContent'],
-    visitRepModal: ['repTitle','repDate','repAuthor','repResult','repContent','repNote'],
-    salesModal:    ['slTitle','slDate','slType','slAmount','slBalance','slRefund','slPayStatus','slNote'],
-  };
-
-  function _crmTakeSnapshot(modalId) {
-    _currentModalId = modalId;
-    const fields = MODAL_FIELDS[modalId] || [];
-    const snap = { _modal: modalId };
-    fields.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) snap[id] = el.value;
-    });
-    _crmSnapshot = JSON.stringify(snap);
-  }
-
-  function _crmIsDirty(modalId) {
-    if (!_crmSnapshot) return false;
-    const fields = MODAL_FIELDS[modalId] || [];
-    const snap = { _modal: modalId };
-    fields.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) snap[id] = el.value;
-    });
-    return JSON.stringify(snap) !== _crmSnapshot;
-  }
-
-  function _crmShowConfirm(onLeave) {
-    _crmConfirmCb = onLeave;
-    document.getElementById('crmConfirmOverlay').classList.add('open');
-  }
-  function _crmCloseConfirm() {
-    document.getElementById('crmConfirmOverlay').classList.remove('open');
-    _crmConfirmCb = null;
-  }
-
-  /* tryClose: dirty하면 팝업, 아니면 바로 닫기 */
-  function crmTryClose(modalId, closeFn) {
-    if (_crmIsDirty(modalId)) {
-      _crmShowConfirm(() => { _crmSnapshot = null; _currentModalId = null; closeFn(); });
-    } else {
-      _crmSnapshot = null;
-      _currentModalId = null;
-      closeFn();
-    }
-  }
-
-  document.getElementById('crmConfirmCancel').addEventListener('click', _crmCloseConfirm);
-  document.getElementById('crmConfirmLeave').addEventListener('click', () => {
-    const cb = _crmConfirmCb;
-    _crmCloseConfirm();
-    if (cb) cb();
-  });
-  document.getElementById('crmConfirmOverlay').addEventListener('click', e => {
-    if (e.target === document.getElementById('crmConfirmOverlay')) _crmCloseConfirm();
-  });
-
   /* filter/search */
   document.querySelectorAll('.cf-btn').forEach(btn=>btn.addEventListener('click',()=>{
     filteredType=btn.dataset.type;
@@ -1447,13 +912,9 @@ function initApp(){
     document.getElementById('fEquipment').value=client?.equipment||'';
     document.getElementById('fNote').value=client?.note||'';
     document.getElementById('clientModal').classList.add('open');
-    setTimeout(()=>{ _crmTakeSnapshot('clientModal'); },50);
     setTimeout(()=>document.getElementById('fName').focus(),120);
   }
-  function closeClientModal(force=false){
-    if(!force){ crmTryClose('clientModal', ()=>closeClientModal(true)); return; }
-    document.getElementById('clientModal').classList.remove('open');
-  }
+  function closeClientModal(){ document.getElementById('clientModal').classList.remove('open'); }
 
   document.getElementById('addClientBtn').addEventListener('click',()=>openClientModal());
   document.getElementById('editClientBtn').addEventListener('click',()=>{ if(selectedClient) openClientModal(selectedClient); });
@@ -1487,7 +948,7 @@ function initApp(){
         showToast('고객이 등록되었습니다','success');
         setTimeout(()=>{ const nc=clients.find(c=>c._id===ref.id); if(nc) selectClient(nc._id); },800);
       }
-      _crmSnapshot = null; closeClientModal(true);
+      closeClientModal();
     } catch(e){ console.error(e); showToast('저장에 실패했습니다','error'); }
     saveBtn.disabled=false; saveBtn.textContent='저장';
   });
@@ -1509,17 +970,13 @@ function initApp(){
   });
 
   /* ── NEW CONSULT MODAL ── */
-  function closeConsultModal(force=false){
-    if(!force){ crmTryClose('consultModal', ()=>closeConsultModal(true)); return; }
-    document.getElementById('consultModal').classList.remove('open');
-  }
+  function closeConsultModal(){ document.getElementById('consultModal').classList.remove('open'); }
   document.getElementById('newConsultBtn').addEventListener('click',()=>{
     document.getElementById('cTitle').value='';
     document.getElementById('cType').value='visit';
-    document.getElementById('cCounselor').value=getDisplayName();
+    document.getElementById('cCounselor').value=sessionStorage.getItem('crm_display_name')||sessionStorage.getItem(SESSION_UID)||'';
     document.getElementById('cContent').value='';
     document.getElementById('consultModal').classList.add('open');
-    setTimeout(()=>{ _crmTakeSnapshot('consultModal'); },50);
     setTimeout(()=>document.getElementById('cTitle').focus(),120);
   });
   document.getElementById('consultModalClose').addEventListener('click',closeConsultModal);
@@ -1540,7 +997,7 @@ function initApp(){
     try{
       const ref=await addDoc(cCol(selectedClient._id),data);
       showToast('상담이 등록되었습니다','success');
-      _crmSnapshot = null; closeConsultModal(true);
+      closeConsultModal();
       switchTab('consult');
       setTimeout(()=>{ const nc=consultations.find(c=>c._id===ref.id); if(nc) openConsultDetail(nc._id); },700);
     } catch(e){ console.error(e); showToast('저장에 실패했습니다','error'); }
@@ -1551,609 +1008,10 @@ function initApp(){
   [document.getElementById('cdClose'),document.getElementById('cdClose2')].forEach(b=>b.addEventListener('click',()=>document.getElementById('consultDetailModal').classList.remove('open')));
 
   /* overlay click close */
-
-  /* ═══════════════════════════════════════
-     캘린더 검색 공통 유틸
-  ═══════════════════════════════════════ */
-  async function searchCalendarEvents(q){
-    if(!q||q.length<1) return [];
-    const snap=await getDocs(eventsCol);
-    const ql=q.toLowerCase();
-    return snap.docs
-      .map(d=>({_id:d.id,...d.data()}))
-      .filter(ev=>{
-        if(ev.color!=='gold') return false;
-        const hay=[ev.title||'',ev.startDate||'',ev.gold?.name||'',ev.name||''].join(' ').toLowerCase();
-        return hay.includes(ql);
-      })
-      .sort((a,b)=>(b.startDate||'').localeCompare(a.startDate||''))
-      .slice(0,10);
-  }
-  function renderCalResults(events,containerEl,onSelect){
-    if(!events.length){ containerEl.innerHTML='<div style="padding:8px 12px;color:var(--text-muted);font-size:12px;">검색 결과가 없습니다</div>'; containerEl.style.display=''; return; }
-    containerEl.innerHTML=events.map(ev=>`<div class="cal-result-item" data-id="${ev._id}"><div class="cal-result-title">${esc(ev.title||'(제목 없음)')}</div><div class="cal-result-meta">${ev.startDate||''} · ${esc(ev.gold?.name||ev.name||'')} ${ev.gold?.phone?'· '+esc(ev.gold.phone):''}</div></div>`).join('');
-    containerEl.style.display='';
-    containerEl.querySelectorAll('.cal-result-item').forEach(item=>item.addEventListener('click',()=>onSelect(events.find(e=>e._id===item.dataset.id))));
-  }
-  function setupCalSearch(searchInputId,resultsId,onSelect){
-    let timer;
-    document.getElementById(searchInputId).addEventListener('input',e=>{
-      clearTimeout(timer);
-      const v=e.target.value.trim();
-      const resEl=document.getElementById(resultsId);
-      if(!v){ resEl.style.display='none'; resEl.innerHTML=''; return; }
-      resEl.innerHTML='<div class="cal-loading">검색 중…</div>'; resEl.style.display='';
-      timer=setTimeout(async()=>{ const evs=await searchCalendarEvents(v); renderCalResults(evs,resEl,onSelect); },350);
-    });
-  }
-  function fmtAmount(n){
-    if(n===undefined||n===null||n==='') return '';
-    const num=Number(String(n).replace(/[^0-9.]/g,''));
-    if(isNaN(num)||num===0) return '';
-    return num.toLocaleString('ko-KR')+'원';
-  }
-  function showLightbox(src){ document.getElementById('lightboxImg').src=src; document.getElementById('lightbox').classList.add('open'); }
-  document.getElementById('lightbox').addEventListener('click',()=>document.getElementById('lightbox').classList.remove('open'));
-
-  /* ═══════════════════════════════════════
-     방문의뢰 탭
-  ═══════════════════════════════════════ */
-  function loadVisitReqs(clientId){
-    if(vrUnsub){ vrUnsub(); vrUnsub=null; }
-    vrUnsub=onSnapshot(query(vrCol(clientId),orderBy('createdAt','desc')),snap=>{
-      visitReqs=snap.docs.map(d=>({_id:d.id,...d.data()}));
-      document.getElementById('visitReqTabCount').textContent=visitReqs.length?`(${visitReqs.length})`:'';
-      document.getElementById('visitReqCountLabel').textContent=`총 ${visitReqs.length}건`;
-      renderVisitReqList();
-    });
-  }
-  const STATUS_LABEL={pending:'예정',done:'완료',cancel:'취소'};
-  const STATUS_CLASS={pending:'status-pending',done:'status-done',cancel:'status-cancel'};
-  const VR_TYPE_LABEL={visit:'방문',remote:'원격',rental:'렌탈'};
-  const REP_RESULT_LABEL={success:'정상 완료',partial:'부분 완료',fail:'미완료',followup:'후속 필요'};
-  const SL_TYPE_LABEL={visit:'방문의뢰',remote:'원격',rental:'렌탈',design:'디자인',other:'기타'};
-  const SL_PAY_LABEL={paid:'결제완료',partial:'부분결제',unpaid:'미결제',refunded:'환불'};
-  const SL_PAY_CLASS={paid:'status-done',partial:'status-pending',unpaid:'status-cancel',refunded:'status-cancel'};
-
-  function renderVisitReqList(){
-    const el=document.getElementById('visitReqList');
-    if(!visitReqs.length){ el.innerHTML='<div class="generic-empty">등록된 방문의뢰가 없습니다</div>'; return; }
-    el.innerHTML=visitReqs.map(r=>`<div class="item-card" data-id="${r._id}"><div class="item-card-header"><div><div class="item-card-title">${esc(r.title||'(제목 없음)')}</div><div class="item-card-meta"><span class="status-chip ${STATUS_CLASS[r.status]||'status-pending'}">${STATUS_LABEL[r.status]||'예정'}</span><span>${VR_TYPE_LABEL[r.type]||'방문'}</span>${r.calEventId?'<span class="cal-linked-badge" style="font-size:9px;padding:1px 6px;">📅 캘린더 연동</span>':''}</div></div><div class="item-date">${r.visitDate||fmtDate(r.createdAt)}</div></div>${r.calEstimate?`<div class="item-card-footer"><span>견적 ${fmtAmount(r.calEstimate)}</span>${r.calBalance?`<span style="color:var(--red);">잔금 ${fmtAmount(r.calBalance)}</span>`:''}</div>`:''}</div>`).join('');
-    el.querySelectorAll('.item-card').forEach(c=>c.addEventListener('click',()=>openVisitReqModal(visitReqs.find(r=>r._id===c.dataset.id))));
-  }
-
-  let vrLinkedEvent=null;
-  function openVisitReqModal(item=null){
-    editingVrId=item?item._id:null; vrLinkedEvent=null;
-    document.getElementById('visitReqModalTitle').textContent=item?'방문의뢰 수정':'방문의뢰 등록';
-    document.getElementById('visitReqDeleteBtn').style.display=item?'':'none';
-    document.getElementById('vrCalSearch').value='';
-    document.getElementById('vrCalResults').style.display='none'; document.getElementById('vrCalResults').innerHTML='';
-    document.getElementById('vrLinkedBadge').style.display='none';
-    document.getElementById('vrCalInfo').style.display='none';
-    document.getElementById('vrDate').value=item?.visitDate||new Date().toISOString().slice(0,10);
-    document.getElementById('vrStatus').value=item?.status||'pending';
-    document.getElementById('vrAssignee').value=item?.assignee||getDisplayName();
-    document.getElementById('vrType').value=item?.type||'visit';
-    document.getElementById('vrTitle').value=item?.title||'';
-    document.getElementById('vrAddress').value=item?.address||selectedClient?.address||'';
-    document.getElementById('vrEquipment').value=item?.equipment||'';
-    document.getElementById('vrReqTopic').value=item?.reqTopic||'';
-    document.getElementById('vrContent').value=item?.content||'';
-    if(item?.calEventId){
-      vrLinkedEvent={_id:item.calEventId,title:item.calTitle};
-      document.getElementById('vrLinkedTitle').textContent=item.calTitle||item.calEventId;
-      document.getElementById('vrLinkedBadge').style.display='';
-      document.getElementById('vrCalName').textContent=item.calName||'—';
-      document.getElementById('vrCalPhone').textContent=item.calPhone||'—';
-      document.getElementById('vrCalEstimate').textContent=item.calEstimate?fmtAmount(item.calEstimate):'—';
-      document.getElementById('vrCalBalance').textContent=item.calBalance?fmtAmount(item.calBalance):'없음';
-      renderVrImages({quote:item.calQuoteImgs||[], ref:item.calRefImgs||[], room:item.calRoomImgs||[]});
-      document.getElementById('vrCalInfo').style.display='';
-    }
-    document.getElementById('visitReqModal').classList.add('open');
-    /* textarea 자동 높이 적용 */
-    setTimeout(()=>{ document.querySelectorAll('#visitReqModal .form-textarea').forEach(autoResize); },30);
-    setTimeout(()=>{ _crmTakeSnapshot('visitReqModal'); },60);
-    setTimeout(()=>document.getElementById('vrTitle').focus(),100);
-  }
-  /* 이미지 탭 렌더 함수 */
-  function renderVrImages(imgSets){
-    const quoteImgs = imgSets.quote||[];
-    const refImgs   = imgSets.ref||[];
-    const roomImgs  = imgSets.room||[];
-    const total = quoteImgs.length + refImgs.length + roomImgs.length;
-    const countEl = document.getElementById('vrImgCount');
-    if(countEl) countEl.textContent = total ? `(${total}장)` : '';
-    const tabsEl = document.getElementById('vrImgTabs');
-    if(tabsEl) tabsEl.style.display = total ? 'flex' : 'none';
-    function _imgSrc(img){
-      if(!img) return '';
-      if(typeof img==='string') return img;
-      return img.data||img.url||img.src||'';
-    }
-    function renderSet(containerId, imgs){
-      const el=document.getElementById(containerId); if(!el) return;
-      el.innerHTML='';
-      (imgs||[]).forEach(img=>{
-        const src=_imgSrc(img); if(!src) return;
-        const i=document.createElement('img');
-        i.className='quote-img-thumb'; i.src=src; i.alt='이미지';
-        i.addEventListener('click',()=>showLightbox(src));
-        el.appendChild(i);
-      });
-    }
-    renderSet('vrQuoteImages', quoteImgs);
-    renderSet('vrRefImages',   refImgs);
-    renderSet('vrRoomImages',  roomImgs);
-    /* 탭 버튼 이벤트 */
-    document.querySelectorAll('.vr-img-tab').forEach(btn=>{
-      btn.onclick = ()=>{
-        document.querySelectorAll('.vr-img-tab').forEach(b=>b.classList.remove('active'));
-        btn.classList.add('active');
-        const type=btn.dataset.type;
-        document.getElementById('vrQuoteImages').style.display = type==='quote' ? '' : 'none';
-        document.getElementById('vrRefImages').style.display   = type==='ref'   ? '' : 'none';
-        document.getElementById('vrRoomImages').style.display  = type==='room'  ? '' : 'none';
-      };
-    });
-    /* 기본: 견적서 탭 활성 */
-    document.querySelectorAll('.vr-img-tab').forEach(b=>b.classList.remove('active'));
-    const firstTab = document.getElementById('vrImgTab_quote');
-    if(firstTab) firstTab.classList.add('active');
-    document.getElementById('vrQuoteImages').style.display = '';
-    document.getElementById('vrRefImages').style.display   = 'none';
-    document.getElementById('vrRoomImages').style.display  = 'none';
-  }
-
-  setupCalSearch('vrCalSearch','vrCalResults',(ev)=>{
-    vrLinkedEvent=ev;
-    document.getElementById('vrCalResults').style.display='none';
-    document.getElementById('vrLinkedTitle').textContent=ev.title||ev._id;
-    document.getElementById('vrLinkedBadge').style.display='';
-    /* 날짜 */
-    document.getElementById('vrDate').value=ev.startDate||document.getElementById('vrDate').value;
-    /* 제목 */
-    if(!document.getElementById('vrTitle').value) document.getElementById('vrTitle').value=ev.title||'';
-    /* 주소: ev.address (캘린더 제목 아래 주소 필드) */
-    if(ev.address) document.getElementById('vrAddress').value=ev.address;
-    /* 캘린더 연동 정보 */
-    const name=ev.gold?.name||ev.name||''; const phone=ev.gold?.phone||ev.phone||'';
-    const est=String(ev.gold?.estimate_amount||''); const bal=String(ev.gold?.balance_amount||'');
-    /* 제목도 항상 갱신 */
-    document.getElementById('vrTitle').value=ev.title||document.getElementById('vrTitle').value;
-    document.getElementById('vrCalName').textContent=name||'—';
-    document.getElementById('vrCalPhone').textContent=phone||'—';
-    document.getElementById('vrCalEstimate').textContent=est&&est!=='0'?fmtAmount(est):'—';
-    document.getElementById('vrCalBalance').textContent=bal&&bal!=='0'?fmtAmount(bal):'없음';
-    /* 장비목록 자동입력 */
-    const equipment=ev.gold?.equipment||'';
-    if(equipment) document.getElementById('vrEquipment').value=equipment;
-    /* 의뢰 주제 자동입력 */
-    const reqTopic=ev.gold?.req_topic||'';
-    if(reqTopic) document.getElementById('vrReqTopic').value=reqTopic;
-    /* 의뢰 내용(req_detail) 자동입력 */
-    const reqDetail=ev.gold?.req_detail||'';
-    if(reqDetail) document.getElementById('vrContent').value=reqDetail;
-    /* 이미지 세트 전체 표시 */
-    const imgSets = {
-      quote: ev.gold?.quoteImgs || ev.quoteImgs || [],
-      ref:   ev.gold?.refImgs   || ev.refImgs   || [],
-      room:  ev.gold?.roomImgs  || ev.roomImgs  || [],
-    };
-    renderVrImages(imgSets);
-    document.getElementById('vrCalInfo').style.display='';
-  });
-  document.getElementById('vrUnlinkBtn').addEventListener('click',()=>{
-    vrLinkedEvent=null;
-    document.getElementById('vrLinkedBadge').style.display='none';
-    document.getElementById('vrCalInfo').style.display='none';
-    document.getElementById('vrImgCount').textContent='';
-    ['vrQuoteImages','vrRefImages','vrRoomImages'].forEach(id=>{
-      const el=document.getElementById(id); if(el){el.innerHTML=''; el.style.display=id==='vrQuoteImages'?'':'none';}
-    });
-    const tabsEl=document.getElementById('vrImgTabs'); if(tabsEl) tabsEl.style.display='none';
-  });
-  document.getElementById('visitReqDeleteBtn').addEventListener('click',async()=>{
-    if(!editingVrId||!selectedClient) return;
-    const ok=await showConfirm('방문의뢰 삭제','이 방문의뢰를 삭제하시겠습니까?','🗑️');
-    if(!ok) return;
-    await deleteDoc(doc(db,`crm_clients/${selectedClient._id}/visit_requests`,editingVrId));
-    document.getElementById('visitReqModal').classList.remove('open'); showToast('삭제되었습니다');
-  });
-  document.getElementById('visitReqSaveBtn').addEventListener('click',async()=>{
-    const title=document.getElementById('vrTitle').value.trim();
-    if(!title){ document.getElementById('vrTitle').classList.add('error'); setTimeout(()=>document.getElementById('vrTitle').classList.remove('error'),600); return; }
-    if(!selectedClient) return;
-    const btn=document.getElementById('visitReqSaveBtn'); btn.disabled=true; btn.textContent='저장 중…';
-    const data={ title, visitDate:document.getElementById('vrDate').value, status:document.getElementById('vrStatus').value, assignee:document.getElementById('vrAssignee').value.trim(), type:document.getElementById('vrType').value, address:document.getElementById('vrAddress').value.trim(), equipment:document.getElementById('vrEquipment').value.trim(), reqTopic:document.getElementById('vrReqTopic').value.trim(), content:document.getElementById('vrContent').value.trim() };
-    if(vrLinkedEvent){
-      data.calEventId=vrLinkedEvent._id; data.calTitle=vrLinkedEvent.title||'';
-      data.calName=document.getElementById('vrCalName').textContent;
-      data.calPhone=document.getElementById('vrCalPhone').textContent;
-      const et=document.getElementById('vrCalEstimate').textContent;
-      data.calEstimate=et&&et!=='—'?et.replace(/[^0-9]/g,''):'';
-      const bt=document.getElementById('vrCalBalance').textContent;
-      data.calBalance=bt&&bt!=='없음'&&bt!=='—'?bt.replace(/[^0-9]/g,''):'';
-      /* 이미지 데이터 저장 (base64 포함) */
-      data.calQuoteImgs=Array.from(document.getElementById('vrQuoteImages').querySelectorAll('img')).map(i=>({data:i.src,name:''}));
-      data.calRefImgs  =Array.from(document.getElementById('vrRefImages').querySelectorAll('img')).map(i=>({data:i.src,name:''}));
-      data.calRoomImgs =Array.from(document.getElementById('vrRoomImages').querySelectorAll('img')).map(i=>({data:i.src,name:''}));
-    }
-    try{
-      if(editingVrId){ await updateDoc(doc(db,`crm_clients/${selectedClient._id}/visit_requests`,editingVrId),data); showToast('수정되었습니다','success'); }
-      else { data.createdAt=serverTimestamp(); await addDoc(vrCol(selectedClient._id),data); showToast('방문의뢰가 등록되었습니다','success'); }
-      _crmSnapshot = null;
-      document.getElementById('visitReqModal').classList.remove('open');
-    } catch(e){ console.error(e); showToast('저장 실패','error'); }
-    btn.disabled=false; btn.textContent='저장';
-  });
-  document.getElementById('newVisitReqBtn').addEventListener('click',()=>openVisitReqModal());
-  document.getElementById('visitReqModalClose').addEventListener('click',()=>crmTryClose('visitReqModal',()=>document.getElementById('visitReqModal').classList.remove('open')));
-  document.getElementById('visitReqCancelBtn').addEventListener('click',()=>crmTryClose('visitReqModal',()=>document.getElementById('visitReqModal').classList.remove('open')));
-
-  /* ═══════════════════════════════════════
-     방문보고 탭
-  ═══════════════════════════════════════ */
-  function loadVisitReps(clientId){
-    if(repUnsub){ repUnsub(); repUnsub=null; }
-    repUnsub=onSnapshot(query(repCol(clientId),orderBy('createdAt','desc')),snap=>{
-      visitReps=snap.docs.map(d=>({_id:d.id,...d.data()}));
-      document.getElementById('visitRepTabCount').textContent=visitReps.length?`(${visitReps.length})`:'';
-      document.getElementById('visitRepCountLabel').textContent=`총 ${visitReps.length}건`;
-      renderVisitRepList();
-    });
-  }
-  function renderVisitRepList(){
-    const el=document.getElementById('visitRepList');
-    if(!visitReps.length){ el.innerHTML='<div class="generic-empty">등록된 방문보고가 없습니다</div>'; return; }
-    el.innerHTML=visitReps.map(r=>`<div class="item-card" data-id="${r._id}"><div class="item-card-header"><div><div class="item-card-title">${esc(r.title||'(제목 없음)')}</div><div class="item-card-meta"><span class="status-chip ${r.result==='success'?'status-done':r.result==='fail'?'status-cancel':'status-pending'}">${REP_RESULT_LABEL[r.result]||'완료'}</span>${r.author?`<span>작성: ${esc(r.author)}</span>`:''} ${r.calEventId?'<span class="cal-linked-badge" style="font-size:9px;padding:1px 6px;">📅 캘린더 연동</span>':''}</div></div><div class="item-date">${r.visitDate||fmtDate(r.createdAt)}</div></div>${r.content?`<div class="item-card-body">${esc(r.content)}</div>`:''}</div>`).join('');
-    el.querySelectorAll('.item-card').forEach(c=>c.addEventListener('click',()=>openVisitRepModal(visitReps.find(r=>r._id===c.dataset.id))));
-  }
-  let repLinkedEvent=null;
-  function openVisitRepModal(item=null){
-    editingRepId=item?item._id:null; repLinkedEvent=null;
-    document.getElementById('visitRepModalTitle').textContent=item?'방문보고 수정':'방문보고 등록';
-    document.getElementById('visitRepDeleteBtn').style.display=item?'':'none';
-    document.getElementById('repCalSearch').value='';
-    document.getElementById('repCalResults').style.display='none'; document.getElementById('repCalResults').innerHTML='';
-    document.getElementById('repLinkedBadge').style.display='none';
-    document.getElementById('repCalInfo').style.display='none';
-    document.getElementById('repDate').value=item?.visitDate||new Date().toISOString().slice(0,10);
-    document.getElementById('repAuthor').value=item?.author||getDisplayName();
-    document.getElementById('repTitle').value=item?.title||'';
-    document.getElementById('repResult').value=item?.result||'success';
-    document.getElementById('repContent').value=item?.content||'';
-    document.getElementById('repNote').value=item?.note||'';
-    if(item?.calEventId){
-      repLinkedEvent={_id:item.calEventId,title:item.calTitle};
-      document.getElementById('repLinkedTitle').textContent=item.calTitle||item.calEventId;
-      document.getElementById('repLinkedBadge').style.display='';
-      if(item.calName||item.calPhone){ document.getElementById('repCalName').textContent=item.calName||'—'; document.getElementById('repCalPhone').textContent=item.calPhone||'—'; document.getElementById('repCalInfo').style.display=''; }
-    }
-    document.getElementById('visitRepModal').classList.add('open');
-    setTimeout(()=>{ document.querySelectorAll('#visitRepModal .form-textarea').forEach(autoResize); },30);
-    setTimeout(()=>{ _crmTakeSnapshot('visitRepModal'); },60);
-    setTimeout(()=>document.getElementById('repTitle').focus(),100);
-  }
-  setupCalSearch('repCalSearch','repCalResults',(ev)=>{
-    repLinkedEvent=ev;
-    document.getElementById('repCalResults').style.display='none';
-    document.getElementById('repLinkedTitle').textContent=ev.title||ev._id;
-    document.getElementById('repLinkedBadge').style.display='';
-    document.getElementById('repDate').value=ev.startDate||document.getElementById('repDate').value;
-    if(!document.getElementById('repTitle').value) document.getElementById('repTitle').value=(ev.title||'')+' 방문보고';
-    document.getElementById('repCalName').textContent=ev.gold?.name||ev.name||'—';
-    document.getElementById('repCalPhone').textContent=ev.gold?.phone||ev.phone||'—';
-    document.getElementById('repCalInfo').style.display='';
-  });
-  document.getElementById('repUnlinkBtn').addEventListener('click',()=>{ repLinkedEvent=null; document.getElementById('repLinkedBadge').style.display='none'; document.getElementById('repCalInfo').style.display='none'; });
-  document.getElementById('visitRepDeleteBtn').addEventListener('click',async()=>{
-    if(!editingRepId||!selectedClient) return;
-    const ok=await showConfirm('방문보고 삭제','이 방문보고를 삭제하시겠습니까?','🗑️');
-    if(!ok) return;
-    await deleteDoc(doc(db,`crm_clients/${selectedClient._id}/visit_reports`,editingRepId));
-    document.getElementById('visitRepModal').classList.remove('open'); showToast('삭제되었습니다');
-  });
-  document.getElementById('visitRepSaveBtn').addEventListener('click',async()=>{
-    const title=document.getElementById('repTitle').value.trim();
-    if(!title){ document.getElementById('repTitle').classList.add('error'); setTimeout(()=>document.getElementById('repTitle').classList.remove('error'),600); return; }
-    if(!selectedClient) return;
-    const btn=document.getElementById('visitRepSaveBtn'); btn.disabled=true; btn.textContent='저장 중…';
-    const data={ title, visitDate:document.getElementById('repDate').value, author:document.getElementById('repAuthor').value.trim(), result:document.getElementById('repResult').value, content:document.getElementById('repContent').value.trim(), note:document.getElementById('repNote').value.trim() };
-    if(repLinkedEvent){ data.calEventId=repLinkedEvent._id; data.calTitle=repLinkedEvent.title||''; data.calName=document.getElementById('repCalName').textContent; data.calPhone=document.getElementById('repCalPhone').textContent; }
-    try{
-      if(editingRepId){ await updateDoc(doc(db,`crm_clients/${selectedClient._id}/visit_reports`,editingRepId),data); showToast('수정되었습니다','success'); }
-      else { data.createdAt=serverTimestamp(); await addDoc(repCol(selectedClient._id),data); showToast('방문보고가 등록되었습니다','success'); }
-      _crmSnapshot = null;
-      document.getElementById('visitRepModal').classList.remove('open');
-    } catch(e){ console.error(e); showToast('저장 실패','error'); }
-    btn.disabled=false; btn.textContent='저장';
-  });
-  document.getElementById('newVisitRepBtn').addEventListener('click',()=>openVisitRepModal());
-  document.getElementById('visitRepModalClose').addEventListener('click',()=>crmTryClose('visitRepModal',()=>document.getElementById('visitRepModal').classList.remove('open')));
-  document.getElementById('visitRepCancelBtn').addEventListener('click',()=>crmTryClose('visitRepModal',()=>document.getElementById('visitRepModal').classList.remove('open')));
-
-  /* ═══════════════════════════════════════
-     매출기록 탭
-  ═══════════════════════════════════════ */
-  function loadSales(clientId){
-    if(slUnsub){ slUnsub(); slUnsub=null; }
-    slUnsub=onSnapshot(query(slCol(clientId),orderBy('createdAt','desc')),snap=>{
-      salesRecs=snap.docs.map(d=>({_id:d.id,...d.data()}));
-      document.getElementById('salesTabCount').textContent=salesRecs.length?`(${salesRecs.length})`:'';
-      document.getElementById('salesCountLabel').textContent=`총 ${salesRecs.length}건`;
-      renderSalesSummary(); renderSalesList();
-    });
-  }
-  function renderSalesSummary(){
-    const total=salesRecs.reduce((s,r)=>s+(Number(r.amount)||0),0);
-    const refund=salesRecs.reduce((s,r)=>s+(Number(r.refund)||0),0);
-    const net=total-refund;
-    document.getElementById('salesSummary').innerHTML=`<div class="sales-sum-card"><div class="sales-sum-label">총 매출</div><div class="sales-sum-value green">${fmtAmount(total)}</div></div><div class="sales-sum-card"><div class="sales-sum-label">환불 합계</div><div class="sales-sum-value red">${refund?fmtAmount(refund):'없음'}</div></div><div class="sales-sum-card"><div class="sales-sum-label">실 매출</div><div class="sales-sum-value">${fmtAmount(net)}</div></div><div class="sales-sum-card"><div class="sales-sum-label">건수</div><div class="sales-sum-value">${salesRecs.length}건</div></div>`;
-  }
-  function renderSalesList(){
-    const el=document.getElementById('salesList');
-    if(!salesRecs.length){ el.innerHTML='<div class="generic-empty">등록된 매출기록이 없습니다</div>'; return; }
-    el.innerHTML=salesRecs.map(r=>`<div class="item-card" data-id="${r._id}"><div class="item-card-header"><div><div class="item-card-title">${esc(r.title||'(제목 없음)')}</div><div class="item-card-meta"><span class="status-chip ${SL_PAY_CLASS[r.payStatus]||'status-done'}">${SL_PAY_LABEL[r.payStatus]||'결제완료'}</span><span>${SL_TYPE_LABEL[r.type]||''}</span>${r.calEventId?'<span class="cal-linked-badge" style="font-size:9px;padding:1px 6px;">📅 캘린더 연동</span>':''}</div></div><div class="item-date">${r.salesDate||fmtDate(r.createdAt)}</div></div><div class="item-card-footer"><span class="amount-badge">💰 ${fmtAmount(r.amount)}</span>${r.balance?`<span class="amount-badge balance-badge">잔금 ${fmtAmount(r.balance)}</span>`:''} ${r.refund?`<span class="amount-badge refund-badge">환불 ${fmtAmount(r.refund)}</span>`:''}</div></div>`).join('');
-    el.querySelectorAll('.item-card').forEach(c=>c.addEventListener('click',()=>openSalesModal(salesRecs.find(r=>r._id===c.dataset.id))));
-  }
-  let slLinkedEvent=null;
-  function openSalesModal(item=null){
-    editingSlId=item?item._id:null; slLinkedEvent=null;
-    document.getElementById('salesModalTitle').textContent=item?'매출 수정':'매출 등록';
-    document.getElementById('salesDeleteBtn').style.display=item?'':'none';
-    document.getElementById('slCalSearch').value='';
-    document.getElementById('slCalResults').style.display='none'; document.getElementById('slCalResults').innerHTML='';
-    document.getElementById('slLinkedBadge').style.display='none';
-    document.getElementById('slCalInfo').style.display='none';
-    document.getElementById('slDate').value=item?.salesDate||new Date().toISOString().slice(0,10);
-    document.getElementById('slType').value=item?.type||'visit';
-    document.getElementById('slTitle').value=item?.title||'';
-    document.getElementById('slAmount').value=item?.amount||'';
-    document.getElementById('slBalance').value=item?.balance||'';
-    document.getElementById('slRefund').value=item?.refund||'';
-    document.getElementById('slPayStatus').value=item?.payStatus||'paid';
-    document.getElementById('slNote').value=item?.note||'';
-    if(item?.calEventId){
-      slLinkedEvent={_id:item.calEventId,title:item.calTitle};
-      document.getElementById('slLinkedTitle').textContent=item.calTitle||item.calEventId;
-      document.getElementById('slLinkedBadge').style.display='';
-      if(item.calEstimate){ document.getElementById('slCalEstimate').textContent=fmtAmount(item.calEstimate); document.getElementById('slCalBalance').textContent=item.calBalance?fmtAmount(item.calBalance):'없음'; document.getElementById('slCalInfo').style.display=''; }
-    }
-    document.getElementById('salesModal').classList.add('open');
-    setTimeout(()=>{ _crmTakeSnapshot('salesModal'); },50);
-    setTimeout(()=>document.getElementById('slTitle').focus(),100);
-  }
-  setupCalSearch('slCalSearch','slCalResults',(ev)=>{
-    slLinkedEvent=ev;
-    document.getElementById('slCalResults').style.display='none';
-    document.getElementById('slLinkedTitle').textContent=ev.title||ev._id;
-    document.getElementById('slLinkedBadge').style.display='';
-    document.getElementById('slDate').value=ev.startDate||document.getElementById('slDate').value;
-    if(!document.getElementById('slTitle').value) document.getElementById('slTitle').value=ev.title||'';
-    const est=String(ev.gold?.estimate_amount||''); const bal=String(ev.gold?.balance_amount||'');
-    const imgs=ev.gold?.quoteImgs||ev.quoteImgs||[];
-    /* 제목/날짜 항상 갱신 */
-    document.getElementById('slTitle').value=ev.title||document.getElementById('slTitle').value;
-    document.getElementById('slDate').value=ev.startDate||document.getElementById('slDate').value;
-    document.getElementById('slCalEstimate').textContent=est&&est!=='0'?fmtAmount(est):'—';
-    document.getElementById('slCalBalance').textContent=bal&&bal!=='0'?fmtAmount(bal):'없음';
-    /* 금액 자동입력 - 항상 덮어쓰기 */
-    if(est) document.getElementById('slAmount').value=est.replace(/[^0-9]/g,'');
-    if(bal) document.getElementById('slBalance').value=bal.replace(/[^0-9]/g,'');
-    const slQEl=document.getElementById('slQuoteImages'); slQEl.innerHTML='';
-    (imgs||[]).forEach(img=>{
-      const src=(typeof img==='string')?img:(img.data||img.url||''); if(!src) return;
-      const el=document.createElement('img'); el.className='quote-img-thumb'; el.src=src; el.alt='견적서';
-      el.addEventListener('click',()=>showLightbox(src)); slQEl.appendChild(el);
-    });
-    document.getElementById('slCalInfo').style.display='';
-    /* 금액은 위에서 이미 처리됨 */
-  });
-  document.getElementById('slUnlinkBtn').addEventListener('click',()=>{ slLinkedEvent=null; document.getElementById('slLinkedBadge').style.display='none'; document.getElementById('slCalInfo').style.display='none'; });
-  document.getElementById('salesDeleteBtn').addEventListener('click',async()=>{
-    if(!editingSlId||!selectedClient) return;
-    const ok=await showConfirm('매출 삭제','이 매출 기록을 삭제하시겠습니까?','🗑️');
-    if(!ok) return;
-    await deleteDoc(doc(db,`crm_clients/${selectedClient._id}/sales_records`,editingSlId));
-    document.getElementById('salesModal').classList.remove('open'); showToast('삭제되었습니다');
-  });
-  document.getElementById('salesSaveBtn').addEventListener('click',async()=>{
-    const title=document.getElementById('slTitle').value.trim();
-    const amount=document.getElementById('slAmount').value;
-    if(!title){ document.getElementById('slTitle').classList.add('error'); setTimeout(()=>document.getElementById('slTitle').classList.remove('error'),600); return; }
-    if(!amount||isNaN(Number(amount))){ document.getElementById('slAmount').classList.add('error'); setTimeout(()=>document.getElementById('slAmount').classList.remove('error'),600); showToast('매출 금액을 입력하세요','error'); return; }
-    if(!selectedClient) return;
-    const btn=document.getElementById('salesSaveBtn'); btn.disabled=true; btn.textContent='저장 중…';
-    const data={ title, salesDate:document.getElementById('slDate').value, type:document.getElementById('slType').value, amount:Number(amount)||0, balance:Number(document.getElementById('slBalance').value)||0, refund:Number(document.getElementById('slRefund').value)||0, payStatus:document.getElementById('slPayStatus').value, note:document.getElementById('slNote').value.trim() };
-    if(slLinkedEvent){ data.calEventId=slLinkedEvent._id; data.calTitle=slLinkedEvent.title||''; const et=document.getElementById('slCalEstimate').textContent; data.calEstimate=et&&et!=='—'?et.replace(/[^0-9]/g,''):''; const bt=document.getElementById('slCalBalance').textContent; data.calBalance=bt&&bt!=='없음'&&bt!=='—'?bt.replace(/[^0-9]/g,''):''; }
-    try{
-      if(editingSlId){ await updateDoc(doc(db,`crm_clients/${selectedClient._id}/sales_records`,editingSlId),data); showToast('수정되었습니다','success'); }
-      else { data.createdAt=serverTimestamp(); await addDoc(slCol(selectedClient._id),data); showToast('매출이 등록되었습니다','success'); }
-      _crmSnapshot = null;
-      document.getElementById('salesModal').classList.remove('open');
-    } catch(e){ console.error(e); showToast('저장 실패','error'); }
-    btn.disabled=false; btn.textContent='저장';
-  });
-  document.getElementById('newSalesBtn').addEventListener('click',()=>openSalesModal());
-  document.getElementById('salesModalClose').addEventListener('click',()=>crmTryClose('salesModal',()=>document.getElementById('salesModal').classList.remove('open')));
-  document.getElementById('salesCancelBtn').addEventListener('click',()=>crmTryClose('salesModal',()=>document.getElementById('salesModal').classList.remove('open')));
-
-  /* overlay 배경 클릭 - dirty check 적용 모달은 crmTryClose 경유 */
-  const DIRTY_MODALS = new Set(['clientModal','consultModal','visitReqModal','visitRepModal','salesModal']);
-  ['clientModal','consultModal','consultDetailModal','visitReqModal','visitRepModal','salesModal'].forEach(id=>{
-    document.getElementById(id).addEventListener('click',e=>{
-      if(e.target.id !== id) return;
-      if(DIRTY_MODALS.has(id)){
-        crmTryClose(id, ()=>document.getElementById(id).classList.remove('open'));
-      } else {
-        document.getElementById(id).classList.remove('open');
-      }
-    });
+  ['clientModal','consultModal','consultDetailModal'].forEach(id=>{
+    document.getElementById(id).addEventListener('click',e=>{ if(e.target.id===id) document.getElementById(id).classList.remove('open'); });
   });
 }
-
-/* ══════════════════════════════════════
-   색상/테마 설정 패널 (공통)
-══════════════════════════════════════ */
-const THEME_STORAGE_KEY = 'cal_theme_colors';
-const DEFAULT_DARK_THEME  = { accent:'#d4bc96', bg:'#111111', surface:'#1c1c1c', surface2:'#272727' };
-const DEFAULT_LIGHT_THEME = { accent:'#7a5c2e', bg:'#f5f2ed', surface:'#ffffff', surface2:'#f0ece4' };
-
-function applyDarkThemeVars(colors) {
-  const root = document.documentElement;
-  const isDark = !root.classList.contains('light');
-  if (isDark) {
-    if (colors.bg)       root.style.setProperty('--bg',       colors.bg);
-    if (colors.surface)  root.style.setProperty('--surface',  colors.surface);
-    if (colors.surface2) root.style.setProperty('--surface2', colors.surface2);
-    if (colors.accent)   root.style.setProperty('--accent',   colors.accent);
-  }
-  let el = document.getElementById('_dark-theme-override');
-  if (!el) { el = document.createElement('style'); el.id='_dark-theme-override'; document.head.appendChild(el); }
-  el.textContent = `:root:not(.light) {
-    ${colors.bg       ? `--bg: ${colors.bg} !important;`       : ''}
-    ${colors.surface  ? `--surface: ${colors.surface} !important;`  : ''}
-    ${colors.surface2 ? `--surface2: ${colors.surface2} !important;` : ''}
-    ${colors.accent   ? `--accent: ${colors.accent} !important;`   : ''}
-  }`;
-}
-
-function applyLightThemeVars(colors) {
-  let el = document.getElementById('_light-theme-override');
-  if (!el) { el = document.createElement('style'); el.id='_light-theme-override'; document.head.appendChild(el); }
-  el.textContent = `html.light {
-    ${colors.bg       ? `--bg: ${colors.bg} !important;`       : ''}
-    ${colors.surface  ? `--surface: ${colors.surface} !important;`  : ''}
-    ${colors.surface2 ? `--surface2: ${colors.surface2} !important;` : ''}
-    ${colors.accent   ? `--accent: ${colors.accent} !important;`   : ''}
-  }`;
-}
-
-function loadAndApplyThemeColors() {
-  const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || '{}');
-  const dark  = { ...DEFAULT_DARK_THEME,  ...(saved.dark  || {}) };
-  const light = { ...DEFAULT_LIGHT_THEME, ...(saved.light || {}) };
-  applyDarkThemeVars(dark);
-  applyLightThemeVars(light);
-  /* 패널 picker 값 반영 */
-  [['dark-accent','dark','accent'],['dark-bg','dark','bg'],['dark-surface','dark','surface'],['dark-surface2','dark','surface2'],
-   ['light-accent','light','accent'],['light-bg','light','bg'],['light-surface','light','surface'],['light-surface2','light','surface2']
-  ].forEach(([id, theme, key]) => {
-    const colors = theme==='dark' ? dark : light;
-    const picker = document.getElementById(`colorPicker-${id}`);
-    const swatch = document.getElementById(`swatch-${id}`);
-    if (picker && colors[key]) picker.value = colors[key];
-    if (swatch && colors[key]) swatch.style.background = colors[key];
-  });
-}
-
-function saveThemeColor(theme, key, hex) {
-  const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || '{}');
-  if (!saved[theme]) saved[theme] = {};
-  saved[theme][key] = hex;
-  localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(saved));
-  const cur  = { ...DEFAULT_DARK_THEME,  ...(saved.dark  || {}) };
-  const curl = { ...DEFAULT_LIGHT_THEME, ...(saved.light || {}) };
-  if (theme === 'dark')  applyDarkThemeVars(cur);
-  if (theme === 'light') applyLightThemeVars(curl);
-}
-
-function resetDarkTheme() {
-  const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || '{}');
-  delete saved.dark;
-  localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(saved));
-  const el = document.getElementById('_dark-theme-override'); if (el) el.remove();
-  applyDarkThemeVars(DEFAULT_DARK_THEME);
-  ['accent','bg','surface','surface2'].forEach(k => {
-    const p = document.getElementById(`colorPicker-dark-${k}`);
-    const s = document.getElementById(`swatch-dark-${k}`);
-    if (p) p.value = DEFAULT_DARK_THEME[k];
-    if (s) s.style.background = DEFAULT_DARK_THEME[k];
-  });
-}
-function resetLightTheme() {
-  const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || '{}');
-  delete saved.light;
-  localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(saved));
-  const el = document.getElementById('_light-theme-override'); if (el) el.remove();
-  applyLightThemeVars(DEFAULT_LIGHT_THEME);
-  ['accent','bg','surface','surface2'].forEach(k => {
-    const p = document.getElementById(`colorPicker-light-${k}`);
-    const s = document.getElementById(`swatch-light-${k}`);
-    if (p) p.value = DEFAULT_LIGHT_THEME[k];
-    if (s) s.style.background = DEFAULT_LIGHT_THEME[k];
-  });
-}
-
-function openSettings() {
-  document.getElementById('settingsOverlay')?.classList.add('open');
-  document.getElementById('settingsPanel')?.classList.add('open');
-  loadAndApplyThemeColors();
-}
-function closeSettings() {
-  document.getElementById('settingsOverlay')?.classList.remove('open');
-  document.getElementById('settingsPanel')?.classList.remove('open');
-}
-
-/* 이벤트 바인딩 - DOM 완성 후 실행 */
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('settingsBtn')?.addEventListener('click', openSettings);
-  document.getElementById('settingsCloseBtn')?.addEventListener('click', closeSettings);
-  document.getElementById('settingsOverlay')?.addEventListener('click', closeSettings);
-
-  [['colorPicker-dark-accent','dark','accent'],['colorPicker-dark-bg','dark','bg'],
-   ['colorPicker-dark-surface','dark','surface'],['colorPicker-dark-surface2','dark','surface2'],
-   ['colorPicker-light-accent','light','accent'],['colorPicker-light-bg','light','bg'],
-   ['colorPicker-light-surface','light','surface'],['colorPicker-light-surface2','light','surface2'],
-  ].forEach(([id, theme, key]) => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('input', e => {
-      const sw = document.getElementById(`swatch-${theme}-${key}`);
-      if (sw) sw.style.background = e.target.value;
-      saveThemeColor(theme, key, e.target.value);
-    });
-  });
-
-  document.getElementById('resetDarkBtn')?.addEventListener('click', resetDarkTheme);
-  document.getElementById('resetLightBtn')?.addEventListener('click', resetLightTheme);
-});
-
-/* 초기 색상 적용 (CSS 변수는 DOMContentLoaded 전에도 가능) */
-loadAndApplyThemeColors();
-
 </script>
-
-<div class="settings-overlay" id="settingsOverlay"></div>
-<div class="settings-panel" id="settingsPanel">
-  <div class="settings-panel-header">
-    <span class="settings-panel-title">⚙️ 색상 설정</span>
-    <button class="settings-btn" id="settingsCloseBtn" style="border:none;font-size:18px;">✕</button>
-  </div>
-  <div class="settings-panel-body">
-    <div>
-      <div class="settings-section-title">🌙 다크 테마 색상</div>
-      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
-        <div class="color-setting-row"><span class="color-setting-label">메인 컬러 (포인트)</span><div class="color-setting-swatch" id="swatch-dark-accent"><input type="color" id="colorPicker-dark-accent"></div></div>
-        <div class="color-setting-row"><span class="color-setting-label">배경색 (가장 어두운)</span><div class="color-setting-swatch" id="swatch-dark-bg"><input type="color" id="colorPicker-dark-bg"></div></div>
-        <div class="color-setting-row"><span class="color-setting-label">카드/모달 색상</span><div class="color-setting-swatch" id="swatch-dark-surface"><input type="color" id="colorPicker-dark-surface"></div></div>
-        <div class="color-setting-row"><span class="color-setting-label">보조 배경색</span><div class="color-setting-swatch" id="swatch-dark-surface2"><input type="color" id="colorPicker-dark-surface2"></div></div>
-      </div>
-      <button class="settings-reset-btn" id="resetDarkBtn" style="margin-top:8px;">↺ 다크 테마 초기화</button>
-    </div>
-    <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px;">
-      <div class="settings-section-title">☀️ 라이트 테마 색상</div>
-      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
-        <div class="color-setting-row"><span class="color-setting-label">메인 컬러 (포인트)</span><div class="color-setting-swatch" id="swatch-light-accent"><input type="color" id="colorPicker-light-accent"></div></div>
-        <div class="color-setting-row"><span class="color-setting-label">배경색 (가장 밝은)</span><div class="color-setting-swatch" id="swatch-light-bg"><input type="color" id="colorPicker-light-bg"></div></div>
-        <div class="color-setting-row"><span class="color-setting-label">카드/모달 색상</span><div class="color-setting-swatch" id="swatch-light-surface"><input type="color" id="colorPicker-light-surface"></div></div>
-        <div class="color-setting-row"><span class="color-setting-label">보조 배경색</span><div class="color-setting-swatch" id="swatch-light-surface2"><input type="color" id="colorPicker-light-surface2"></div></div>
-      </div>
-      <button class="settings-reset-btn" id="resetLightBtn" style="margin-top:8px;">↺ 라이트 테마 초기화</button>
-    </div>
-  </div>
-</div>
-
 </body>
 </html>
