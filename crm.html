@@ -1220,7 +1220,10 @@ function initApp(){
 
   /* timeline entry submit */
   /* 상담시간 영역 클릭 시 datetime 입력창 포커스 및 열기 */
-  /* 상담시간 picker는 input 자체 클릭으로만 열림 */
+  /* 상담시간 input 클릭 시 picker 열기 */
+  document.getElementById('cdEntryTime').addEventListener('click', function() {
+    try { this.showPicker(); } catch(_) {}
+  });
 
   /* ── 타임라인 항목 수정/삭제 ── */
   async function handleTlAction(action, idx, sorted){
