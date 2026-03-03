@@ -2064,7 +2064,15 @@ async function runImportSect(data, sect, db) {
       const { _id, id:_i2, updatedAt, createdAt, _subcollections, ...rawData } = item;
       const sanitized = stripTimestamps(JSON.parse(JSON.stringify(rawData)));
       const colName = sect==='crm' ? 'crm_clients' : 'wiki_articles';
-      await setDoc(doc(db, colName, id), { ...sanitized, updatedAt: serverTimestamp() });
+      /* createdAt 보존: 원본값 있으면 그대로, 없으면 serverTimestamp */
+      const origCreatedAt = createdAt
+        ? (createdAt.seconds ? new Date(createdAt.seconds*1000) : new Date(createdAt))
+        : null;
+      await setDoc(doc(db, colName, id), {
+        ...sanitized,
+        updatedAt: serverTimestamp(),
+        createdAt: origCreatedAt || serverTimestamp()
+      });
 
       /* CRM 서브컬렉션 복원 */
       if (sect==='crm' && item._subcollections) {

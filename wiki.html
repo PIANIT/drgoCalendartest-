@@ -650,8 +650,16 @@ async function getAuthorName(authorId){
 /* ══ 데이터 로드 ══ */
 async function loadArticles(){
   try{
-    const snap=await getDocs(query(collection(db,COL),orderBy('createdAt','desc')));
+    /* createdAt 없는 복원 문서도 포함되도록 전체 조회 후 JS 정렬 */
+    const snap=await getDocs(collection(db,COL));
     articles=snap.docs.map(d=>({id:d.id,...d.data()}));
+    articles.sort((a,b)=>{
+      const ta=a.createdAt||a.updatedAt, tb=b.createdAt||b.updatedAt;
+      if(!ta&&!tb) return 0; if(!ta) return 1; if(!tb) return -1;
+      const da=ta.toDate?ta.toDate():new Date(ta);
+      const db2=tb.toDate?tb.toDate():new Date(tb);
+      return db2-da;
+    });
     articles.forEach(a=>{if(a.category)categories.add(a.category);});
     renderList();
   }catch(e){console.error(e);toast('데이터 로드 실패');}
@@ -955,8 +963,15 @@ async function saveArticle(){
     }
     closeEditModal();
     // 저장 후 최신 데이터로 목록+상세 즉시 갱신
-    const freshSnap=await getDocs(query(collection(db,COL),orderBy('createdAt','desc')));
+    const freshSnap=await getDocs(collection(db,COL));
     articles=freshSnap.docs.map(d=>({id:d.id,...d.data()}));
+    articles.sort((a,b)=>{
+      const ta=a.createdAt||a.updatedAt, tb=b.createdAt||b.updatedAt;
+      if(!ta&&!tb) return 0; if(!ta) return 1; if(!tb) return -1;
+      const da=ta.toDate?ta.toDate():new Date(ta);
+      const db2=tb.toDate?tb.toDate():new Date(tb);
+      return db2-da;
+    });
     articles.forEach(a=>{if(a.category)categories.add(a.category);});
     renderList();
     await openArticle(editingId);
