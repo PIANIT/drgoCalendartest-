@@ -573,7 +573,7 @@
   }
   .field-input:focus, .field-textarea:focus, .field-select:focus { border-color:var(--accent); }
   .field-input::placeholder, .field-textarea::placeholder { color:var(--text-muted); }
-  .field-textarea { resize:none; min-height:80px; line-height:1.7; overflow:hidden; box-sizing:border-box; }
+  .field-textarea { resize:none; min-height:80px; line-height:1.7; overflow:hidden; box-sizing:border-box; transition:height 0.15s; }
   .field-select { cursor:pointer; color-scheme:dark; } html.light .field-select { color-scheme:light; }
   .field-select option { background:var(--surface2); }
 
@@ -2568,6 +2568,8 @@ function openModal(evIdx){
   document.getElementById('modalOverlay').classList.add('open');
   applyLockState();
   if (!isLocked && !isMobile() && pcView==='month') document.getElementById('modalTitle').focus();
+  /* 편집 시 textarea 기존 내용 높이 반영 */
+  setTimeout(()=>{ document.querySelectorAll('.field-textarea').forEach(ta=>{ if(!isLocked){ ta.style.height='auto'; ta.style.height=(ta.scrollHeight+4)+'px'; } }); },50);
   setTimeout(()=>{ refreshAutoResize(); _takeSnapshot(); }, 30);
 }
 
@@ -2933,6 +2935,14 @@ function _showLockedCompact(){
   /* ── 2. notifGroup 숨기기 ── */
   const ng=document.getElementById('notifGroup'); if(ng) ng.style.display='none';
 
+  /* ── 2-1. textarea 내용 전체 표시 (overflow 해제 + scrollHeight 적용) ── */
+  document.querySelectorAll('.field-textarea').forEach(ta=>{
+    ta.style.overflow='visible';
+    ta.style.height='auto';
+    ta.style.height=(ta.scrollHeight+4)+'px';
+    ta.style.resize='none';
+  });
+
   /* ── 3. 일정관련옵션 field-group 숨기기 ── */
   const schedFg = document.getElementById('scheduleOpts')?.closest('.field-group');
   if (schedFg) schedFg.style.display='none';
@@ -2981,6 +2991,10 @@ function _hideLockedCompact(){
   });
   const ng=document.getElementById('notifGroup'); if(ng) ng.style.display='';
   const colorFg=document.getElementById('colorRow')?.closest('.field-group'); if(colorFg) colorFg.style.display='';
+  /* textarea 원래대로 복원 */
+  document.querySelectorAll('.field-textarea').forEach(ta=>{
+    ta.style.overflow=''; ta.style.height='';
+  });
   /* 색상별 섹션 복원은 setColor가 처리 */
   setColor(currentColor);
 }
@@ -4194,14 +4208,36 @@ function renderPcDay() {
 
 /* ══ 년 단위 이동 ══ */
 document.getElementById('prevYearBtn').addEventListener('click',()=>{
-  currentYear--;
-  if(pcView==='month'){ render(); }
-  else { const mv=isMobile(); if(mv){ /* 모바일 월뷰 */ currentMonth=0; renderAll(); } else renderAll(); }
+  if(isMobile()){
+    currentYear--; renderAll();
+  } else if(pcView==='month'){
+    currentYear--; render();
+  } else if(pcView==='week'){
+    /* pcWeekStart를 52주(364일) 전으로 */
+    if(pcWeekStart) pcWeekStart=addDaysPc(pcWeekStart,-364);
+    currentYear--;
+    renderPcWeek();
+  } else {
+    /* 일간 뷰 */
+    if(pcDayDate) pcDayDate=addDaysPc(pcDayDate,-365);
+    currentYear--;
+    renderPcDay();
+  }
 });
 document.getElementById('nextYearBtn').addEventListener('click',()=>{
-  currentYear++;
-  if(pcView==='month'){ render(); }
-  else { renderAll(); }
+  if(isMobile()){
+    currentYear++; renderAll();
+  } else if(pcView==='month'){
+    currentYear++; render();
+  } else if(pcView==='week'){
+    if(pcWeekStart) pcWeekStart=addDaysPc(pcWeekStart,364);
+    currentYear++;
+    renderPcWeek();
+  } else {
+    if(pcDayDate) pcDayDate=addDaysPc(pcDayDate,365);
+    currentYear++;
+    renderPcDay();
+  }
 });
 
 /* ══ 검색 기능 ══ */
