@@ -1053,6 +1053,7 @@ let _backupDb       = null;
 let _importSect     = 'calendar';
 let _crmAll = [], _crmFiltered = [], _crmSelectedIds = new Set(), _crmPage = 1;
 let _wikiAll = [], _wikiFiltered = [], _wikiSelectedIds = new Set(), _wikiPage = 1;
+let toastTimer = null;
 
 /* ══════════════════════════════
    AUTH
@@ -2250,7 +2251,6 @@ async function createUser(db) {
   }
 }
 
-let toastTimer;
 function showToast(msg, type='info') {
   const t = document.getElementById('toast');
   t.textContent = type==='success' ? '✓ '+msg : type==='error' ? '✕ '+msg : 'ℹ '+msg;
