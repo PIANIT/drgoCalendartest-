@@ -22,6 +22,7 @@
     --chip-red-bg:#c87070;   --chip-red-text:#200808;
     --chip-green-bg:#70c870; --chip-green-text:#08200a;
     --chip-purple-bg:#9b70c8;--chip-purple-text:#f0eaff;
+    --chip-teal-bg:#e8894a;  --chip-teal-text:#1a0a00;
     --chip-single-bg:#303030;
   }
   html.light {
@@ -33,6 +34,7 @@
     --chip-red-bg:#b85858;   --chip-red-text:#ffffff;
     --chip-green-bg:#58b058; --chip-green-text:#ffffff;
     --chip-purple-bg:#7b50a8;--chip-purple-text:#ffffff;
+    --chip-teal-bg:#c96a20;  --chip-teal-text:#ffffff;
     --chip-single-bg:#e8e2d8;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
@@ -136,6 +138,7 @@
   .event-chip.single.color-red    { background:rgba(200,122,122,0.18); border-left-color:var(--chip-red-bg);    color:var(--text-muted); }
   .event-chip.single.color-green  { background:rgba(122,200,122,0.18); border-left-color:var(--chip-green-bg);  color:var(--text-muted); }
   .event-chip.single.color-purple { background:rgba(155,112,200,0.18); border-left-color:var(--chip-purple-bg); color:var(--text-muted); }
+  .event-chip.single.color-teal   { background:rgba(232,137,74,0.18);  border-left-color:var(--chip-teal-bg);   color:var(--text-muted); }
 
   .span-chip-overlay { position:absolute; top:0; left:0; right:0; pointer-events:none; z-index:2; }
   .span-chip {
@@ -149,6 +152,7 @@
   .span-chip.color-red    { background:var(--chip-red-bg);    color:var(--chip-red-text); }
   .span-chip.color-green  { background:var(--chip-green-bg);  color:var(--chip-green-text); }
   .span-chip.color-purple { background:var(--chip-purple-bg); color:var(--chip-purple-text); }
+  .span-chip.color-teal   { background:var(--chip-teal-bg);   color:var(--chip-teal-text);   }
   .span-chip.is-start { border-radius:4px 0 0 4px; }
   .span-chip.is-end   { border-radius:0 4px 4px 0; }
   .span-chip.is-solo  { border-radius:4px; }
@@ -177,6 +181,7 @@
   .pc-span-chip.color-red    { background:var(--chip-red-bg);    color:var(--chip-red-text); }
   .pc-span-chip.color-green  { background:var(--chip-green-bg);  color:var(--chip-green-text); }
   .pc-span-chip.color-purple { background:var(--chip-purple-bg); color:var(--chip-purple-text); }
+  .pc-span-chip.color-teal   { background:var(--chip-teal-bg);   color:var(--chip-teal-text);   }
   .pc-span-chip.is-start { border-radius:4px 0 0 4px; }
   .pc-span-chip.is-end   { border-radius:0 4px 4px 0; }
   .pc-span-chip.is-solo  { border-radius:4px; }
@@ -216,6 +221,7 @@
   .pc-day-card.color-red    { border-left-color:var(--chip-red-bg); }
   .pc-day-card.color-green  { border-left-color:var(--chip-green-bg); }
   .pc-day-card.color-purple { border-left-color:var(--chip-purple-bg); }
+  .pc-day-card.color-teal   { border-left-color:var(--chip-teal-bg);   }
   .pc-day-time { min-width:72px; font-family:var(--font-mono); font-size:12px; color:var(--text-muted); padding-top:2px; flex-shrink:0; }
   .pc-day-body { flex:1; min-width:0; }
   .pc-day-card-title { font-size:15px; font-weight:600; color:var(--text-muted); font-style:italic; }
@@ -254,6 +260,7 @@
     .mv-date-dot.red    { background:var(--chip-red-bg); }
     .mv-date-dot.green  { background:var(--chip-green-bg); }
     .mv-date-dot.purple { background:var(--chip-purple-bg); }
+    .mv-date-dot.teal   { background:var(--chip-teal-bg); }
     .mv-date-cell.selected .mv-date-num { background:rgba(200,176,138,0.25); box-shadow:0 0 0 2px var(--accent); }
     .mv-month-grid-header { display:grid; grid-template-columns:repeat(7,1fr); padding:4px 8px 2px; gap:2px; }
     .mv-month-grid { display:grid; grid-template-columns:repeat(7,1fr); padding:0 8px; gap:2px; }
@@ -283,6 +290,7 @@
     .mv-event-card.color-red    { border-left-color:var(--chip-red-bg); }
     .mv-event-card.color-green  { border-left-color:var(--chip-green-bg); }
     .mv-event-card.color-purple { border-left-color:var(--chip-purple-bg); }
+    .mv-event-card.color-teal   { border-left-color:var(--chip-teal-bg); }
     .mv-event-time { font-family:var(--font-mono); font-size:12px; color:var(--text-muted); }
     .mv-event-badge { font-size:10px; padding:2px 7px; border-radius:4px; font-family:var(--font-mono); font-weight:700; flex-shrink:0; }
     .mv-event-badge.gold   { background:rgba(200,176,138,0.2); color:var(--chip-gold-bg); }
@@ -290,6 +298,7 @@
     .mv-event-badge.red    { background:rgba(200,122,122,0.2); color:var(--chip-red-bg); }
     .mv-event-badge.green  { background:rgba(122,200,122,0.2); color:var(--chip-green-bg); }
     .mv-event-badge.purple { background:rgba(155,112,200,0.2); color:var(--chip-purple-bg); }
+    .mv-event-badge.teal   { background:rgba(232,137,74,0.2);  color:var(--chip-teal-bg); }
     .mv-day-nav { display:flex; align-items:center; justify-content:space-between; padding:8px 14px; gap:8px; }
     .mv-day-nav-label { font-size:16px; font-weight:700; color:var(--text); text-align:center; }
     .mv-day-nav-sub { font-size:11px; color:var(--text-muted); text-align:center; }
@@ -411,7 +420,7 @@ const eventsCol = collection(db, 'events');
 ══════════════════ */
 const MONTHS   = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
 const DOW_KOR  = ['일','월','화','수','목','금','토'];
-const TYPE_LABELS = { gold:'방문의뢰', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방' };
+const TYPE_LABELS = { gold:'방문의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방' };
 
 const KR_HOLIDAYS = {
   '2024-01-01':'1월 1일','2024-02-09':'설날 전날','2024-02-10':'설날','2024-02-11':'설날 다음 날','2024-02-12':'대체공휴일(설날)',
@@ -789,10 +798,23 @@ function renderPcDay() {
       card.className=`pc-day-card color-${ev.color||'gold'}`;
       const timeStr=guestChipText(ev);
       const spanStr=(ev.endDate&&ev.endDate!==ev.startDate)?`<span style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono);">${ev.startDate} ~ ${ev.endDate}</span>`:'';
+      /* 원격/방송룸 상세 정보 */
+      let tealInfo='';
+      if(ev.color==='teal'&&ev.teal){
+        const t=ev.teal;
+        const mLabel=t.mode==='studio'?'방송룸 이용':'원격';
+        tealInfo=`<div style="margin-top:5px;font-size:11px;color:var(--text-muted);line-height:1.6;">
+          <span style="font-weight:600;">${mLabel}</span>
+          ${t.name?` · ${t.name}`:''}
+          ${t.platform?` · ${t.platform}`:''}
+          ${t.content?`<div style="margin-top:3px;white-space:pre-line;">${t.content}</div>`:''}
+        </div>`;
+      }
       card.innerHTML=`
         <div class="pc-day-time">${timeStr}</div>
         <div class="pc-day-body">
-          <div class="pc-day-card-title">일정 있음</div>
+          <div class="pc-day-card-title">${ev.title||'일정 있음'}</div>
+          ${tealInfo}
           ${spanStr?`<div style="margin-top:4px;">${spanStr}</div>`:''}
         </div>`;
       list.appendChild(card);
@@ -846,9 +868,23 @@ function renderMvEventCard(ev, container) {
   const card=document.createElement('div');
   card.className=`mv-event-card color-${ev.color||'gold'}`;
   const timeStr=guestChipText(ev);
+  /* 원격/방송룸 추가 정보 */
+  let extraHtml='';
+  if(ev.color==='teal'&&ev.teal){
+    const t=ev.teal;
+    const mLabel=t.mode==='studio'?'방송룸 이용':'원격';
+    const parts=[mLabel];
+    if(t.name) parts.push(t.name);
+    if(t.platform) parts.push(t.platform);
+    extraHtml=`<span class="mv-event-meta" style="font-size:11px;color:var(--text-muted);margin-top:2px;display:block;">${parts.join(' · ')}</span>`;
+    if(t.content) extraHtml+=`<span class="mv-event-meta" style="font-size:11px;color:var(--text-muted);margin-top:2px;display:block;white-space:pre-line;">${t.content}</span>`;
+  }
   card.innerHTML=`
-    <span class="mv-event-badge ${ev.color||'gold'}">${TYPE_LABELS[ev.color||'gold']}</span>
-    <span class="mv-event-time">${timeStr}</span>`;
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+      <span class="mv-event-badge ${ev.color||'gold'}">${TYPE_LABELS[ev.color||'gold']}</span>
+      <span class="mv-event-time">${timeStr}</span>
+    </div>
+    ${extraHtml}`;
   container.appendChild(card);
 }
 
@@ -894,7 +930,7 @@ function renderMvMonth(){
       const colorCount={};
       evs.forEach(ev=>{ const c=ev.color||'gold'; colorCount[c]=(colorCount[c]||0)+1; });
       const dotsRow=document.createElement('div'); dotsRow.style.cssText='display:flex;gap:3px;flex-wrap:wrap;justify-content:center;margin-top:1px;';
-      ['gold','blue','red','green','purple'].forEach(c=>{
+      ['gold','teal','blue','red','green','purple'].forEach(c=>{
         if(!colorCount[c]) return;
         const wrap=document.createElement('div'); wrap.style.cssText='display:flex;flex-direction:column;align-items:center;gap:1px;';
         const dot=document.createElement('div'); dot.className=`mv-date-dot ${c}`;
