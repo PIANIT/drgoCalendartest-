@@ -575,7 +575,8 @@ function initWorkspace(displayName) {
     pane.appendChild(loading);
 
     const iframe = document.createElement('iframe');
-    iframe.src = meta.src;
+    /* 캐시 버스팅: 배포 후 항상 최신 파일 로드 */
+    iframe.src = meta.src + '?v=' + Date.now();
     iframe.title = meta.label;
     /* iframe이 같은 origin이면 로드 후 스피너 제거 */
     iframe.addEventListener('load', ()=>{
