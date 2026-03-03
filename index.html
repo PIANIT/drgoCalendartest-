@@ -660,6 +660,17 @@
   .tp-divider {
     width:1px; background:var(--border); flex-shrink:0; align-self:stretch;
   }
+  .tp-footer {
+    border-top:1px solid var(--border); padding:7px 8px; flex-shrink:0;
+    display:flex; justify-content:flex-end;
+  }
+  .tp-confirm-btn {
+    background:var(--accent); color:#1a1207; border:none;
+    border-radius:7px; padding:5px 16px; font-size:12px; font-weight:700;
+    cursor:pointer; font-family:var(--font-main); letter-spacing:0.04em;
+    transition:opacity 0.15s;
+  }
+  .tp-confirm-btn:hover { opacity:0.85; }
   .dt-input:focus { border-color:var(--accent); }
   .dt-input:disabled { opacity:0.3; cursor:not-allowed; }
 
@@ -2879,24 +2890,36 @@ async function deleteEvent(){
       mCol.appendChild(item);
     });
 
-    /* 컬럼 클릭 이벤트 - 위임 */
+    /* 컬럼 클릭 이벤트 - selected 표시만 (확인 버튼에서 최종 반영) */
     hCol.addEventListener('click', e=>{
       const item=e.target.closest('.tp-item'); if(!item) return;
       hCol.querySelectorAll('.tp-item').forEach(i=>i.classList.remove('selected'));
       item.classList.add('selected');
-      const mSel=mCol.querySelector('.tp-item.selected');
-      updateTrigger(targetId, parseInt(item.dataset.h), mSel?parseInt(mSel.dataset.m):0);
     });
     mCol.addEventListener('click', e=>{
       const item=e.target.closest('.tp-item'); if(!item) return;
       mCol.querySelectorAll('.tp-item').forEach(i=>i.classList.remove('selected'));
       item.classList.add('selected');
-      const hSel=hCol.querySelector('.tp-item.selected');
-      updateTrigger(targetId, hSel?parseInt(hSel.dataset.h):0, parseInt(item.dataset.m));
     });
 
+    /* ── 확인 버튼 ── */
+    const footer = document.createElement('div'); footer.className='tp-footer';
+    const confirmBtn = document.createElement('button');
+    confirmBtn.className='tp-confirm-btn';
+    confirmBtn.textContent='확인';
+    confirmBtn.addEventListener('click', e=>{
+      e.stopPropagation();
+      const hSel = hCol.querySelector('.tp-item.selected');
+      const mSel = mCol.querySelector('.tp-item.selected');
+      const hVal = hSel ? parseInt(hSel.dataset.h) : curH;
+      const mVal = mSel ? parseInt(mSel.dataset.m) : roundedM;
+      updateTrigger(targetId, hVal, mVal);
+      window.closeTimePicker();
+    });
+    footer.appendChild(confirmBtn);
+
     body.appendChild(hCol); body.appendChild(divEl); body.appendChild(mCol);
-    popup.appendChild(header); popup.appendChild(body);
+    popup.appendChild(header); popup.appendChild(body); popup.appendChild(footer);
     document.body.appendChild(popup);
 
     /* 위치 계산 */

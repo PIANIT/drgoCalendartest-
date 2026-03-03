@@ -1049,6 +1049,10 @@ let confirmCallback = null;
 let importData      = null;
 let dateFrom        = '';
 let dateTo          = '';
+let _backupDb       = null;
+let _importSect     = 'calendar';
+let _crmAll = [], _crmFiltered = [], _crmSelectedIds = new Set(), _crmPage = 1;
+let _wikiAll = [], _wikiFiltered = [], _wikiSelectedIds = new Set(), _wikiPage = 1;
 
 /* ══════════════════════════════
    AUTH
@@ -1723,8 +1727,6 @@ function stripTimestamps(obj) {
   return result;
 }
 
-let _backupDb = null;
-let _backupCalData = [];
 
 function openBackupModal(section) {
   _backupDb = arguments[1] || _backupDb;
@@ -1765,7 +1767,6 @@ async function openSingleBackup(sect, db) {
 }
 
 /* 탭별 복원 - 섹션을 구분한 import */
-let _importSect = 'calendar';
 async function openSingleImport(sect, db) {
   _importSect = sect;
   _backupDb   = db;
@@ -2261,7 +2262,6 @@ function showToast(msg, type='info') {
 /* ══════════════════════════════════════════
    CRM 섹션
 ══════════════════════════════════════════ */
-let _crmAll=[], _crmFiltered=[], _crmSelectedIds=new Set(), _crmPage=1;
 const CRM_PAGE=25;
 
 function initCrmSection(db) {
@@ -2361,7 +2361,6 @@ function renderCrm() {
 /* ══════════════════════════════════════════
    위키 섹션
 ══════════════════════════════════════════ */
-let _wikiAll=[], _wikiFiltered=[], _wikiSelectedIds=new Set(), _wikiPage=1;
 const WIKI_PAGE=25;
 
 function initWikiSection(db) {
