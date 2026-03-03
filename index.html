@@ -23,6 +23,19 @@
     --font-main: "Malgun Gothic", "맑은 고딕", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
     --font-mono: 'DM Mono', "Malgun Gothic", "맑은 고딕", monospace;
   }
+
+  .year-nav-btn { font-family:var(--font-mono); font-size:12px; font-weight:700; }
+  /* 검색 결과 */
+  .csr-item { display:flex; align-items:flex-start; gap:10px; padding:9px 12px; cursor:pointer;
+    border-radius:8px; border:1px solid var(--border); background:var(--surface2);
+    transition:background 0.12s; margin-bottom:5px; }
+  .csr-item:hover { background:var(--surface); border-color:var(--accent); }
+  .csr-bar  { width:3px; min-height:38px; border-radius:2px; flex-shrink:0; margin-top:1px; }
+  .csr-info { flex:1; min-width:0; }
+  .csr-title { font-size:13px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .csr-meta  { font-size:11px; color:var(--text-muted); margin-top:3px; display:flex; gap:10px; flex-wrap:wrap; }
+  .csr-empty { text-align:center; padding:18px; color:var(--text-muted); font-size:13px; }
+  @media(max-width:640px){ #searchPanel{ padding:8px 12px 10px; top:49px; } }
 </style>
 <style>
   /* ── PWA 설치 배너 ── */
@@ -967,22 +980,37 @@
 <header>
   <div class="header-left">
     <span class="app-title">Calendar</span>
+    <button class="nav-btn year-nav-btn" id="prevYearBtn" title="이전 년도">«</button>
     <button class="nav-btn" id="prevBtn">‹</button>
     <div class="month-label" id="monthLabel"></div>
     <button class="nav-btn" id="nextBtn">›</button>
+    <button class="nav-btn year-nav-btn" id="nextYearBtn" title="다음 년도">»</button>
     <button class="nav-btn" id="todayBtn" style="font-size:11px;letter-spacing:0.05em;width:auto;padding:0 10px;font-family:var(--font-mono);">TODAY</button>
   </div>
-  <div style="display:flex;align-items:center;gap:10px;">
+  <div style="display:flex;align-items:center;gap:8px;">
     <div class="view-toggle-group">
       <button class="view-toggle-btn active" data-view="month">월간</button>
       <button class="view-toggle-btn" data-view="week">주간</button>
       <button class="view-toggle-btn" data-view="day">일간</button>
     </div>
+    <button class="icon-btn" id="searchToggleBtn" title="검색" style="width:34px;height:34px;font-size:15px;">🔍</button>
     <button class="settings-btn" id="settingsBtn" title="색상 설정">⚙️</button>
     <button class="theme-btn" id="themeBtn" title="테마 전환">🌙</button>
     <button class="add-btn" id="addBtn">+ 일정 추가</button>
   </div>
 </header>
+
+<!-- ════ 검색 패널 ════ -->
+<div id="searchPanel" style="display:none;padding:10px 32px 12px;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:57px;z-index:9;">
+  <div style="display:flex;gap:8px;align-items:center;">
+    <div style="position:relative;flex:1;max-width:520px;">
+      <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none;">🔍</span>
+      <input id="calSearchInput" class="field-input" placeholder="제목, 이름, 장소, 날짜로 검색…" style="padding-left:34px;height:36px;" autocomplete="off" />
+    </div>
+    <button id="searchCloseBtn" style="background:none;border:1px solid var(--border);color:var(--text-muted);border-radius:7px;padding:6px 12px;cursor:pointer;font-size:12px;white-space:nowrap;">✕ 닫기</button>
+  </div>
+  <div id="calSearchResults" style="margin-top:8px;max-height:300px;overflow-y:auto;display:none;"></div>
+</div>
 
 <div class="legend" id="filterBar">
   <button class="filter-btn active f-gold"   data-filter="gold">  <span class="filter-dot" id="fd-gold"></span>방문의뢰</button>
@@ -1221,9 +1249,17 @@
     <div class="modal-strip" id="modalStrip"></div>
     <div class="modal-header">
       <div style="flex:1">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
           <span class="modal-date-badge" id="modalDateBadge"></span>
           <span class="type-badge gold" id="typeBadge">● 방문의뢰</span>
+        </div>
+        <div class="color-row" id="colorRow" style="margin-bottom:8px;flex-wrap:wrap;">
+          <div class="color-dot" data-color="gold">방문의뢰</div>
+          <div class="color-dot" data-color="teal">원격/방송룸</div>
+          <div class="color-dot" data-color="blue">사내업무</div>
+          <div class="color-dot" data-color="red">휴가관련</div>
+          <div class="color-dot" data-color="green">촬영관련</div>
+          <div class="color-dot" data-color="purple">미팅/내방</div>
         </div>
         <input class="modal-title-input" id="modalTitle" placeholder="일정 제목을 입력하세요" />
       </div>
@@ -1241,8 +1277,8 @@
 
     <div class="modal-body">
       <div class="field-group">
-        <label class="field-label" for="modalLocation">주소</label>
-        <input class="field-input" id="modalLocation" placeholder="주소를 입력하세요" autocomplete="off" />
+        <label class="field-label" for="modalLocation">장소</label>
+        <input class="field-input" id="modalLocation" placeholder="장소를 입력하세요" autocomplete="off" />
       </div>
       <div class="datetime-section">
         <div class="allday-row">
@@ -1303,17 +1339,7 @@
         <div class="sched-opt-desc" id="schedOptDesc"></div>
       </div>
 
-      <div class="field-group">
-        <div class="field-label">의뢰 유형 / 색상</div>
-        <div class="color-row" id="colorRow">
-          <div class="color-dot" data-color="gold">방문의뢰</div>
-          <div class="color-dot" data-color="teal">원격/방송룸</div>
-          <div class="color-dot" data-color="blue">사내업무</div>
-          <div class="color-dot" data-color="red">휴가관련</div>
-          <div class="color-dot" data-color="green">촬영관련</div>
-          <div class="color-dot" data-color="purple">미팅/내방</div>
-        </div>
-      </div>
+
 
       <div class="field-group" style="margin-top:10px;">
         <div class="field-label">특수 옵션</div>
@@ -2663,7 +2689,7 @@ const LOG_FIELD_LABELS = {
   title:'제목', color:'분류',
   startDate:'시작일', endDate:'종료일',
   startTime:'시작시간', endTime:'종료시간', allDay:'종일여부',
-  location:'주소', name:'담당자', desc:'내용',
+  location:'장소', name:'담당자', desc:'내용',
   schedOpt:'일정유형', specialOpts:'특수옵션',
   notifMinutes:'알림', locked:'잠금',
 };
@@ -2912,7 +2938,7 @@ function _showLockedCompact(){
   if (schedFg) schedFg.style.display='none';
 
   /* ── 4. 의뢰유형 field-group 숨기기 ── */
-  const colorFg = document.getElementById('colorRow')?.closest('.field-group');
+  /* colorRow는 modal-header로 이동 */
   if (colorFg) colorFg.style.display='none';
 
   /* ── 5. 특수옵션 field-group 숨기기 ── */
@@ -4165,6 +4191,91 @@ function renderPcDay() {
 }
 
 ['prevBtn','nextBtn','todayBtn'].forEach(id=>{ const old=document.getElementById(id); const fresh=old.cloneNode(true); old.parentNode.replaceChild(fresh,old); });
+
+/* ══ 년 단위 이동 ══ */
+document.getElementById('prevYearBtn').addEventListener('click',()=>{
+  currentYear--;
+  if(pcView==='month'){ render(); }
+  else { const mv=isMobile(); if(mv){ /* 모바일 월뷰 */ currentMonth=0; renderAll(); } else renderAll(); }
+});
+document.getElementById('nextYearBtn').addEventListener('click',()=>{
+  currentYear++;
+  if(pcView==='month'){ render(); }
+  else { renderAll(); }
+});
+
+/* ══ 검색 기능 ══ */
+const _TYPE_LBL = {gold:'방문의뢰',teal:'원격/방송룸',blue:'사내업무',red:'휴가관련',green:'촬영관련',purple:'미팅/내방'};
+const _TYPE_COL = {gold:'var(--chip-gold-bg)',teal:'var(--chip-teal-bg)',blue:'var(--chip-blue-bg)',red:'var(--chip-red-bg)',green:'var(--chip-green-bg)',purple:'var(--chip-purple-bg)'};
+
+document.getElementById('searchToggleBtn').addEventListener('click',()=>{
+  const p=document.getElementById('searchPanel');
+  const open=p.style.display!=='none';
+  p.style.display=open?'none':'';
+  if(!open) setTimeout(()=>document.getElementById('calSearchInput').focus(),60);
+});
+document.getElementById('searchCloseBtn').addEventListener('click',_closeSearch);
+function _closeSearch(){
+  document.getElementById('searchPanel').style.display='none';
+  document.getElementById('calSearchInput').value='';
+  document.getElementById('calSearchResults').style.display='none';
+  document.getElementById('calSearchResults').innerHTML='';
+}
+/* ESC로 닫기 */
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&document.getElementById('searchPanel').style.display!=='none') _closeSearch(); });
+
+let _srchTimer;
+document.getElementById('calSearchInput').addEventListener('input',e=>{
+  clearTimeout(_srchTimer);
+  const q=e.target.value.trim();
+  const res=document.getElementById('calSearchResults');
+  if(!q){ res.style.display='none'; res.innerHTML=''; return; }
+  res.style.display=''; res.innerHTML='<div class="csr-empty">검색 중…</div>';
+  _srchTimer=setTimeout(()=>_doSearch(q),200);
+});
+
+function _esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function _doSearch(q){
+  const res=document.getElementById('calSearchResults');
+  const ql=q.toLowerCase();
+  const found=events.filter(ev=>{
+    const hay=[ev.title||'',ev.startDate||'',ev.endDate||'',ev.location||'',ev.address||'',
+      ev.name||'',ev.desc||'',ev.gold?.name||'',ev.gold?.phone||'',ev.teal?.name||''
+    ].join(' ').toLowerCase();
+    return hay.includes(ql);
+  }).sort((a,b)=>(b.startDate||'').localeCompare(a.startDate||'')).slice(0,40);
+
+  if(!found.length){ res.innerHTML='<div class="csr-empty">📭 검색 결과가 없습니다</div>'; return; }
+  res.innerHTML=found.map(ev=>{
+    const c=ev.color||'gold';
+    const dt=ev.startDate||(ev.endDate&&ev.endDate!==ev.startDate?` ~ ${ev.endDate}`:'');
+    const nm=ev.gold?.name||ev.teal?.name||ev.name||'';
+    const loc=ev.location||ev.address||'';
+    return `<div class="csr-item" data-id="${_esc(ev._id)}">
+      <div class="csr-bar" style="background:${_TYPE_COL[c]||'var(--accent)'}"></div>
+      <div class="csr-info">
+        <div class="csr-title">${_esc(ev.title||'(제목 없음)')}</div>
+        <div class="csr-meta">
+          <span>📅 ${_esc(ev.startDate||'')}${ev.endDate&&ev.endDate!==ev.startDate?' ~ '+_esc(ev.endDate):''}</span>
+          ${nm?`<span>👤 ${_esc(nm)}</span>`:''}
+          ${loc?`<span>📍 ${_esc(loc)}</span>`:''}
+        </div>
+      </div>
+      <span class="type-badge ${c}" style="flex-shrink:0;align-self:flex-start;">● ${_TYPE_LBL[c]||c}</span>
+    </div>`;
+  }).join('');
+  res.querySelectorAll('.csr-item').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const ev=events.find(e=>e._id===el.dataset.id); if(!ev) return;
+      const d=new Date(ev.startDate);
+      if(!isNaN(d)){ currentYear=d.getFullYear(); currentMonth=d.getMonth(); }
+      if(typeof renderAll==='function') renderAll(); else render();
+      setTimeout(()=>openModal(ev),120);
+      _closeSearch();
+    });
+  });
+}
 
 document.getElementById('prevBtn').addEventListener('click',()=>{
   if (isMobile()) {

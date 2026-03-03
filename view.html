@@ -354,7 +354,7 @@ html.light .date-range-input { color-scheme:light; }
 <div class="toolbar">
   <div class="search-wrap">
     <span class="search-icon">🔍</span>
-    <input class="search-input" id="searchInput" placeholder="제목, 이름, 주소 검색…" />
+    <input class="search-input" id="searchInput" placeholder="제목, 이름, 장소 검색…" />
   </div>
   <div class="filter-group" id="filterGroup">
     <button class="filter-btn active" data-filter="all">전체</button>
@@ -742,7 +742,7 @@ function openDetail(ev) {
     ['시간',       ev.allDay!==false ? '종일' : `${ev.startTime||'?'} ~ ${ev.endTime||'?'}`],
     ['분류',       TYPE_LABELS[c]||c],
     ['담당자',     ev.name||(ev.gold?.name)||'—'],
-    ['주소',       ev.address||'—'],
+    ['장소',       ev.address||'—'],
     ['잠금',       ev.locked ? '🔒 잠금됨' : '없음'],
     ['특수옵션',   (ev.specialOpts||[]).map(k=>SPECIAL_LABELS[k]||k).join(', ') || (ev.schedOpt ? SCHED_LABELS[ev.schedOpt] : '없음')],
   ]));

@@ -537,8 +537,8 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
         <input class="form-input" id="fStreamTopic" type="text" placeholder="게임, 토크, 먹방...">
       </div>
       <div class="form-group">
-        <label class="form-label">주소</label>
-        <input class="form-input" id="fAddress" type="text" placeholder="방문 의뢰 시 주소">
+        <label class="form-label">장소 / 주소</label>
+        <input class="form-input" id="fAddress" type="text" placeholder="방문 의뢰 시 장소 또는 주소">
       </div>
       <div class="form-group">
         <label class="form-label">PC 사양</label>
@@ -1082,7 +1082,7 @@ function initApp(){
       ${field('방송주소 / ID',esc(c.streamId))}
       ${fieldFull('방종 주제',c.streamTopic)}
       ${sec('방문 정보')}
-      ${fieldFull('주소',c.address)}
+      ${fieldFull('장소',c.address)}
       ${sec('장비 정보')}
       ${fieldFull('PC 사양',c.pcSpec)}
       ${fieldFull('장비 목록',c.equipment)}
@@ -1381,7 +1381,12 @@ function initApp(){
       timer=setTimeout(async()=>{ const evs=await searchCalendarEvents(v); renderCalResults(evs,resEl,onSelect); },350);
     });
   }
-  function fmtAmount(n){ if(!n) return ''; return Number(n).toLocaleString('ko-KR')+'원'; }
+  function fmtAmount(n){
+    if(n===undefined||n===null||n==='') return '';
+    const num=Number(String(n).replace(/[^0-9.]/g,''));
+    if(isNaN(num)||num===0) return '';
+    return num.toLocaleString('ko-KR')+'원';
+  }
   function showLightbox(src){ document.getElementById('lightboxImg').src=src; document.getElementById('lightbox').classList.add('open'); }
   document.getElementById('lightbox').addEventListener('click',()=>document.getElementById('lightbox').classList.remove('open'));
 
@@ -1454,11 +1459,21 @@ function initApp(){
     if(countEl) countEl.textContent = total ? `(${total}장)` : '';
     const tabsEl = document.getElementById('vrImgTabs');
     if(tabsEl) tabsEl.style.display = total ? 'flex' : 'none';
+    function _imgSrc(img){
+      if(!img) return '';
+      if(typeof img==='string') return img;
+      return img.data||img.url||img.src||'';
+    }
     function renderSet(containerId, imgs){
-      const el = document.getElementById(containerId);
-      if(!el) return;
-      el.innerHTML = imgs.map(img=>`<img class="quote-img-thumb" src="${img.data||img}" alt="이미지">`).join('');
-      el.querySelectorAll('.quote-img-thumb').forEach(i=>i.addEventListener('click',()=>showLightbox(i.src)));
+      const el=document.getElementById(containerId); if(!el) return;
+      el.innerHTML='';
+      (imgs||[]).forEach(img=>{
+        const src=_imgSrc(img); if(!src) return;
+        const i=document.createElement('img');
+        i.className='quote-img-thumb'; i.src=src; i.alt='이미지';
+        i.addEventListener('click',()=>showLightbox(src));
+        el.appendChild(i);
+      });
     }
     renderSet('vrQuoteImages', quoteImgs);
     renderSet('vrRefImages',   refImgs);
@@ -1496,11 +1511,13 @@ function initApp(){
     if(ev.address) document.getElementById('vrAddress').value=ev.address;
     /* 캘린더 연동 정보 */
     const name=ev.gold?.name||ev.name||''; const phone=ev.gold?.phone||ev.phone||'';
-    const est=ev.gold?.estimate_amount||''; const bal=ev.gold?.balance_amount||'';
+    const est=String(ev.gold?.estimate_amount||''); const bal=String(ev.gold?.balance_amount||'');
+    /* 제목도 항상 갱신 */
+    document.getElementById('vrTitle').value=ev.title||document.getElementById('vrTitle').value;
     document.getElementById('vrCalName').textContent=name||'—';
     document.getElementById('vrCalPhone').textContent=phone||'—';
-    document.getElementById('vrCalEstimate').textContent=est?fmtAmount(est):'—';
-    document.getElementById('vrCalBalance').textContent=bal?fmtAmount(bal):'없음';
+    document.getElementById('vrCalEstimate').textContent=est&&est!=='0'?fmtAmount(est):'—';
+    document.getElementById('vrCalBalance').textContent=bal&&bal!=='0'?fmtAmount(bal):'없음';
     /* 장비목록 자동입력 */
     const equipment=ev.gold?.equipment||'';
     if(equipment) document.getElementById('vrEquipment').value=equipment;
@@ -1702,14 +1719,24 @@ function initApp(){
     document.getElementById('slLinkedBadge').style.display='';
     document.getElementById('slDate').value=ev.startDate||document.getElementById('slDate').value;
     if(!document.getElementById('slTitle').value) document.getElementById('slTitle').value=ev.title||'';
-    const est=ev.gold?.estimate_amount||''; const bal=ev.gold?.balance_amount||''; const imgs=ev.quoteImgs||[];
-    document.getElementById('slCalEstimate').textContent=est?fmtAmount(est):'—';
-    document.getElementById('slCalBalance').textContent=bal?fmtAmount(bal):'없음';
-    document.getElementById('slQuoteImages').innerHTML=imgs.map(img=>`<img class="quote-img-thumb" src="${img.data||img}" alt="견적서">`).join('');
-    document.getElementById('slQuoteImages').querySelectorAll('.quote-img-thumb').forEach(img=>img.addEventListener('click',()=>showLightbox(img.src)));
+    const est=String(ev.gold?.estimate_amount||''); const bal=String(ev.gold?.balance_amount||'');
+    const imgs=ev.gold?.quoteImgs||ev.quoteImgs||[];
+    /* 제목/날짜 항상 갱신 */
+    document.getElementById('slTitle').value=ev.title||document.getElementById('slTitle').value;
+    document.getElementById('slDate').value=ev.startDate||document.getElementById('slDate').value;
+    document.getElementById('slCalEstimate').textContent=est&&est!=='0'?fmtAmount(est):'—';
+    document.getElementById('slCalBalance').textContent=bal&&bal!=='0'?fmtAmount(bal):'없음';
+    /* 금액 자동입력 - 항상 덮어쓰기 */
+    if(est) document.getElementById('slAmount').value=est.replace(/[^0-9]/g,'');
+    if(bal) document.getElementById('slBalance').value=bal.replace(/[^0-9]/g,'');
+    const slQEl=document.getElementById('slQuoteImages'); slQEl.innerHTML='';
+    (imgs||[]).forEach(img=>{
+      const src=(typeof img==='string')?img:(img.data||img.url||''); if(!src) return;
+      const el=document.createElement('img'); el.className='quote-img-thumb'; el.src=src; el.alt='견적서';
+      el.addEventListener('click',()=>showLightbox(src)); slQEl.appendChild(el);
+    });
     document.getElementById('slCalInfo').style.display='';
-    if(est&&!document.getElementById('slAmount').value) document.getElementById('slAmount').value=est.replace(/[^0-9]/g,'');
-    if(bal&&!document.getElementById('slBalance').value) document.getElementById('slBalance').value=bal.replace(/[^0-9]/g,'');
+    /* 금액은 위에서 이미 처리됨 */
   });
   document.getElementById('slUnlinkBtn').addEventListener('click',()=>{ slLinkedEvent=null; document.getElementById('slLinkedBadge').style.display='none'; document.getElementById('slCalInfo').style.display='none'; });
   document.getElementById('salesDeleteBtn').addEventListener('click',async()=>{

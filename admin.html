@@ -792,7 +792,7 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
 <div class="toolbar">
   <div class="search-wrap">
     <span class="search-icon">🔍</span>
-    <input class="search-input" id="searchInput" placeholder="제목, 이름, 주소 검색…" />
+    <input class="search-input" id="searchInput" placeholder="제목, 이름, 장소 검색…" />
   </div>
   <div class="filter-group" id="filterGroup">
     <button class="filter-btn active" data-filter="all">전체</button>
@@ -830,7 +830,7 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
   <div></div>
   <div class="sort-col active" data-sort="title">제목 <span class="sort-arrow" id="sa-title">↑</span></div>
   <div class="sort-col hide-m" data-sort="startDate">날짜 <span class="sort-arrow" id="sa-startDate"></span></div>
-  <div class="sort-col hide-m" data-sort="address">주소</div>
+  <div class="sort-col hide-m" data-sort="address">장소</div>
   <div class="sort-col hide-m" data-sort="name">담당자 <span class="sort-arrow" id="sa-name"></span></div>
   <div class="sort-col" data-sort="color">분류 <span class="sort-arrow" id="sa-color"></span></div>
   <div class="sort-col" data-sort="flags">옵션</div>
@@ -1529,7 +1529,7 @@ function openDetail(ev) {
     ['시간',      ev.allDay!==false ? '종일' : `${ev.startTime||'?'} ~ ${ev.endTime||'?'}`],
     ['분류',      TYPE_LABELS[c]||c],
     ['이름/담당자', ev.name||(ev.gold?.name)||'—'],
-    ['주소',      ev.address||'—'],
+    ['장소',      ev.address||'—'],
     ['잠금',      ev.locked ? '🔒 잠금됨' : '없음'],
     ['특수옵션',  (ev.specialOpts||[]).map(k=>SPECIAL_LABELS[k]||k).join(', ') || (ev.schedOpt ? SCHED_LABELS[ev.schedOpt] : '없음')],
   ]));
