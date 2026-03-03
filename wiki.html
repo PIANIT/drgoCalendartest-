@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>DRGO 위키</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Serif+KR:wght@400;600;700&family=Gothic+A1:wght@400;700&family=Nanum+Gothic:wght@400;700&family=Nanum+Myeongjo&display=swap" rel="stylesheet">
 <style>
 :root {
   --font-main: "Malgun Gothic","맑은 고딕",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
@@ -111,46 +111,74 @@ body { background:var(--bg); color:var(--text); font-family:var(--font-main); he
 .cat-chip { padding:4px 10px; border-radius:12px; font-size:11px; border:1px solid var(--border); cursor:pointer; transition:all .15s; color:var(--text-muted); background:none; font-family:var(--font-main); }
 .cat-chip.selected { background:rgba(212,188,150,.15); border-color:var(--accent); color:var(--accent); }
 
-/* ═══ TOOLBAR ═══ */
+/* ═══════════════════════════════════════
+   ENHANCED TOOLBAR
+═══════════════════════════════════════ */
 #editorToolbar {
   display:flex; align-items:center; gap:2px; flex-wrap:wrap;
-  padding:5px 8px; background:var(--surface);
-  border:1.5px solid var(--border); border-bottom:1px solid var(--border);
+  padding:6px 8px; background:var(--surface);
+  border:1.5px solid var(--border); border-bottom:none;
   border-radius:8px 8px 0 0;
+  row-gap:4px;
 }
 .tb {
   background:none; border:1px solid transparent; color:var(--text-muted);
   cursor:pointer; padding:0 6px; border-radius:4px; font-size:12px;
   font-family:var(--font-main); transition:all .12s;
   display:flex; align-items:center; justify-content:center;
-  height:24px; min-width:24px; white-space:nowrap; flex-shrink:0;
+  height:26px; min-width:26px; white-space:nowrap; flex-shrink:0;
+  position:relative;
 }
 .tb:hover { background:var(--surface2); color:var(--text); }
 .tb.act { background:rgba(212,188,150,.18); color:var(--accent); border-color:rgba(212,188,150,.3); }
-.tb-sep { width:1px; height:16px; background:var(--border); margin:0 2px; flex-shrink:0; }
+.tb-sep { width:1px; height:18px; background:var(--border); margin:0 3px; flex-shrink:0; align-self:center; }
+
+/* 툴팁 */
+.tb[title]:hover::after {
+  content: attr(title);
+  position:absolute; top:calc(100% + 5px); left:50%; transform:translateX(-50%);
+  background:#000; color:#fff; font-size:10px; padding:3px 7px; border-radius:4px;
+  white-space:nowrap; pointer-events:none; z-index:9999;
+  border:1px solid #333;
+}
+
+/* 셀렉트 */
 .tb-sel {
-  height:24px; padding:0 5px; border-radius:4px;
+  height:26px; padding:0 5px; border-radius:4px;
   background:var(--surface2); border:1px solid var(--border);
   color:var(--text); font-size:11px; font-family:var(--font-main);
   outline:none; cursor:pointer; flex-shrink:0;
+  transition:border-color .15s;
 }
+.tb-sel:hover, .tb-sel:focus { border-color:var(--accent); }
 .tb-sel option { background:var(--surface); }
 
-/* 색상 버튼 */
-.tb-color {
-  position:relative; width:26px; height:24px; border-radius:4px;
-  border:1px solid var(--border); cursor:pointer; overflow:hidden;
-  flex-shrink:0; background:var(--surface2);
+/* 숫자 입력 폰트 크기 */
+#fontSizeInput {
+  width:42px; height:26px; padding:0 5px; border-radius:4px;
+  background:var(--surface2); border:1px solid var(--border);
+  color:var(--text); font-size:11px; font-family:var(--font-main);
+  outline:none; text-align:center; flex-shrink:0;
 }
-.tb-color input[type=color] {
+#fontSizeInput:hover, #fontSizeInput:focus { border-color:var(--accent); }
+
+/* 색상 버튼 */
+.tb-color-btn {
+  position:relative; height:26px; width:30px; border-radius:4px;
+  border:1px solid var(--border); cursor:pointer; overflow:hidden;
+  flex-shrink:0; background:var(--surface2); display:flex;
+  flex-direction:column; align-items:center; justify-content:center;
+  gap:1px;
+}
+.tb-color-btn:hover { border-color:var(--accent); }
+.tb-color-btn input[type=color] {
   position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%;
 }
 .tb-color-bar {
-  position:absolute; bottom:2px; left:2px; right:2px; height:3px; border-radius:2px; pointer-events:none;
+  position:absolute; bottom:2px; left:3px; right:3px; height:3px; border-radius:2px; pointer-events:none;
 }
 .tb-color-letter {
-  position:absolute; top:1px; left:0; right:0; text-align:center;
-  font-size:11px; font-weight:700; pointer-events:none; line-height:1;
+  font-size:11px; font-weight:700; pointer-events:none; line-height:1; margin-top:1px;
 }
 
 /* ═══ EDITOR ═══ */
@@ -176,35 +204,90 @@ body { background:var(--bg); color:var(--text); font-family:var(--font-main); he
 #articleEditor a { color:var(--accent2); text-decoration:underline; }
 #articleEditor::-webkit-scrollbar { width:5px; }
 #articleEditor::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
-#articleEditor img { max-width:100%; height:auto; border-radius:6px; border:2px solid transparent; display:block; margin:8px 0; cursor:pointer; transition:border-color .15s; }
-#articleEditor img.img-sel { border-color:var(--accent2); }
 
-/* ═══ 이미지 리사이즈 바 ═══ */
-#imgResizeBar {
-  display:none; position:fixed; z-index:2000;
-  background:var(--surface); border:1px solid var(--border);
-  border-radius:10px; padding:10px 14px;
-  box-shadow:0 8px 32px rgba(0,0,0,.5);
-  gap:8px; align-items:center; flex-wrap:wrap; font-size:12px;
+/* 이미지 - 드래그 리사이즈 지원 */
+#articleEditor img {
+  max-width:100%; height:auto; border-radius:6px;
+  border:2px solid transparent; display:block; margin:8px 0;
+  cursor:pointer; transition:border-color .15s;
 }
-#imgResizeBar.show { display:flex; }
-#imgResizeBar label { color:var(--text-muted); font-size:11px; }
-#imgResizeBar input[type=range] { width:100px; accent-color:var(--accent); cursor:pointer; }
-#imgResizeBar input[type=number] { width:56px; padding:3px 6px; background:var(--surface2); border:1px solid var(--border); border-radius:5px; color:var(--text); font-size:12px; text-align:center; outline:none; font-family:var(--font-main); }
-#imgResizeBar select { padding:3px 6px; background:var(--surface2); border:1px solid var(--border); border-radius:5px; color:var(--text); font-size:12px; outline:none; font-family:var(--font-main); }
+#articleEditor img.img-sel { border-color:var(--accent2); outline:none; }
 
-/* ═══ TABLE GRID ═══ */
+/* 이미지 래퍼 (드래그 리사이즈용) */
+.img-resize-wrapper {
+  display:inline-block; position:relative;
+  max-width:100%; line-height:0; vertical-align:top;
+}
+.img-resize-wrapper img { display:block; width:100%; height:auto; }
+.img-resize-wrapper.selected img { border-color:var(--accent2); }
+.resize-handle {
+  position:absolute; width:10px; height:10px;
+  background:var(--accent2); border:2px solid #fff;
+  border-radius:2px; z-index:10; display:none;
+}
+.img-resize-wrapper.selected .resize-handle { display:block; }
+.resize-handle.se { right:-5px; bottom:-5px; cursor:se-resize; }
+.resize-handle.sw { left:-5px;  bottom:-5px; cursor:sw-resize; }
+.resize-handle.ne { right:-5px; top:-5px;    cursor:ne-resize; }
+.resize-handle.nw { left:-5px;  top:-5px;    cursor:nw-resize; }
+
+/* ═══ 표 컨텍스트 메뉴 ═══ */
+#tableCtxMenu {
+  display:none; position:fixed; z-index:3000;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:8px; padding:4px;
+  box-shadow:0 8px 28px rgba(0,0,0,.5); min-width:160px;
+}
+#tableCtxMenu.show { display:block; }
+.ctx-item {
+  padding:7px 12px; font-size:12px; cursor:pointer;
+  border-radius:5px; color:var(--text);
+  display:flex; align-items:center; gap:8px;
+}
+.ctx-item:hover { background:var(--surface2); }
+.ctx-sep { height:1px; background:var(--border); margin:3px 4px; }
+.ctx-item.danger { color:var(--red); }
+
+/* ═══ 이미지 플로팅 툴바 ═══ */
+#imgToolbar {
+  display:none; position:fixed; z-index:2500;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:9px; padding:6px 10px;
+  box-shadow:0 6px 24px rgba(0,0,0,.5);
+  gap:6px; align-items:center; flex-wrap:wrap; font-size:12px;
+}
+#imgToolbar.show { display:flex; }
+#imgToolbar label { color:var(--text-muted); font-size:11px; white-space:nowrap; }
+#imgWidthInput {
+  width:54px; padding:3px 6px; background:var(--surface2);
+  border:1px solid var(--border); border-radius:5px;
+  color:var(--text); font-size:12px; text-align:center;
+  outline:none; font-family:var(--font-main);
+}
+#imgWidthInput:focus { border-color:var(--accent); }
+#imgUnitSel {
+  padding:3px 6px; background:var(--surface2); border:1px solid var(--border);
+  border-radius:5px; color:var(--text); font-size:12px; outline:none;
+  font-family:var(--font-main); cursor:pointer;
+}
+#imgAlignSel {
+  padding:3px 6px; background:var(--surface2); border:1px solid var(--border);
+  border-radius:5px; color:var(--text); font-size:12px; outline:none;
+  font-family:var(--font-main); cursor:pointer;
+}
+
+/* ═══ 표 그리드 ═══ */
 #tableGrid { display:flex; flex-direction:column; gap:3px; margin:10px 0; }
 .tg-row { display:flex; gap:3px; }
 .tg-cell { width:24px; height:24px; border:1px solid var(--border); border-radius:3px; cursor:pointer; background:var(--surface2); transition:background .1s; }
 .tg-cell.hov { background:rgba(212,188,150,.25); border-color:var(--accent); }
 
-/* ═══ CONFIRM ═══ */
-.confirm-text { font-size:13px; color:var(--text); line-height:1.6; }
-
 /* ═══ TOAST ═══ */
 #wikiToast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(16px); z-index:5000; background:var(--surface); border:1px solid var(--border); border-radius:9px; padding:10px 18px; font-size:13px; color:var(--text); box-shadow:0 8px 28px rgba(0,0,0,.4); opacity:0; transition:all .25s; pointer-events:none; white-space:nowrap; }
 #wikiToast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* ═══ CONFIRM ═══ */
+.confirm-text { font-size:13px; color:var(--text); line-height:1.6; }
 
 @media(max-width:768px) { #sidebar{width:200px;} .article-view-body{padding:18px 16px;} .article-view-header{padding:14px 16px 10px;} }
 @media(max-width:560px) { #sidebar{display:none;} }
@@ -269,11 +352,13 @@ body { background:var(--bg); color:var(--text); font-family:var(--font-main); he
       <div class="form-row">
         <label class="form-label">내용</label>
 
-        <!-- ─── TOOLBAR ─── -->
+        <!-- ─────────────────────────────────────
+             강화된 TOOLBAR
+        ───────────────────────────────────── -->
         <div id="editorToolbar">
 
           <!-- 단락 스타일 -->
-          <select class="tb-sel" id="blockSel" title="단락 스타일" style="width:76px;">
+          <select class="tb-sel" id="blockSel" title="단락 스타일" style="width:78px;">
             <option value="p">본문</option>
             <option value="h1">제목 1</option>
             <option value="h2">제목 2</option>
@@ -285,65 +370,83 @@ body { background:var(--bg); color:var(--text); font-family:var(--font-main); he
           <div class="tb-sep"></div>
 
           <!-- 폰트 패밀리 -->
-          <select class="tb-sel" id="fontFamSel" title="글씨체" style="width:90px;">
+          <select class="tb-sel" id="fontFamSel" title="글씨체" style="width:96px;">
             <option value="">기본체</option>
-            <option value="맑은 고딕,sans-serif">맑은 고딕</option>
-            <option value="나눔고딕,sans-serif">나눔고딕</option>
-            <option value="나눔명조,serif">나눔명조</option>
+            <option value="'Malgun Gothic','맑은 고딕',sans-serif">맑은 고딕</option>
+            <option value="'Noto Sans KR',sans-serif">Noto Sans</option>
+            <option value="'Noto Serif KR',serif">Noto Serif</option>
+            <option value="'Gothic A1',sans-serif">Gothic A1</option>
+            <option value="'Nanum Gothic',sans-serif">나눔고딕</option>
+            <option value="'Nanum Myeongjo',serif">나눔명조</option>
+            <option value="'DM Mono',monospace">DM Mono</option>
             <option value="Arial,sans-serif">Arial</option>
             <option value="Georgia,serif">Georgia</option>
-            <option value="Courier New,monospace">Courier</option>
+            <option value="'Times New Roman',serif">Times New Roman</option>
+            <option value="'Courier New',monospace">Courier New</option>
           </select>
 
-          <!-- 폰트 크기 -->
-          <select class="tb-sel" id="fontSzSel" title="글씨 크기" style="width:56px;">
-            <option value="1">8</option>
-            <option value="2">10</option>
-            <option value="3" selected>12</option>
-            <option value="4">14</option>
-            <option value="5">18</option>
-            <option value="6">24</option>
-            <option value="7">36</option>
+          <!-- 폰트 크기 (직접 입력 + 빠른 선택) -->
+          <input type="number" id="fontSizeInput" value="14" min="6" max="96" title="폰트 크기 (px)">
+          <select class="tb-sel" id="fontSzQuick" title="빠른 크기 선택" style="width:50px;">
+            <option value="">크기</option>
+            <option value="10">10</option>
+            <option value="11">11</option>
+            <option value="12">12</option>
+            <option value="13">13</option>
+            <option value="14">14</option>
+            <option value="16">16</option>
+            <option value="18">18</option>
+            <option value="20">20</option>
+            <option value="24">24</option>
+            <option value="28">28</option>
+            <option value="32">32</option>
+            <option value="36">36</option>
+            <option value="48">48</option>
+            <option value="64">64</option>
+            <option value="72">72</option>
           </select>
 
           <div class="tb-sep"></div>
 
           <!-- 서식 -->
-          <button class="tb" data-cmd="bold"          title="굵게 Ctrl+B"><b>B</b></button>
-          <button class="tb" data-cmd="italic"        title="기울임 Ctrl+I"><i>I</i></button>
-          <button class="tb" data-cmd="underline"     title="밑줄 Ctrl+U"><u>U</u></button>
+          <button class="tb" data-cmd="bold"          title="굵게 (Ctrl+B)"><b>B</b></button>
+          <button class="tb" data-cmd="italic"        title="기울임 (Ctrl+I)"><i>I</i></button>
+          <button class="tb" data-cmd="underline"     title="밑줄 (Ctrl+U)"><u>U</u></button>
           <button class="tb" data-cmd="strikeThrough" title="취소선"><s>S</s></button>
+          <button class="tb" data-cmd="superscript"   title="위 첨자">x²</button>
+          <button class="tb" data-cmd="subscript"     title="아래 첨자">x₂</button>
 
           <div class="tb-sep"></div>
 
           <!-- 글자색 -->
-          <div class="tb-color" title="글자색">
-            <span class="tb-color-letter" style="color:#f0ebe2;">A</span>
+          <div class="tb-color-btn" title="글자 색상">
+            <span class="tb-color-letter" id="fontColorLetter" style="color:var(--text);">A</span>
             <div class="tb-color-bar" id="fontColorBar" style="background:#d4bc96;"></div>
             <input type="color" id="fontColorInput" value="#d4bc96">
           </div>
 
-          <!-- 배경색(형광펜) -->
-          <div class="tb-color" title="형광펜 배경색">
-            <span class="tb-color-letter" style="color:#111;">H</span>
+          <!-- 배경(형광펜) -->
+          <div class="tb-color-btn" title="배경 색상 (형광펜)">
+            <span class="tb-color-letter" style="color:#111111; text-shadow:none; background:#ffe066; padding:0 1px; border-radius:2px;">H</span>
             <div class="tb-color-bar" id="bgColorBar" style="background:#ffe066;"></div>
             <input type="color" id="bgColorInput" value="#ffe066">
           </div>
 
           <div class="tb-sep"></div>
 
-          <!-- 정렬 -->
-          <button class="tb" data-cmd="justifyLeft"   title="왼쪽 정렬">◧</button>
-          <button class="tb" data-cmd="justifyCenter" title="가운데 정렬">◫</button>
-          <button class="tb" data-cmd="justifyRight"  title="오른쪽 정렬">◨</button>
+          <!-- 정렬 (4종) -->
+          <button class="tb" data-cmd="justifyLeft"   title="왼쪽 정렬">⬅</button>
+          <button class="tb" data-cmd="justifyCenter" title="가운데 정렬">⬌</button>
+          <button class="tb" data-cmd="justifyRight"  title="오른쪽 정렬">➡</button>
+          <button class="tb" data-cmd="justifyFull"   title="양쪽 맞춤">⇔</button>
 
           <div class="tb-sep"></div>
 
           <!-- 목록 -->
-          <button class="tb" data-cmd="insertUnorderedList" title="불릿 목록">• 목록</button>
-          <button class="tb" data-cmd="insertOrderedList"   title="번호 목록">1. 목록</button>
-          <button class="tb" data-cmd="indent"              title="들여쓰기">▷</button>
-          <button class="tb" data-cmd="outdent"             title="내어쓰기">◁</button>
+          <button class="tb" data-cmd="insertUnorderedList" title="글머리 목록">• 목록</button>
+          <button class="tb" data-cmd="insertOrderedList"   title="번호 목록">① 목록</button>
+          <button class="tb" data-cmd="indent"              title="들여쓰기 →">→</button>
+          <button class="tb" data-cmd="outdent"             title="내어쓰기 ←">←</button>
 
           <div class="tb-sep"></div>
 
@@ -354,18 +457,24 @@ body { background:var(--bg); color:var(--text); font-family:var(--font-main); he
           <button class="tb" id="linkBtn" title="링크 삽입">🔗 링크</button>
 
           <!-- 구분선 -->
-          <button class="tb" data-cmd="insertHorizontalRule" title="수평선">― 선</button>
+          <button class="tb" data-cmd="insertHorizontalRule" title="수평 구분선">― 선</button>
 
           <div class="tb-sep"></div>
 
           <!-- 이미지 -->
           <button class="tb" id="imgInsertBtn" title="이미지 삽입">🖼 이미지</button>
 
+          <div class="tb-sep"></div>
+
+          <!-- 실행취소/재실행 -->
+          <button class="tb" data-cmd="undo"  title="실행 취소 (Ctrl+Z)">↩</button>
+          <button class="tb" data-cmd="redo"  title="다시 실행 (Ctrl+Y)">↪</button>
+
           <!-- 서식 지우기 -->
-          <button class="tb" data-cmd="removeFormat" title="서식 모두 제거" style="margin-left:2px;color:var(--red);">✕ 서식</button>
+          <button class="tb" data-cmd="removeFormat" title="서식 모두 제거" style="color:var(--red);">✕ 서식</button>
         </div>
 
-        <!-- ─── 에디터 본문 ─── -->
+        <!-- 에디터 본문 -->
         <div id="articleEditor" contenteditable="true" data-placeholder="내용을 입력하세요…"></div>
         <input type="file" id="imgFileInput" accept="image/*" style="display:none" multiple>
       </div>
@@ -377,24 +486,38 @@ body { background:var(--bg); color:var(--text); font-family:var(--font-main); he
   </div>
 </div>
 
-<!-- ═══ 이미지 리사이즈 바 ═══ -->
-<div id="imgResizeBar">
+<!-- ═══ 이미지 플로팅 툴바 ═══ -->
+<div id="imgToolbar">
   <label>너비</label>
-  <input type="range"  id="imgRangeW" min="10" max="100" value="100" step="5">
-  <input type="number" id="imgNumW"   min="10" max="2000" value="100">
-  <select id="imgUnitW">
+  <input type="number" id="imgWidthInput" min="1" max="2000" value="100">
+  <select id="imgUnitSel">
     <option value="%">%</option>
     <option value="px">px</option>
   </select>
-  <div class="tb-sep" style="height:18px;"></div>
+  <div class="tb-sep" style="height:18px;margin:0 2px;"></div>
   <label>정렬</label>
-  <select id="imgAlign">
+  <select id="imgAlignSel">
     <option value="left">왼쪽</option>
     <option value="center">가운데</option>
     <option value="right">오른쪽</option>
   </select>
-  <button class="tb" id="imgResizeDone" style="color:var(--green);border-color:var(--green);">✓ 완료</button>
-  <button class="tb" id="imgResizeClose" style="color:var(--red);">✕</button>
+  <div class="tb-sep" style="height:18px;margin:0 2px;"></div>
+  <button class="tb" id="imgDoneBtn" style="color:var(--green);border-color:var(--green);height:24px;">✓ 완료</button>
+  <button class="tb" id="imgDeleteBtn" style="color:var(--red);border-color:var(--red);height:24px;">🗑</button>
+</div>
+
+<!-- ═══ 표 컨텍스트 메뉴 ═══ -->
+<div id="tableCtxMenu">
+  <div class="ctx-item" data-action="addRowAbove">↑ 위에 행 추가</div>
+  <div class="ctx-item" data-action="addRowBelow">↓ 아래에 행 추가</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" data-action="addColLeft">← 왼쪽에 열 추가</div>
+  <div class="ctx-item" data-action="addColRight">→ 오른쪽에 열 추가</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item danger" data-action="deleteRow">✕ 현재 행 삭제</div>
+  <div class="ctx-item danger" data-action="deleteCol">✕ 현재 열 삭제</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item danger" data-action="deleteTable">🗑 표 전체 삭제</div>
 </div>
 
 <!-- ═══ 표 삽입 MODAL ═══ -->
@@ -412,7 +535,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--font-main); he
           <select class="form-select" id="tHead" style="width:76px;"><option value="1">있음</option><option value="0">없음</option></select>
         </div>
       </div>
-      <p style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">격자를 드래그해서 크기 선택</p>
+      <p style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">격자를 클릭/드래그해서 크기 선택</p>
       <div id="tableGrid"></div>
       <p style="font-size:11px;color:var(--accent);margin-top:6px;" id="tGridLabel"></p>
     </div>
@@ -476,13 +599,13 @@ const COL = 'wiki_articles';
 /* ── STATE ── */
 let articles=[], categories=new Set(['일반','운영','영업','기술']);
 let selectedCat=null, currentId=null, editingId=null, searchQuery='';
-let savedRange=null, selectedImg=null;
+let savedRange=null, selectedImg=null, ctxTargetCell=null;
 
 /* ── HELPERS ── */
 const $ = id => document.getElementById(id);
 function toast(msg){ const t=$('wikiToast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
 function formatDate(ts){ if(!ts)return''; const d=ts.toDate?ts.toDate():new Date(ts); return d.toLocaleDateString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit'}); }
-function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function saveRange(){ const sel=window.getSelection(); if(sel&&sel.rangeCount>0) savedRange=sel.getRangeAt(0).cloneRange(); }
 function restoreRange(){ if(!savedRange)return; const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(savedRange); }
 
@@ -540,12 +663,12 @@ function openEditModal(id){
   selectedCat=art?.category||null;
   renderCatChips();
   $('editModal').classList.add('open');
-  hideResizeBar();
+  hideImgToolbar(); deselectImg();
   setTimeout(()=>$('articleTitle').focus(),80);
 }
 function closeEditModal(){
   $('editModal').classList.remove('open');
-  hideResizeBar(); deselectImg(); editingId=null;
+  hideImgToolbar(); deselectImg(); editingId=null;
 }
 
 /* ── CATEGORIES ── */
@@ -558,9 +681,9 @@ function renderCatChips(){
 }
 $('newCatInput').addEventListener('keydown',e=>{ if(e.key==='Enter'){ const v=e.target.value.trim(); if(v){categories.add(v);selectedCat=v;renderCatChips();} e.target.value=''; e.target.style.display='none'; } });
 
-/* ══════════════════════════════
-   TOOLBAR
-══════════════════════════════ */
+/* ══════════════════════════════════════════
+   TOOLBAR LOGIC
+══════════════════════════════════════════ */
 
 /* 단락 스타일 */
 $('blockSel').addEventListener('change',e=>{
@@ -568,19 +691,62 @@ $('blockSel').addEventListener('change',e=>{
   document.execCommand('formatBlock',false,e.target.value);
 });
 
-/* 폰트 패밀리 */
+/* ─ 폰트 패밀리 (span 방식 - execCommand fontName 대신) ─ */
 $('fontFamSel').addEventListener('change',e=>{
+  const val=e.target.value;
   editorEl.focus(); restoreRange();
-  if(e.target.value) document.execCommand('fontName',false,e.target.value);
+  if(!val) return;
+  const sel=window.getSelection();
+  if(!sel||sel.isCollapsed) return;
+  wrapSelectionWithSpan({ fontFamily: val });
+  e.target.selectedIndex=0;
 });
 
-/* 폰트 크기 */
-$('fontSzSel').addEventListener('change',e=>{
-  editorEl.focus(); restoreRange();
-  document.execCommand('fontSize',false,e.target.value);
+/* ─ 폰트 크기 직접 입력 ─ */
+$('fontSizeInput').addEventListener('change',e=>{
+  const sz=parseInt(e.target.value);
+  if(sz>=6&&sz<=96) applyFontSize(sz+'px');
+});
+$('fontSizeInput').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){ const sz=parseInt(e.target.value); if(sz>=6&&sz<=96)applyFontSize(sz+'px'); }
 });
 
-/* 공통 커맨드 버튼 */
+/* ─ 빠른 크기 선택 ─ */
+$('fontSzQuick').addEventListener('change',e=>{
+  const sz=e.target.value;
+  if(sz){ $('fontSizeInput').value=sz; applyFontSize(sz+'px'); }
+  e.target.selectedIndex=0;
+});
+
+function applyFontSize(size){
+  editorEl.focus(); restoreRange();
+  const sel=window.getSelection();
+  if(!sel||sel.isCollapsed) return;
+  wrapSelectionWithSpan({ fontSize: size });
+}
+
+/* 선택 영역을 span으로 감싸는 범용 함수 */
+function wrapSelectionWithSpan(styles){
+  const sel=window.getSelection();
+  if(!sel||sel.rangeCount===0) return;
+  const range=sel.getRangeAt(0);
+  if(range.collapsed) return;
+  const span=document.createElement('span');
+  Object.assign(span.style, styles);
+  try {
+    range.surroundContents(span);
+  } catch(e){
+    const frag=range.extractContents();
+    span.appendChild(frag);
+    range.insertNode(span);
+  }
+  sel.removeAllRanges();
+  const newRange=document.createRange();
+  newRange.selectNodeContents(span);
+  sel.addRange(newRange);
+}
+
+/* ─ 공통 커맨드 버튼 ─ */
 document.querySelectorAll('.tb[data-cmd]').forEach(btn=>{
   btn.addEventListener('mousedown',e=>{
     e.preventDefault(); editorEl.focus();
@@ -589,7 +755,7 @@ document.querySelectorAll('.tb[data-cmd]').forEach(btn=>{
   });
 });
 
-/* 글자색 */
+/* ─ 글자색 ─ */
 $('fontColorInput').addEventListener('mousedown',saveRange);
 $('fontColorInput').addEventListener('input',e=>{
   restoreRange();
@@ -597,7 +763,7 @@ $('fontColorInput').addEventListener('input',e=>{
   $('fontColorBar').style.background=e.target.value;
 });
 
-/* 배경색 */
+/* ─ 배경색 ─ */
 $('bgColorInput').addEventListener('mousedown',saveRange);
 $('bgColorInput').addEventListener('input',e=>{
   restoreRange();
@@ -605,11 +771,12 @@ $('bgColorInput').addEventListener('input',e=>{
   $('bgColorBar').style.background=e.target.value;
 });
 
-/* 툴바 상태 동기화 */
+/* ─ 툴바 상태 동기화 ─ */
 function syncToolbarState(){
   ['bold','italic','underline','strikeThrough',
    'insertUnorderedList','insertOrderedList',
-   'justifyLeft','justifyCenter','justifyRight'].forEach(cmd=>{
+   'justifyLeft','justifyCenter','justifyRight','justifyFull',
+   'superscript','subscript'].forEach(cmd=>{
     const b=document.querySelector(`.tb[data-cmd="${cmd}"]`);
     if(b) b.classList.toggle('act',document.queryCommandState(cmd));
   });
@@ -617,8 +784,12 @@ function syncToolbarState(){
 editorEl.addEventListener('keyup',syncToolbarState);
 editorEl.addEventListener('mouseup',syncToolbarState);
 
-/* ── 표 삽입 ── */
+/* ══════════════════════════════════════════
+   표 삽입
+══════════════════════════════════════════ */
 const GRID=8;
+let gridSelected={r:2,c:2};
+
 function buildGrid(){
   const g=$('tableGrid'); g.innerHTML='';
   for(let r=0;r<GRID;r++){
@@ -629,37 +800,129 @@ function buildGrid(){
     }
     g.appendChild(row);
   }
-  let hrC=0,hrR=0;
+  let hrC=gridSelected.c, hrR=gridSelected.r;
+  highlightGrid(hrR,hrC);
+
   g.querySelectorAll('.tg-cell').forEach(cell=>{
     cell.addEventListener('mouseover',()=>{
       hrR=+cell.dataset.r; hrC=+cell.dataset.c;
-      g.querySelectorAll('.tg-cell').forEach(c=>c.classList.toggle('hov',+c.dataset.r<=hrR&&+c.dataset.c<=hrC));
+      highlightGrid(hrR,hrC);
       $('tGridLabel').textContent=`${hrR+1}행 × ${hrC+1}열`;
     });
     cell.addEventListener('click',()=>{
+      gridSelected={r:hrR,c:hrC};
       $('tRows').value=hrR+1; $('tCols').value=hrC+1;
       $('tGridLabel').textContent=`${hrR+1}행 × ${hrC+1}열 선택됨 ✓`;
     });
   });
 }
+
+function highlightGrid(maxR,maxC){
+  document.querySelectorAll('#tableGrid .tg-cell').forEach(c=>
+    c.classList.toggle('hov',+c.dataset.r<=maxR&&+c.dataset.c<=maxC)
+  );
+}
+
 $('tableBtn').addEventListener('click',()=>{ saveRange(); buildGrid(); $('tableModal').classList.add('open'); });
 $('tableMClose').addEventListener('click',()=>$('tableModal').classList.remove('open'));
 $('tableMCancel').addEventListener('click',()=>$('tableModal').classList.remove('open'));
+
 $('tableInsert').addEventListener('click',()=>{
   const rows=parseInt($('tRows').value)||3;
   const cols=parseInt($('tCols').value)||3;
   const hasHead=$('tHead').value==='1';
+  const cellStyle='border:1px solid var(--border, #3a3a3a);padding:7px 10px;min-width:60px;';
   let html='<table style="border-collapse:collapse;width:100%;margin:10px 0;">';
-  if(hasHead) html+='<thead><tr>'+Array(cols).fill(0).map((_,i)=>`<th style="border:1px solid #555;padding:8px 10px;background:rgba(212,188,150,.15);font-weight:600;min-width:60px;">헤더${i+1}</th>`).join('')+'</tr></thead>';
+  if(hasHead){
+    html+='<thead><tr>';
+    for(let c=0;c<cols;c++) html+=`<th style="${cellStyle}background:rgba(212,188,150,.12);font-weight:600;">헤더${c+1}</th>`;
+    html+='</tr></thead>';
+  }
   html+='<tbody>';
-  for(let r=0;r<rows;r++) html+='<tr>'+Array(cols).fill(0).map(()=>'<td style="border:1px solid #555;padding:7px 10px;min-width:60px;">내용</td>').join('')+'</tr>';
+  for(let r=0;r<rows;r++){
+    html+='<tr>';
+    for(let c=0;c<cols;c++) html+=`<td style="${cellStyle}">내용</td>`;
+    html+='</tr>';
+  }
   html+='</tbody></table><p><br></p>';
   $('tableModal').classList.remove('open');
   editorEl.focus(); restoreRange();
   document.execCommand('insertHTML',false,html);
 });
 
-/* ── 링크 삽입 ── */
+/* ── 표 컨텍스트 메뉴 ── */
+editorEl.addEventListener('contextmenu',e=>{
+  const td=e.target.closest('td,th');
+  if(!td){ hideCtxMenu(); return; }
+  e.preventDefault();
+  ctxTargetCell=td;
+  const menu=$('tableCtxMenu');
+  menu.style.left=e.clientX+'px';
+  menu.style.top=e.clientY+'px';
+  menu.classList.add('show');
+});
+
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#tableCtxMenu')) hideCtxMenu();
+});
+function hideCtxMenu(){ $('tableCtxMenu').classList.remove('show'); }
+
+$('tableCtxMenu').querySelectorAll('.ctx-item').forEach(item=>{
+  item.addEventListener('click',()=>{
+    const action=item.dataset.action;
+    const cell=ctxTargetCell;
+    if(!cell) return;
+    const row=cell.closest('tr');
+    const table=cell.closest('table');
+    const tbody=table.querySelector('tbody')||table;
+    const allRows=[...table.querySelectorAll('tr')];
+    const rowIdx=allRows.indexOf(row);
+    const colIdx=[...row.children].indexOf(cell);
+    const colCount=[...allRows[0].children].length;
+    const cellTag=cell.tagName.toLowerCase();
+    const cellStyle='border:1px solid var(--border, #3a3a3a);padding:7px 10px;min-width:60px;';
+
+    if(action==='addRowAbove'||action==='addRowBelow'){
+      const newRow=document.createElement('tr');
+      for(let i=0;i<colCount;i++){
+        const td=document.createElement('td');
+        td.style.cssText=cellStyle; td.textContent=' ';
+        newRow.appendChild(td);
+      }
+      if(action==='addRowAbove') row.parentNode.insertBefore(newRow,row);
+      else row.insertAdjacentElement('afterend',newRow);
+    }
+    else if(action==='addColLeft'||action==='addColRight'){
+      allRows.forEach(r=>{
+        const cells=[...r.children];
+        const refCell=cells[colIdx];
+        const tag=r.closest('thead')?'th':'td';
+        const nc=document.createElement(tag);
+        nc.style.cssText=cellStyle;
+        if(tag==='th'){ nc.style.background='rgba(212,188,150,.12)'; nc.style.fontWeight='600'; }
+        nc.textContent=tag==='th'?'헤더':' ';
+        if(action==='addColLeft') r.insertBefore(nc,refCell);
+        else refCell.insertAdjacentElement('afterend',nc);
+      });
+    }
+    else if(action==='deleteRow'){
+      if(allRows.length<=1){ table.remove(); }
+      else row.remove();
+    }
+    else if(action==='deleteCol'){
+      if(colCount<=1){ table.remove(); }
+      else allRows.forEach(r=>{ const cells=[...r.children]; if(cells[colIdx]) cells[colIdx].remove(); });
+    }
+    else if(action==='deleteTable'){
+      table.remove();
+    }
+    hideCtxMenu();
+  });
+});
+
+/* ══════════════════════════════════════════
+   링크 삽입
+══════════════════════════════════════════ */
 $('linkBtn').addEventListener('click',()=>{
   saveRange();
   const sel=window.getSelection();
@@ -675,25 +938,31 @@ $('linkInsert').addEventListener('click',()=>{
   const url=$('linkUrl').value.trim();
   if(!url){toast('URL을 입력하세요');return;}
   editorEl.focus(); restoreRange();
-  document.execCommand('insertHTML',false,`<a href="${escHtml(url)}" target="_blank" style="color:var(--accent2);text-decoration:underline;">${escHtml(text||url)}</a>`);
+  document.execCommand('insertHTML',false,`<a href="${escHtml(url)}" target="_blank" style="color:var(--accent2,#90bcd4);text-decoration:underline;">${escHtml(text||url)}</a>`);
   $('linkModal').classList.remove('open');
 });
+$('linkUrl').addEventListener('keydown',e=>{ if(e.key==='Enter') $('linkInsert').click(); });
 
-/* ── 이미지 삽입 ── */
+/* ══════════════════════════════════════════
+   이미지 삽입 + 드래그 리사이즈
+══════════════════════════════════════════ */
 $('imgInsertBtn').addEventListener('click',()=>{ saveRange(); $('imgFileInput').click(); });
 $('imgFileInput').addEventListener('change',async e=>{
   const files=Array.from(e.target.files); editorEl.focus(); restoreRange();
-  for(const f of files) await insertImg(f); e.target.value='';
+  for(const f of files) await insertImgFile(f); e.target.value='';
 });
 editorEl.addEventListener('dragover',e=>e.preventDefault());
-editorEl.addEventListener('drop',async e=>{ e.preventDefault(); const files=Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/')); for(const f of files) await insertImg(f); });
+editorEl.addEventListener('drop',async e=>{
+  e.preventDefault(); const files=Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith('image/'));
+  for(const f of files) await insertImgFile(f);
+});
 editorEl.addEventListener('paste',async e=>{
   const items=Array.from(e.clipboardData?.items||[]).filter(i=>i.type.startsWith('image/'));
   if(!items.length)return; e.preventDefault();
-  for(const item of items){ const f=item.getAsFile(); if(f) await insertImg(f); }
+  for(const item of items){ const f=item.getAsFile(); if(f) await insertImgFile(f); }
 });
 
-async function insertImg(file){
+async function insertImgFile(file){
   return new Promise(resolve=>{
     const img0=new Image(), url0=URL.createObjectURL(file);
     img0.onload=()=>{
@@ -702,75 +971,150 @@ async function insertImg(file){
       const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
       canvas.getContext('2d').drawImage(img0,0,0,w,h); URL.revokeObjectURL(url0);
       const src=canvas.toDataURL('image/jpeg',Q);
-      document.execCommand('insertHTML',false,`<img src="${src}" style="max-width:100%;width:100%;display:block;margin:8px 0;border-radius:6px;" data-origw="${w}"><p><br></p>`);
+      // 이미지 래퍼 + 리사이즈 핸들 생성
+      const wrapperId='imgw_'+Date.now();
+      const html=`<div class="img-resize-wrapper" id="${wrapperId}" contenteditable="false" style="width:100%;display:block;">
+        <img src="${src}" style="width:100%;height:auto;display:block;border-radius:6px;border:2px solid transparent;" data-origw="${w}">
+        <div class="resize-handle nw"></div>
+        <div class="resize-handle ne"></div>
+        <div class="resize-handle sw"></div>
+        <div class="resize-handle se"></div>
+      </div><p><br></p>`;
+      document.execCommand('insertHTML',false,html);
+      // 핸들 이벤트 바인딩
+      setTimeout(()=>{
+        const wrapper=document.getElementById(wrapperId);
+        if(wrapper) bindResizeHandles(wrapper);
+      },50);
       resolve();
     };
     img0.src=url0;
   });
 }
 
-/* ── 이미지 선택 & 리사이즈 ── */
-editorEl.addEventListener('click',e=>{
-  if(e.target.tagName==='IMG'){ selectImg(e.target); }
-  else { deselectImg(); }
-});
+/* ── 드래그 리사이즈 핸들 바인딩 ── */
+function bindResizeHandles(wrapper){
+  const img=wrapper.querySelector('img');
+  wrapper.addEventListener('click',e=>{
+    if(e.target.classList.contains('resize-handle')) return;
+    e.stopPropagation();
+    selectImg(wrapper);
+  });
+  wrapper.querySelectorAll('.resize-handle').forEach(handle=>{
+    handle.addEventListener('mousedown',e=>startResize(e,wrapper,img,handle));
+    handle.addEventListener('touchstart',e=>startResizeTouch(e,wrapper,img,handle),{passive:false});
+  });
+}
 
-function selectImg(img){
+function startResize(e,wrapper,img,handle){
+  e.preventDefault(); e.stopPropagation();
+  selectImg(wrapper);
+  const startX=e.clientX;
+  const startW=wrapper.offsetWidth;
+  const isLeft=handle.classList.contains('nw')||handle.classList.contains('sw');
+
+  const onMove=ev=>{
+    const dx=ev.clientX-startX;
+    const newW=Math.max(40, isLeft ? startW-dx : startW+dx);
+    wrapper.style.width=newW+'px';
+    syncImgToolbar(wrapper);
+  };
+  const onUp=()=>{
+    document.removeEventListener('mousemove',onMove);
+    document.removeEventListener('mouseup',onUp);
+  };
+  document.addEventListener('mousemove',onMove);
+  document.addEventListener('mouseup',onUp);
+}
+
+function startResizeTouch(e,wrapper,img,handle){
+  e.preventDefault(); e.stopPropagation();
+  selectImg(wrapper);
+  const startX=e.touches[0].clientX;
+  const startW=wrapper.offsetWidth;
+  const isLeft=handle.classList.contains('nw')||handle.classList.contains('sw');
+
+  const onMove=ev=>{
+    const dx=ev.touches[0].clientX-startX;
+    const newW=Math.max(40, isLeft ? startW-dx : startW+dx);
+    wrapper.style.width=newW+'px';
+    syncImgToolbar(wrapper);
+  };
+  const onEnd=()=>{
+    document.removeEventListener('touchmove',onMove);
+    document.removeEventListener('touchend',onEnd);
+  };
+  document.addEventListener('touchmove',onMove,{passive:false});
+  document.addEventListener('touchend',onEnd);
+}
+
+/* ── 이미지 선택/해제 ── */
+function selectImg(wrapper){
   deselectImg();
-  selectedImg=img; img.classList.add('img-sel');
-  showResizeBar(img);
+  selectedImg=wrapper;
+  wrapper.classList.add('selected');
+  showImgToolbar(wrapper);
 }
 function deselectImg(){
-  if(selectedImg){selectedImg.classList.remove('img-sel');selectedImg=null;}
-  hideResizeBar();
+  if(selectedImg){ selectedImg.classList.remove('selected'); selectedImg=null; }
+  hideImgToolbar();
 }
+editorEl.addEventListener('click',e=>{
+  if(!e.target.closest('.img-resize-wrapper')) deselectImg();
+});
 
-function showResizeBar(img){
-  const bar=$('imgResizeBar');
-  // 현재 값 읽기
-  const styleW=img.style.width||'100%';
-  const isP=styleW.endsWith('%');
-  const v=parseInt(styleW)||100;
-  $('imgUnitW').value=isP?'%':'px';
-  $('imgRangeW').min=isP?'10':'60';
-  $('imgRangeW').max=isP?'100':'2000';
-  $('imgRangeW').value=v;
-  $('imgNumW').value=v;
-  // 정렬
-  const ml=img.style.marginLeft;
-  $('imgAlign').value=ml==='auto'?'center':(img.style.marginLeft===img.style.marginRight&&ml==='auto'?'center':'left');
-
-  // 위치: 에디터 모달 기준
-  const edRect=editorEl.getBoundingClientRect();
-  bar.style.top=(edRect.bottom-60)+'px';
+/* ── 이미지 플로팅 툴바 ── */
+function showImgToolbar(wrapper){
+  const bar=$('imgToolbar');
+  syncImgToolbar(wrapper);
+  // 위치
+  const edRect=$('articleEditor').getBoundingClientRect();
   bar.style.left=(edRect.left+8)+'px';
+  bar.style.top=(edRect.bottom-52)+'px';
   bar.classList.add('show');
 }
-function hideResizeBar(){ $('imgResizeBar').classList.remove('show'); }
+function syncImgToolbar(wrapper){
+  const sw=wrapper.style.width;
+  const isP=sw.endsWith('%');
+  const v=parseInt(sw)||100;
+  $('imgUnitSel').value=isP?'%':'px';
+  $('imgWidthInput').value=v;
+  const ml=wrapper.style.marginLeft;
+  const mr=wrapper.style.marginRight;
+  if(ml==='auto'&&mr==='auto') $('imgAlignSel').value='center';
+  else if(ml==='auto') $('imgAlignSel').value='right';
+  else $('imgAlignSel').value='left';
+}
+function hideImgToolbar(){ $('imgToolbar').classList.remove('show'); }
 
-function applyResize(){
-  if(!selectedImg)return;
-  const unit=$('imgUnitW').value;
-  const val=$('imgNumW').value;
+function applyImgSize(){
+  if(!selectedImg) return;
+  const val=parseInt($('imgWidthInput').value)||100;
+  const unit=$('imgUnitSel').value;
   selectedImg.style.width=val+unit;
-  selectedImg.style.height='auto';
-  selectedImg.style.maxWidth=unit==='%'?'100%':'none';
-  // 정렬
-  const align=$('imgAlign').value;
+  const align=$('imgAlignSel').value;
   selectedImg.style.display='block';
   if(align==='center'){ selectedImg.style.marginLeft='auto'; selectedImg.style.marginRight='auto'; }
   else if(align==='right'){ selectedImg.style.marginLeft='auto'; selectedImg.style.marginRight='0'; }
   else { selectedImg.style.marginLeft='0'; selectedImg.style.marginRight='auto'; }
 }
 
-$('imgRangeW').addEventListener('input',e=>{ $('imgNumW').value=e.target.value; applyResize(); });
-$('imgNumW').addEventListener('input',()=>{ const v=parseInt($('imgNumW').value)||100; const unit=$('imgUnitW').value; if(unit==='%'&&v>=10&&v<=100)$('imgRangeW').value=v; applyResize(); });
-$('imgUnitW').addEventListener('change',()=>{ const unit=$('imgUnitW').value; $('imgRangeW').min=unit==='%'?'10':'60'; $('imgRangeW').max=unit==='%'?'100':'2000'; applyResize(); });
-$('imgAlign').addEventListener('change',applyResize);
-$('imgResizeDone').addEventListener('click',deselectImg);
-$('imgResizeClose').addEventListener('click',deselectImg);
+$('imgWidthInput').addEventListener('input',applyImgSize);
+$('imgUnitSel').addEventListener('change',applyImgSize);
+$('imgAlignSel').addEventListener('change',applyImgSize);
+$('imgDoneBtn').addEventListener('click',deselectImg);
+$('imgDeleteBtn').addEventListener('click',()=>{ if(selectedImg){ selectedImg.remove(); deselectImg(); } });
 
-/* ── SAVE ── */
+/* ── 기존 이미지에도 핸들 바인딩 (편집 모달 열 때) ── */
+function bindExistingImages(){
+  editorEl.querySelectorAll('.img-resize-wrapper').forEach(w=>{
+    if(!w.dataset.bound){ w.dataset.bound='1'; bindResizeHandles(w); }
+  });
+}
+
+/* ══════════════════════════════════════════
+   SAVE
+══════════════════════════════════════════ */
 $('saveArticleBtn').addEventListener('click',saveArticle);
 async function saveArticle(){
   const title=$('articleTitle').value.trim();
@@ -798,7 +1142,7 @@ $('confirmDelete').addEventListener('click',async()=>{
 ['confirmCancel','confirmClose'].forEach(id=>$(id).addEventListener('click',()=>$('confirmModal').classList.remove('open')));
 
 /* ── EDIT ── */
-$('editBtn').addEventListener('click',()=>{ if(currentId)openEditModal(currentId); });
+$('editBtn').addEventListener('click',()=>{ if(currentId){openEditModal(currentId); setTimeout(bindExistingImages,100);} });
 $('newArticleBtn').addEventListener('click',()=>openEditModal(null));
 $('editModalClose').addEventListener('click',closeEditModal);
 $('cancelEditBtn').addEventListener('click',closeEditModal);
@@ -811,7 +1155,7 @@ $('searchInput').addEventListener('input',e=>{ searchQuery=e.target.value.trim()
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
     ['editModal','confirmModal','tableModal','linkModal'].forEach(id=>$(id).classList.remove('open'));
-    hideResizeBar();
+    hideImgToolbar(); hideCtxMenu();
   }
 });
 
