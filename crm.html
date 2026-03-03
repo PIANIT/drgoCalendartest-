@@ -263,6 +263,30 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
   .modal{border-radius:18px 18px 0 0;max-height:92vh;}
   .form-row{grid-template-columns:1fr;}
 }
+
+  /* ── 색상 설정 패널 ── */
+  .settings-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:5000; backdrop-filter:blur(3px); }
+  .settings-overlay.open { display:block; }
+  .settings-panel { position:fixed; top:0; right:0; bottom:0; width:320px; max-width:92vw; background:var(--surface); border-left:1px solid var(--border); z-index:5001; display:flex; flex-direction:column; transform:translateX(100%); transition:transform 0.28s cubic-bezier(.4,0,.2,1); overflow:hidden; }
+  .settings-panel.open { transform:translateX(0); }
+  .settings-panel-header { display:flex; align-items:center; justify-content:space-between; padding:20px 20px 16px; border-bottom:1px solid var(--border); background:var(--surface); flex-shrink:0; }
+  .settings-panel-title { font-size:15px; font-weight:700; letter-spacing:0.04em; color:var(--text); }
+  .settings-panel-body { padding:20px; display:flex; flex-direction:column; gap:16px; overflow-y:auto; flex:1; min-height:0; }
+  .settings-section-title { font-size:11px; font-family:var(--font-mono); letter-spacing:0.12em; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px; }
+  .color-setting-row { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-radius:8px; background:var(--surface2); border:1px solid var(--border); gap:10px; }
+  .color-setting-label { font-size:13px; font-weight:500; color:var(--text); flex:1; }
+  .color-setting-swatch { width:28px; height:28px; border-radius:6px; flex-shrink:0; border:2px solid rgba(255,255,255,0.15); cursor:pointer; transition:transform 0.15s, box-shadow 0.15s; position:relative; overflow:hidden; }
+  .color-setting-swatch:hover { transform:scale(1.1); box-shadow:0 2px 8px rgba(0,0,0,0.35); }
+  .color-setting-swatch input[type=color] { position:absolute; inset:-4px; width:calc(100% + 8px); height:calc(100% + 8px); opacity:0; cursor:pointer; border:none; padding:0; }
+  .settings-reset-btn { padding:10px; border-radius:8px; border:1px solid var(--border); background:none; color:var(--text-muted); font-family:var(--font-main); font-size:13px; cursor:pointer; transition:all 0.15s; width:100%; }
+  .settings-reset-btn:hover { border-color:var(--red); color:var(--red); background:rgba(200,100,100,0.07); }
+  .settings-btn { background:none; border:1px solid var(--border); color:var(--text-muted); cursor:pointer; width:32px; height:32px; border-radius:6px; font-size:16px; display:flex; align-items:center; justify-content:center; transition:all 0.2s; flex-shrink:0; }
+  .settings-btn:hover { border-color:var(--accent); color:var(--accent); }
+  @media(max-width:600px) {
+    .settings-panel { width:100%; border-left:none; top:auto; bottom:0; left:0; right:0; height:60vh; max-height:60vh; border-radius:20px 20px 0 0; transform:translateY(100%); }
+    .settings-panel.open { transform:translateY(0); }
+  }
+
 </style>
 </head>
 <body>
@@ -300,7 +324,11 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
     </div>
   </div>
   <div class="header-right">
-    <a href="index.html" style="text-decoration:none;"><button class="icon-btn" title="캘린더로 이동">📅</button></a>
+    <div id="userBadge" style="display:none;align-items:center;gap:5px;padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;font-size:11px;color:var(--text-muted);">
+      <span>👤</span><span id="userNameDisplay" style="color:var(--accent);font-weight:500;"></span>
+    </div>
+    <button class="icon-btn" id="logoutBtnHeader" title="로그아웃" style="font-size:13px;">🚪</button>
+    <button class="settings-btn" id="settingsBtn" title="색상 설정">⚙️</button>
     <button class="icon-btn" id="themeBtn" title="테마 전환">🌙</button>
     <button class="add-btn" id="addClientBtn">+ 고객 등록</button>
   </div>
@@ -553,16 +581,28 @@ const firebaseConfig = {
   appId:             "1:163730741115:web:73a06d5b1cf1a477734fde"
 };
 
-/* ── AUTH ── */
-const SESSION_KEY='crm_auth_ok', SESSION_UID='crm_uid';
-const TRIES_KEY='crm_tries', LOCK_KEY='crm_lock';
-const MAX_TRIES=5, LOCK_MS=120000;
+/* ── AUTH (cal_auth_* localStorage 기반, main.html과 공유) ── */
+const AUTH_KEY  = 'cal_auth_ok';
+const AUTH_UID  = 'cal_auth_uid';
+const AUTH_NAME = 'cal_auth_name';
+const AUTH_EXP  = 'cal_auth_exp';
+const AUTH_TTL  = 30 * 24 * 60 * 60 * 1000;
+const TRIES_KEY = 'cal_auth_tries';
+const LOCK_KEY  = 'cal_auth_lock';
+const MAX_TRIES = 5, LOCK_MS = 120000;
 
 async function sha256(msg){
   const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(msg));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
-function isAuth(){ return sessionStorage.getItem(SESSION_KEY)==='1'; }
+function isAuth(){
+  if(localStorage.getItem(AUTH_KEY)!=='1') return false;
+  const exp=parseInt(localStorage.getItem(AUTH_EXP)||'0');
+  if(Date.now()>exp){ clearAuth(); return false; }
+  return true;
+}
+function clearAuth(){[AUTH_KEY,AUTH_UID,AUTH_NAME,AUTH_EXP].forEach(k=>localStorage.removeItem(k));}
+function getDisplayName(){ return localStorage.getItem(AUTH_NAME)||localStorage.getItem(AUTH_UID)||''; }
 function getLockRemaining(){ const l=localStorage.getItem(LOCK_KEY); return l?Math.max(0,parseInt(l)-Date.now()):0; }
 function updateLockUI(){
   const rem=getLockRemaining();
@@ -576,6 +616,15 @@ function updateLockUI(){
     if(btn.disabled && errEl.textContent.includes('잠금')){ btn.disabled=false; errEl.textContent=''; }
   }
 }
+function updateHeaderUser(){
+  const name=getDisplayName();
+  if(name){
+    document.getElementById('userNameDisplay').textContent=name;
+    document.getElementById('userBadge').style.display='flex';
+  } else {
+    document.getElementById('userBadge').style.display='none';
+  }
+}
 async function tryAuth(){
   if(getLockRemaining()>0) return;
   const idEl=document.getElementById('authIdInput'), pwEl=document.getElementById('authPwInput'), errEl=document.getElementById('authError');
@@ -587,13 +636,22 @@ async function tryAuth(){
   btn.disabled=true; btn.textContent='확인 중…';
   try{
     const pwHash=await sha256(userPw);
-    const tmpApp=initializeApp(firebaseConfig,'auth_tmp');
+    const tmpApp=initializeApp(firebaseConfig,'crm_auth_tmp_'+Date.now());
     const tmpDb=getFirestore(tmpApp);
     const uDoc=await getDoc(doc(tmpDb,'users',userId));
     if(uDoc.exists()&&uDoc.data().passwordHash===pwHash){
-      sessionStorage.setItem(SESSION_KEY,'1'); sessionStorage.setItem(SESSION_UID,userId);
+      const displayName=uDoc.data().displayName||userId;
+      localStorage.setItem(AUTH_KEY,'1');
+      localStorage.setItem(AUTH_UID,userId);
+      localStorage.setItem(AUTH_NAME,displayName);
+      localStorage.setItem(AUTH_EXP,Date.now()+AUTH_TTL);
       localStorage.removeItem(TRIES_KEY); localStorage.removeItem(LOCK_KEY);
+      /* crm sessionStorage도 동시 설정 (호환성) */
+      sessionStorage.setItem('crm_auth_ok','1');
+      sessionStorage.setItem('crm_uid',userId);
+      sessionStorage.setItem('crm_display_name',displayName);
       document.getElementById('authOverlay').classList.add('hidden');
+      updateHeaderUser();
       initApp();
     } else {
       const tries=parseInt(localStorage.getItem(TRIES_KEY)||'0')+1;
@@ -609,8 +667,26 @@ document.getElementById('authBtn').addEventListener('click',tryAuth);
 document.getElementById('authPwInput').addEventListener('keydown',e=>{ if(e.key==='Enter') tryAuth(); });
 document.getElementById('authIdInput').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('authPwInput').focus(); });
 
-if(isAuth()){ document.getElementById('authOverlay').classList.add('hidden'); initApp(); }
-else{ updateLockUI(); setTimeout(()=>document.getElementById('authIdInput').focus(),100); }
+/* 헤더 로그아웃 버튼 */
+document.getElementById('logoutBtnHeader').addEventListener('click',()=>{
+  clearAuth();
+  sessionStorage.removeItem('crm_auth_ok');
+  sessionStorage.removeItem('crm_uid');
+  sessionStorage.removeItem('crm_display_name');
+  location.reload();
+});
+
+if(isAuth()){
+  /* main.html에서 로그인된 세션 복원 */
+  const uid=localStorage.getItem(AUTH_UID)||'';
+  const name=localStorage.getItem(AUTH_NAME)||uid;
+  sessionStorage.setItem('crm_auth_ok','1');
+  sessionStorage.setItem('crm_uid',uid);
+  sessionStorage.setItem('crm_display_name',name);
+  document.getElementById('authOverlay').classList.add('hidden');
+  updateHeaderUser();
+  initApp();
+} else { updateLockUI(); setTimeout(()=>document.getElementById('authIdInput').focus(),100); }
 
 /* ════════════════════
    MAIN APP
@@ -846,7 +922,7 @@ function initApp(){
     const text=document.getElementById('cdEntryText').value.trim();
     if(!text){ showToast('내용을 입력하세요','error'); return; }
     const timeVal=document.getElementById('cdEntryTime').value;
-    const entry={ text, author:sessionStorage.getItem('crm_display_name')||sessionStorage.getItem(SESSION_UID)||'', time:timeVal?new Date(timeVal):new Date(), createdAt:new Date() };
+    const entry={ text, author:getDisplayName(), time:timeVal?new Date(timeVal):new Date(), createdAt:new Date() };
     const btn=document.getElementById('cdEntrySubmit');
     btn.disabled=true; btn.textContent='…';
     try{
@@ -973,7 +1049,7 @@ function initApp(){
   document.getElementById('newConsultBtn').addEventListener('click',()=>{
     document.getElementById('cTitle').value='';
     document.getElementById('cType').value='visit';
-    document.getElementById('cCounselor').value=sessionStorage.getItem('crm_display_name')||sessionStorage.getItem(SESSION_UID)||'';
+    document.getElementById('cCounselor').value=getDisplayName();
     document.getElementById('cContent').value='';
     document.getElementById('consultModal').classList.add('open');
     setTimeout(()=>document.getElementById('cTitle').focus(),120);
@@ -1012,5 +1088,36 @@ function initApp(){
   });
 }
 </script>
+
+<div class="settings-overlay" id="settingsOverlay"></div>
+<div class="settings-panel" id="settingsPanel">
+  <div class="settings-panel-header">
+    <span class="settings-panel-title">⚙️ 색상 설정</span>
+    <button class="settings-btn" id="settingsCloseBtn" style="border:none;font-size:18px;">✕</button>
+  </div>
+  <div class="settings-panel-body">
+    <div>
+      <div class="settings-section-title">🌙 다크 테마 색상</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+        <div class="color-setting-row"><span class="color-setting-label">메인 컬러 (포인트)</span><div class="color-setting-swatch" id="swatch-dark-accent"><input type="color" id="colorPicker-dark-accent"></div></div>
+        <div class="color-setting-row"><span class="color-setting-label">배경색 (가장 어두운)</span><div class="color-setting-swatch" id="swatch-dark-bg"><input type="color" id="colorPicker-dark-bg"></div></div>
+        <div class="color-setting-row"><span class="color-setting-label">카드/모달 색상</span><div class="color-setting-swatch" id="swatch-dark-surface"><input type="color" id="colorPicker-dark-surface"></div></div>
+        <div class="color-setting-row"><span class="color-setting-label">보조 배경색</span><div class="color-setting-swatch" id="swatch-dark-surface2"><input type="color" id="colorPicker-dark-surface2"></div></div>
+      </div>
+      <button class="settings-reset-btn" id="resetDarkBtn" style="margin-top:8px;">↺ 다크 테마 초기화</button>
+    </div>
+    <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px;">
+      <div class="settings-section-title">☀️ 라이트 테마 색상</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+        <div class="color-setting-row"><span class="color-setting-label">메인 컬러 (포인트)</span><div class="color-setting-swatch" id="swatch-light-accent"><input type="color" id="colorPicker-light-accent"></div></div>
+        <div class="color-setting-row"><span class="color-setting-label">배경색 (가장 밝은)</span><div class="color-setting-swatch" id="swatch-light-bg"><input type="color" id="colorPicker-light-bg"></div></div>
+        <div class="color-setting-row"><span class="color-setting-label">카드/모달 색상</span><div class="color-setting-swatch" id="swatch-light-surface"><input type="color" id="colorPicker-light-surface"></div></div>
+        <div class="color-setting-row"><span class="color-setting-label">보조 배경색</span><div class="color-setting-swatch" id="swatch-light-surface2"><input type="color" id="colorPicker-light-surface2"></div></div>
+      </div>
+      <button class="settings-reset-btn" id="resetLightBtn" style="margin-top:8px;">↺ 라이트 테마 초기화</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
