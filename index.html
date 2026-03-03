@@ -1290,13 +1290,13 @@
         <div class="dt-row">
           <span class="dt-label">시작</span>
           <input class="dt-input" type="date" id="startDate" />
-          <input type="hidden" id="startTime" value="09:00" />
+          <input type="hidden" id="startTime" value="13:00" />
           <div class="time-picker-trigger dt-input" id="startTimeTrigger" data-target="startTime">09:00</div>
         </div>
         <div class="dt-row">
           <span class="dt-label">종료</span>
           <input class="dt-input" type="date" id="endDate" />
-          <input type="hidden" id="endTime" value="10:00" />
+          <input type="hidden" id="endTime" value="14:00" />
           <div class="time-picker-trigger dt-input" id="endTimeTrigger" data-target="endTime">10:00</div>
         </div>
         <!-- 방문의뢰 전용 한줄 날짜+시간 -->
@@ -2505,8 +2505,8 @@ function openNewModal(dk){
   document.getElementById('modalLocation').value='';
   document.getElementById('startDate').value=dk;
   document.getElementById('endDate').value=dk;
-  document.getElementById('startTime').value='09:00';
-  document.getElementById('endTime').value='10:00';
+  document.getElementById('startTime').value='13:00';
+  document.getElementById('endTime').value='14:00';
   /* goldDtRow 초기화 */
   document.getElementById('goldStartDate').value=dk||'';
   document.getElementById('goldStartTime').value='09:00';
@@ -2514,7 +2514,7 @@ function openNewModal(dk){
   /* trigger 텍스트 초기화 */
   ['startTimeTrigger','endTimeTrigger','goldStartTimeTrigger','goldEndTimeTrigger'].forEach(id=>{
     const el=document.getElementById(id); if(!el) return;
-    const def={startTimeTrigger:'09:00',endTimeTrigger:'10:00',goldStartTimeTrigger:'09:00',goldEndTimeTrigger:'10:00'};
+    const def={startTimeTrigger:'13:00',endTimeTrigger:'14:00',goldStartTimeTrigger:'13:00',goldEndTimeTrigger:'14:00'};
     el.textContent=def[id]||'09:00';
   });
   currentAttachments=[]; currentColor='gold'; isLocked=false;
@@ -2541,14 +2541,14 @@ function openModal(evIdx){
   document.getElementById('modalDesc').value=ev.desc||'';
   document.getElementById('startDate').value=ev.startDate||'';
   document.getElementById('endDate').value=ev.endDate||ev.startDate||'';
-  document.getElementById('startTime').value=ev.startTime||'09:00';
-  document.getElementById('endTime').value=ev.endTime||'10:00';
+  document.getElementById('startTime').value=ev.startTime||'13:00';
+  document.getElementById('endTime').value=ev.endTime||'14:00';
   /* goldDtRow 값 로드 */
   document.getElementById('goldStartDate').value=ev.startDate||'';
-  document.getElementById('goldStartTime').value=ev.startTime||'09:00';
-  document.getElementById('goldEndTime').value=ev.endTime||'10:00';
+  document.getElementById('goldStartTime').value=ev.startTime||'13:00';
+  document.getElementById('goldEndTime').value=ev.endTime||'14:00';
   /* trigger 텍스트 로드 */
-  const _st=ev.startTime||'09:00', _et=ev.endTime||'10:00';
+  const _st=ev.startTime||'13:00', _et=ev.endTime||'14:00';
   ['startTimeTrigger','endTimeTrigger','goldStartTimeTrigger','goldEndTimeTrigger'].forEach(id=>{
     const el=document.getElementById(id); if(!el) return;
     el.textContent=id.includes('End')||id.includes('end') ? _et : _st;
@@ -2810,6 +2810,26 @@ async function deleteEvent(){
     if(t) t.textContent=fmt(h,m);
     const inp=document.getElementById(targetId);
     if(inp) inp.value=fmt(h,m);
+
+    /* 시작시간 선택 시 종료시간 자동 +1시간 */
+    const endMap = { startTime:'endTime', goldStartTime:'goldEndTime' };
+    const endId  = endMap[targetId];
+    if (endId) {
+      const endH   = (h + 1) % 24;
+      const endFmt = fmt(endH, m);
+      /* 기존 종료시간이 새 시작시간보다 이전이거나 같을 때만 자동 설정 */
+      const endInp = document.getElementById(endId);
+      const endTrg = document.getElementById(endId+'Trigger');
+      if (endInp) {
+        const [curEH, curEM] = parseVal(endInp.value||'00:00');
+        const startTotal = h * 60 + m;
+        const endTotal   = curEH * 60 + curEM;
+        if (endTotal <= startTotal) {
+          endInp.value = endFmt;
+          if (endTrg) endTrg.textContent = endFmt;
+        }
+      }
+    }
   }
 
   window.closeTimePicker = function(){
