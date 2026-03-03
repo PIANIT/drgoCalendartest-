@@ -300,7 +300,23 @@ body { background:var(--bg); color:var(--text); font-family:var(--font-main); he
   <div class="wiki-title"><span>📖</span><span>DRGO WIKI</span></div>
   <div class="header-right">
     <input type="text" id="searchInput" placeholder="🔍 제목 검색…">
+    <div id="userBadge" style="display:none; align-items:center; gap:6px; padding:4px 10px; background:var(--surface2); border:1px solid var(--border); border-radius:20px; font-size:11px; color:var(--text-muted);">
+      <span style="color:var(--accent); font-size:10px;">👤</span>
+      <span id="userNameDisplay"></span>
+    </div>
+    <button class="hdr-btn" id="logoutBtn" style="display:none;" onclick="doLogout()">로그아웃</button>
     <button class="hdr-btn primary" id="newArticleBtn">＋ 새 문서</button>
+  </div>
+</div>
+
+<!-- ═══ LOGIN OVERLAY ═══ -->
+<div id="loginOverlay" style="display:none; position:fixed; inset:0; z-index:9000; background:var(--bg); align-items:center; justify-content:center;">
+  <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:36px 40px; width:340px; display:flex; flex-direction:column; gap:14px; box-shadow:0 24px 64px rgba(0,0,0,.6);">
+    <div style="font-family:var(--font-mono); font-size:13px; letter-spacing:.18em; color:var(--accent); text-align:center; margin-bottom:4px;">📖 DRGO WIKI</div>
+    <input class="form-input" type="text"     id="loginId" placeholder="아이디" autocomplete="username" style="height:42px;">
+    <input class="form-input" type="password" id="loginPw" placeholder="비밀번호" autocomplete="current-password" style="height:42px;">
+    <div id="loginErr" style="font-size:12px; color:var(--red); text-align:center; min-height:16px;"></div>
+    <button id="loginBtn" style="height:42px; background:var(--accent); color:#1a1207; border:none; border-radius:8px; font-size:14px; font-weight:700; font-family:var(--font-main); cursor:pointer; transition:opacity .15s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">로그인</button>
   </div>
 </div>
 
@@ -583,7 +599,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--font-main); he
 
 <script type="module">
 import { initializeApp }    from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getFirestore, collection, doc, getDocs, addDoc, updateDoc, deleteDoc, query, orderBy, serverTimestamp }
+import { getFirestore, collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, query, orderBy, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -595,6 +611,94 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 const COL = 'wiki_articles';
+
+/* ══════════════════════════════════════════
+   AUTH (index.html과 동일한 방식)
+══════════════════════════════════════════ */
+const AUTH_KEY  = 'cal_auth_ok';
+const AUTH_UID  = 'cal_auth_uid';
+const AUTH_EXP  = 'cal_auth_exp';
+const AUTH_NAME = 'cal_auth_name';
+const AUTH_TTL  = 30 * 24 * 60 * 60 * 1000; // 30일
+
+async function sha256(str){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+function isLoggedIn(){
+  if(localStorage.getItem(AUTH_KEY)!=='1') return false;
+  const exp=parseInt(localStorage.getItem(AUTH_EXP)||'0');
+  if(Date.now()>exp){ clearAuth(); return false; }
+  return true;
+}
+function clearAuth(){
+  [AUTH_KEY,AUTH_UID,AUTH_EXP,AUTH_NAME].forEach(k=>localStorage.removeItem(k));
+}
+function getCurrentDisplayName(){
+  return localStorage.getItem(AUTH_NAME) || localStorage.getItem(AUTH_UID) || '';
+}
+
+function showLoginOverlay(){
+  $('loginOverlay').style.display='flex';
+}
+function hideLoginOverlay(){
+  $('loginOverlay').style.display='none';
+}
+
+function updateUserBadge(){
+  const name = getCurrentDisplayName();
+  if(name){
+    $('userNameDisplay').textContent = name;
+    $('userBadge').style.display = 'flex';
+    $('logoutBtn').style.display = '';
+  } else {
+    $('userBadge').style.display = 'none';
+    $('logoutBtn').style.display = 'none';
+  }
+}
+
+window.doLogout = function(){
+  clearAuth();
+  updateUserBadge();
+  showLoginOverlay();
+};
+
+/* 로그인 처리 */
+async function tryLogin(){
+  const userId = $('loginId').value.trim();
+  const userPw = $('loginPw').value;
+  const errEl  = $('loginErr');
+  errEl.textContent = '';
+  if(!userId){ errEl.textContent='아이디를 입력하세요.'; $('loginId').focus(); return; }
+  if(!userPw){ errEl.textContent='비밀번호를 입력하세요.'; $('loginPw').focus(); return; }
+  $('loginBtn').textContent='확인 중…'; $('loginBtn').disabled=true;
+  try {
+    const userDoc = await getDoc(doc(db,'users',userId));
+    if(!userDoc.exists()){ errEl.textContent='존재하지 않는 아이디입니다.'; return; }
+    const data = userDoc.data();
+    const pwHash = await sha256(userPw);
+    if(data.passwordHash !== pwHash){ errEl.textContent='비밀번호가 올바르지 않습니다.'; return; }
+    /* 로그인 성공 */
+    const displayName = data.displayName || userId;
+    localStorage.setItem(AUTH_KEY,  '1');
+    localStorage.setItem(AUTH_UID,  userId);
+    localStorage.setItem(AUTH_NAME, displayName);
+    localStorage.setItem(AUTH_EXP,  Date.now() + AUTH_TTL);
+    hideLoginOverlay();
+    updateUserBadge();
+    await loadArticles();
+  } catch(e){
+    errEl.textContent='오류: '+e.message;
+  } finally {
+    $('loginBtn').textContent='로그인'; $('loginBtn').disabled=false;
+  }
+}
+
+$('loginBtn').addEventListener('click', tryLogin);
+['loginId','loginPw'].forEach(id=>{
+  $(id).addEventListener('keydown', e=>{ if(e.key==='Enter') tryLogin(); });
+});
 
 /* ── STATE ── */
 let articles=[], categories=new Set(['일반','운영','영업','기술']);
@@ -1121,7 +1225,7 @@ async function saveArticle(){
   const content=editorEl.innerHTML.trim();
   if(!title){toast('제목을 입력하세요');return;}
   if(!content){toast('내용을 입력하세요');return;}
-  const author=sessionStorage.getItem('crm_display_name')||localStorage.getItem('cal_auth_name')||'';
+  const author=getCurrentDisplayName();
   const data={title,content,category:selectedCat||'일반',author,updatedAt:serverTimestamp()};
   try {
     if(editingId){ await updateDoc(doc(db,COL,editingId),data); toast('문서가 수정되었습니다'); }
@@ -1160,7 +1264,13 @@ document.addEventListener('keydown',e=>{
 });
 
 /* ── INIT ── */
-loadArticles();
+updateUserBadge();
+if(isLoggedIn()){
+  hideLoginOverlay();
+  loadArticles();
+} else {
+  showLoginOverlay();
+}
 renderCatChips();
 </script>
 </body>
