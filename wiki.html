@@ -607,6 +607,19 @@ $('loginBtn').addEventListener('click',tryLogin);
 let articles=[], categories=new Set(['일반','운영','영업','기술']);
 let selectedCat=null, currentId=null, editingId=null, searchQuery='';
 let savedRange=null, selectedImg=null, ctxTargetCell=null;
+const usersCache={};
+
+/* users 컬렉션에서 displayName 조회 (캐시 사용) */
+async function getAuthorName(authorId){
+  if(!authorId) return '';
+  if(usersCache[authorId]) return usersCache[authorId];
+  try{
+    const snap=await getDoc(doc(db,'users',authorId));
+    const name=snap.exists()?(snap.data().displayName||authorId):authorId;
+    usersCache[authorId]=name;
+    return name;
+  }catch(e){ return authorId; }
+}
 
 /* ══ 데이터 로드 ══ */
 async function loadArticles(){
@@ -638,16 +651,22 @@ function renderList(){
 }
 
 /* ══ 문서 열기 ══ */
-function openArticle(id){
+async function openArticle(id){
   const art=articles.find(a=>a.id===id); if(!art)return;
   currentId=id;
   $('wikiWelcome').style.display='none';
   $('articleView').classList.add('show');
   $('viewCategory').textContent=art.category||'';
   $('viewTitle').textContent=art.title||'';
-  $('viewMeta').innerHTML=`<span>✏️ ${formatDate(art.updatedAt||art.createdAt)}</span>${art.author?`<span>👤 ${escHtml(art.author)}</span>`:''}`;
   $('viewBody').innerHTML=art.content||'';
   renderList();
+  // author: DB에 저장된 값이 ID일 수도 있으므로 users 컬렉션에서 displayName 조회
+  if(art.author){
+    const authorName=await getAuthorName(art.author);
+    $('viewMeta').innerHTML=`<span>✏️ ${formatDate(art.updatedAt||art.createdAt)}</span><span>👤 ${escHtml(authorName)}</span>`;
+  } else {
+    $('viewMeta').innerHTML=`<span>✏️ ${formatDate(art.updatedAt||art.createdAt)}</span>`;
+  }
 }
 
 /* ══ 에디터 모달 ══ */
@@ -883,8 +902,9 @@ async function saveArticle(){
   if(!title){toast('제목을 입력하세요');return;}
   if(!content){toast('내용을 입력하세요');return;}
   if(!isLoggedIn()){toast('로그인이 필요합니다');return;}
-  // 닉네임(displayName) 사용
-  const author=getDisplayName();
+  // 닉네임(displayName) 사용 - Firestore에서 최신 값으로 가져오기
+  const currentUid=localStorage.getItem('cal_auth_uid')||'';
+  const author=currentUid ? await getAuthorName(currentUid) : getDisplayName();
   const data={title,content,category:selectedCat||'일반',author,updatedAt:serverTimestamp()};
   try{
     if(editingId){await updateDoc(doc(db,COL,editingId),data);toast('문서가 수정되었습니다');}
