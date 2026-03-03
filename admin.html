@@ -248,6 +248,7 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
 .cb-red   { background:var(--chip-red-bg); }
 .cb-green { background:var(--chip-green-bg); }
 .cb-purple{ background:var(--chip-purple-bg); }
+  .cb-teal  { background:var(--chip-teal-bg);   }
 .title-text { font-size:14px; font-weight:500; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .title-sub { font-size:11px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
 
@@ -264,6 +265,7 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
 .rb-red   { background:rgba(200,112,112,0.18); color:var(--chip-red-bg);  border:1px solid rgba(200,112,112,0.3); }
 .rb-green { background:rgba(112,200,112,0.18); color:var(--chip-green-bg);border:1px solid rgba(112,200,112,0.3); }
 .rb-purple{ background:rgba(155,112,200,0.18); color:var(--chip-purple-bg);border:1px solid rgba(155,112,200,0.3); }
+  .rb-teal  { background:rgba(232,137,74,0.18);  color:var(--chip-teal-bg);  border:1px solid rgba(232,137,74,0.3);  }
 
 .row-flags { display:flex; gap:3px; flex-wrap:wrap; font-size:13px; }
 .row-actions { display:flex; gap:6px; justify-content:flex-end; }
@@ -2298,7 +2300,7 @@ function renderCrm() {
   _crmPage     = Math.min(_crmPage,tpages);
   const slice  = data.slice((_crmPage-1)*CRM_PAGE, _crmPage*CRM_PAGE);
   const list   = document.getElementById('crmList');
-  const TYPE_M = {unknown:'미정',individual:'개인',business:'사업자',team:'팀'};
+  const TYPE_M = {unknown:'미정',personal:'개인',enter:'엔터',corp:'기업',rental:'렌탈',individual:'개인',business:'사업자',team:'팀'};
   list.innerHTML='';
   if(!slice.length){ list.innerHTML='<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">CRM 데이터가 없습니다</div></div>'; }
   slice.forEach(c=>{

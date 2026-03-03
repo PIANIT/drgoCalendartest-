@@ -798,23 +798,10 @@ function renderPcDay() {
       card.className=`pc-day-card color-${ev.color||'gold'}`;
       const timeStr=guestChipText(ev);
       const spanStr=(ev.endDate&&ev.endDate!==ev.startDate)?`<span style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono);">${ev.startDate} ~ ${ev.endDate}</span>`:'';
-      /* 원격/방송룸 상세 정보 */
-      let tealInfo='';
-      if(ev.color==='teal'&&ev.teal){
-        const t=ev.teal;
-        const mLabel=t.mode==='studio'?'방송룸 이용':'원격';
-        tealInfo=`<div style="margin-top:5px;font-size:11px;color:var(--text-muted);line-height:1.6;">
-          <span style="font-weight:600;">${mLabel}</span>
-          ${t.name?` · ${t.name}`:''}
-          ${t.platform?` · ${t.platform}`:''}
-          ${t.content?`<div style="margin-top:3px;white-space:pre-line;">${t.content}</div>`:''}
-        </div>`;
-      }
       card.innerHTML=`
         <div class="pc-day-time">${timeStr}</div>
         <div class="pc-day-body">
-          <div class="pc-day-card-title">${ev.title||'일정 있음'}</div>
-          ${tealInfo}
+          <div class="pc-day-card-title">일정 있음</div>
           ${spanStr?`<div style="margin-top:4px;">${spanStr}</div>`:''}
         </div>`;
       list.appendChild(card);
