@@ -224,6 +224,16 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
 .tl-edit-actions{display:flex;gap:6px;margin-top:6px;}
 .tl-save-btn{font-size:11px;padding:4px 12px;border-radius:6px;border:none;background:var(--accent);color:#1a1207;cursor:pointer;font-weight:700;}
 .tl-cancel-btn{font-size:11px;padding:4px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;}
+.crm-confirm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9000;backdrop-filter:blur(2px);align-items:center;justify-content:center;padding:20px;}
+.crm-confirm-overlay.open{display:flex;}
+.crm-confirm-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 28px 20px;max-width:360px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.4);animation:popIn .18s ease;}
+.crm-confirm-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px;}
+.crm-confirm-desc{font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:20px;}
+.crm-confirm-btns{display:flex;gap:10px;justify-content:flex-end;}
+.crm-confirm-cancel{padding:9px 18px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--text-muted);font-family:var(--font-main);font-size:13px;cursor:pointer;transition:all .15s;}
+.crm-confirm-cancel:hover{border-color:var(--accent);color:var(--accent);}
+.crm-confirm-leave{padding:9px 18px;border-radius:8px;border:none;background:var(--red);color:#fff;font-family:var(--font-main);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
+.crm-confirm-leave:hover{filter:brightness(1.12);}
 .tl-add{margin-top:12px;border:1px solid var(--border);border-radius:9px;overflow:hidden;}
 .tl-add-head{padding:9px 13px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap;cursor:pointer;}
 .taf-label{font-size:10px;font-family:var(--font-mono);color:var(--text-muted);letter-spacing:.1em;}
@@ -746,6 +756,18 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
       <button class="btn-danger" id="visitRepDeleteBtn" style="display:none;margin-right:auto;">삭제</button>
       <button class="btn-cancel" id="visitRepCancelBtn">취소</button>
       <button class="btn-save" id="visitRepSaveBtn">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 나가기 확인 팝업 ═══ -->
+<div class="crm-confirm-overlay" id="crmConfirmOverlay">
+  <div class="crm-confirm-box">
+    <div class="crm-confirm-title">⚠️ 저장하지 않은 변경사항</div>
+    <div class="crm-confirm-desc">수정된 내용이 있습니다.<br>저장하지 않고 정말 나가시겠습니까?</div>
+    <div class="crm-confirm-btns">
+      <button class="crm-confirm-cancel" id="crmConfirmCancel">계속 편집</button>
+      <button class="crm-confirm-leave"  id="crmConfirmLeave">나가기</button>
     </div>
   </div>
 </div>
@@ -1332,6 +1354,71 @@ function initApp(){
     document.querySelectorAll('.form-textarea,.tl-textarea').forEach(bindAutoResize);
   }
 
+  /* ══════════════════════════════════════════
+     CRM Dirty Check + 나가기 확인
+  ══════════════════════════════════════════ */
+  let _crmSnapshot = null;
+  let _crmConfirmCb = null;
+
+  /* 모달별 감시 필드 정의 */
+  const MODAL_FIELDS = {
+    clientModal:   ['fName','fNick','fPhone','fType','fPlatform','fStreamId','fStreamTopic','fAddress','fPcSpec','fEquipment','fNote'],
+    consultModal:  ['cTitle','cType','cCounselor','cContent'],
+    visitReqModal: ['vrTitle','vrDate','vrStatus','vrAssignee','vrType','vrAddress','vrEquipment','vrReqTopic','vrContent'],
+    visitRepModal: ['repTitle','repDate','repAuthor','repResult','repContent','repNote'],
+    salesModal:    ['slTitle','slDate','slType','slAmount','slNote'],
+  };
+
+  function _crmTakeSnapshot(modalId) {
+    const fields = MODAL_FIELDS[modalId] || [];
+    const snap = { _modal: modalId };
+    fields.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) snap[id] = el.value;
+    });
+    _crmSnapshot = JSON.stringify(snap);
+  }
+
+  function _crmIsDirty(modalId) {
+    if (!_crmSnapshot) return false;
+    const fields = MODAL_FIELDS[modalId] || [];
+    const snap = { _modal: modalId };
+    fields.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) snap[id] = el.value;
+    });
+    return JSON.stringify(snap) !== _crmSnapshot;
+  }
+
+  function _crmShowConfirm(onLeave) {
+    _crmConfirmCb = onLeave;
+    document.getElementById('crmConfirmOverlay').classList.add('open');
+  }
+  function _crmCloseConfirm() {
+    document.getElementById('crmConfirmOverlay').classList.remove('open');
+    _crmConfirmCb = null;
+  }
+
+  /* tryClose: dirty하면 팝업, 아니면 바로 닫기 */
+  function crmTryClose(modalId, closeFn) {
+    if (_crmIsDirty(modalId)) {
+      _crmShowConfirm(() => { _crmSnapshot = null; closeFn(); });
+    } else {
+      _crmSnapshot = null;
+      closeFn();
+    }
+  }
+
+  document.getElementById('crmConfirmCancel').addEventListener('click', _crmCloseConfirm);
+  document.getElementById('crmConfirmLeave').addEventListener('click', () => {
+    const cb = _crmConfirmCb;
+    _crmCloseConfirm();
+    if (cb) cb();
+  });
+  document.getElementById('crmConfirmOverlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('crmConfirmOverlay')) _crmCloseConfirm();
+  });
+
   /* filter/search */
   document.querySelectorAll('.cf-btn').forEach(btn=>btn.addEventListener('click',()=>{
     filteredType=btn.dataset.type;
@@ -1357,9 +1444,13 @@ function initApp(){
     document.getElementById('fEquipment').value=client?.equipment||'';
     document.getElementById('fNote').value=client?.note||'';
     document.getElementById('clientModal').classList.add('open');
+    setTimeout(()=>{ _crmTakeSnapshot('clientModal'); },50);
     setTimeout(()=>document.getElementById('fName').focus(),120);
   }
-  function closeClientModal(){ document.getElementById('clientModal').classList.remove('open'); }
+  function closeClientModal(force=false){
+    if(!force){ crmTryClose('clientModal', ()=>closeClientModal(true)); return; }
+    document.getElementById('clientModal').classList.remove('open');
+  }
 
   document.getElementById('addClientBtn').addEventListener('click',()=>openClientModal());
   document.getElementById('editClientBtn').addEventListener('click',()=>{ if(selectedClient) openClientModal(selectedClient); });
@@ -1393,7 +1484,7 @@ function initApp(){
         showToast('고객이 등록되었습니다','success');
         setTimeout(()=>{ const nc=clients.find(c=>c._id===ref.id); if(nc) selectClient(nc._id); },800);
       }
-      closeClientModal();
+      _crmSnapshot = null; closeClientModal(true);
     } catch(e){ console.error(e); showToast('저장에 실패했습니다','error'); }
     saveBtn.disabled=false; saveBtn.textContent='저장';
   });
@@ -1415,13 +1506,17 @@ function initApp(){
   });
 
   /* ── NEW CONSULT MODAL ── */
-  function closeConsultModal(){ document.getElementById('consultModal').classList.remove('open'); }
+  function closeConsultModal(force=false){
+    if(!force){ crmTryClose('consultModal', ()=>closeConsultModal(true)); return; }
+    document.getElementById('consultModal').classList.remove('open');
+  }
   document.getElementById('newConsultBtn').addEventListener('click',()=>{
     document.getElementById('cTitle').value='';
     document.getElementById('cType').value='visit';
     document.getElementById('cCounselor').value=getDisplayName();
     document.getElementById('cContent').value='';
     document.getElementById('consultModal').classList.add('open');
+    setTimeout(()=>{ _crmTakeSnapshot('consultModal'); },50);
     setTimeout(()=>document.getElementById('cTitle').focus(),120);
   });
   document.getElementById('consultModalClose').addEventListener('click',closeConsultModal);
@@ -1442,7 +1537,7 @@ function initApp(){
     try{
       const ref=await addDoc(cCol(selectedClient._id),data);
       showToast('상담이 등록되었습니다','success');
-      closeConsultModal();
+      _crmSnapshot = null; closeConsultModal(true);
       switchTab('consult');
       setTimeout(()=>{ const nc=consultations.find(c=>c._id===ref.id); if(nc) openConsultDetail(nc._id); },700);
     } catch(e){ console.error(e); showToast('저장에 실패했습니다','error'); }
@@ -1556,6 +1651,7 @@ function initApp(){
     document.getElementById('visitReqModal').classList.add('open');
     /* textarea 자동 높이 적용 */
     setTimeout(()=>{ document.querySelectorAll('#visitReqModal .form-textarea').forEach(autoResize); },30);
+    setTimeout(()=>{ _crmTakeSnapshot('visitReqModal'); },60);
     setTimeout(()=>document.getElementById('vrTitle').focus(),100);
   }
   /* 이미지 탭 렌더 함수 */
@@ -1684,13 +1780,14 @@ function initApp(){
     try{
       if(editingVrId){ await updateDoc(doc(db,`crm_clients/${selectedClient._id}/visit_requests`,editingVrId),data); showToast('수정되었습니다','success'); }
       else { data.createdAt=serverTimestamp(); await addDoc(vrCol(selectedClient._id),data); showToast('방문의뢰가 등록되었습니다','success'); }
+      _crmSnapshot = null;
       document.getElementById('visitReqModal').classList.remove('open');
     } catch(e){ console.error(e); showToast('저장 실패','error'); }
     btn.disabled=false; btn.textContent='저장';
   });
   document.getElementById('newVisitReqBtn').addEventListener('click',()=>openVisitReqModal());
-  document.getElementById('visitReqModalClose').addEventListener('click',()=>document.getElementById('visitReqModal').classList.remove('open'));
-  document.getElementById('visitReqCancelBtn').addEventListener('click',()=>document.getElementById('visitReqModal').classList.remove('open'));
+  document.getElementById('visitReqModalClose').addEventListener('click',()=>crmTryClose('visitReqModal',()=>document.getElementById('visitReqModal').classList.remove('open')));
+  document.getElementById('visitReqCancelBtn').addEventListener('click',()=>crmTryClose('visitReqModal',()=>document.getElementById('visitReqModal').classList.remove('open')));
 
   /* ═══════════════════════════════════════
      방문보고 탭
@@ -1733,6 +1830,7 @@ function initApp(){
     }
     document.getElementById('visitRepModal').classList.add('open');
     setTimeout(()=>{ document.querySelectorAll('#visitRepModal .form-textarea').forEach(autoResize); },30);
+    setTimeout(()=>{ _crmTakeSnapshot('visitRepModal'); },60);
     setTimeout(()=>document.getElementById('repTitle').focus(),100);
   }
   setupCalSearch('repCalSearch','repCalResults',(ev)=>{
@@ -1764,13 +1862,14 @@ function initApp(){
     try{
       if(editingRepId){ await updateDoc(doc(db,`crm_clients/${selectedClient._id}/visit_reports`,editingRepId),data); showToast('수정되었습니다','success'); }
       else { data.createdAt=serverTimestamp(); await addDoc(repCol(selectedClient._id),data); showToast('방문보고가 등록되었습니다','success'); }
+      _crmSnapshot = null;
       document.getElementById('visitRepModal').classList.remove('open');
     } catch(e){ console.error(e); showToast('저장 실패','error'); }
     btn.disabled=false; btn.textContent='저장';
   });
   document.getElementById('newVisitRepBtn').addEventListener('click',()=>openVisitRepModal());
-  document.getElementById('visitRepModalClose').addEventListener('click',()=>document.getElementById('visitRepModal').classList.remove('open'));
-  document.getElementById('visitRepCancelBtn').addEventListener('click',()=>document.getElementById('visitRepModal').classList.remove('open'));
+  document.getElementById('visitRepModalClose').addEventListener('click',()=>crmTryClose('visitRepModal',()=>document.getElementById('visitRepModal').classList.remove('open')));
+  document.getElementById('visitRepCancelBtn').addEventListener('click',()=>crmTryClose('visitRepModal',()=>document.getElementById('visitRepModal').classList.remove('open')));
 
   /* ═══════════════════════════════════════
      매출기록 탭
@@ -1820,6 +1919,7 @@ function initApp(){
       if(item.calEstimate){ document.getElementById('slCalEstimate').textContent=fmtAmount(item.calEstimate); document.getElementById('slCalBalance').textContent=item.calBalance?fmtAmount(item.calBalance):'없음'; document.getElementById('slCalInfo').style.display=''; }
     }
     document.getElementById('salesModal').classList.add('open');
+    setTimeout(()=>{ _crmTakeSnapshot('salesModal'); },50);
     setTimeout(()=>document.getElementById('slTitle').focus(),100);
   }
   setupCalSearch('slCalSearch','slCalResults',(ev)=>{
@@ -1868,13 +1968,14 @@ function initApp(){
     try{
       if(editingSlId){ await updateDoc(doc(db,`crm_clients/${selectedClient._id}/sales_records`,editingSlId),data); showToast('수정되었습니다','success'); }
       else { data.createdAt=serverTimestamp(); await addDoc(slCol(selectedClient._id),data); showToast('매출이 등록되었습니다','success'); }
+      _crmSnapshot = null;
       document.getElementById('salesModal').classList.remove('open');
     } catch(e){ console.error(e); showToast('저장 실패','error'); }
     btn.disabled=false; btn.textContent='저장';
   });
   document.getElementById('newSalesBtn').addEventListener('click',()=>openSalesModal());
-  document.getElementById('salesModalClose').addEventListener('click',()=>document.getElementById('salesModal').classList.remove('open'));
-  document.getElementById('salesCancelBtn').addEventListener('click',()=>document.getElementById('salesModal').classList.remove('open'));
+  document.getElementById('salesModalClose').addEventListener('click',()=>crmTryClose('salesModal',()=>document.getElementById('salesModal').classList.remove('open')));
+  document.getElementById('salesCancelBtn').addEventListener('click',()=>crmTryClose('salesModal',()=>document.getElementById('salesModal').classList.remove('open')));
 
   ['clientModal','consultModal','consultDetailModal','visitReqModal','visitRepModal','salesModal'].forEach(id=>{
     document.getElementById(id).addEventListener('click',e=>{ if(e.target.id===id) document.getElementById(id).classList.remove('open'); });
