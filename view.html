@@ -34,9 +34,9 @@
   --font-mono: 'DM Mono',"Malgun Gothic","맑은 고딕",monospace;
 }
 html.light {
-  --bg: #f7f4f0; --surface: #ffffff; --surface2: #efebe4; --surface3: #e8e2d8;
-  --border: #d8d0c4; --accent: #9c7d48; --accent2: #3a7a9a;
-  --text: #1e1812; --text-muted: #7a6e60; --red: #a84444; --green: #3a8a3a;
+  --bg: #ffffff; --surface: #ffffff; --surface2: #f0f0f0; --surface3: #e6e6e6;
+  --border: #dedede; --accent: #9c7d48; --accent2: #3a7a9a;
+  --text: #1a1a1a; --text-muted: #666666; --red: #a84444; --green: #3a8a3a;
   --chip-gold-bg: #b89558; --chip-gold-text: #ffffff;
   --chip-blue-bg: #5898ba; --chip-blue-text: #ffffff;
   --chip-red-bg: #b85858; --chip-red-text: #ffffff;
@@ -271,6 +271,69 @@ html.light .date-range-input { color-scheme:light; }
 .btn-modal-close { background:var(--accent); color:#1a1207; border:none; padding:9px 28px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s; font-family:var(--font-main); }
 .btn-modal-close:hover { background:#e0cc9e; }
 
+/* ── 이미지 미리보기 & Lightbox ── */
+let _lbImages = [];
+let _lbIdx    = 0;
+
+function openLightbox(images, idx) {
+  _lbImages = images;
+  _lbIdx    = idx;
+  showLbImage();
+  document.getElementById('lightbox').style.display = 'flex';
+}
+function closeLightbox() {
+  document.getElementById('lightbox').style.display = 'none';
+}
+function showLbImage() {
+  const img = _lbImages[_lbIdx];
+  document.getElementById('lbImg').src = img.data;
+  document.getElementById('lbCaption').textContent = `${img.name||'이미지'} (${_lbIdx+1}/${_lbImages.length})`;
+  document.getElementById('lbPrev').style.display = _lbImages.length > 1 ? '' : 'none';
+  document.getElementById('lbNext').style.display = _lbImages.length > 1 ? '' : 'none';
+}
+document.getElementById('lbClose').addEventListener('click', closeLightbox);
+document.getElementById('lightbox').addEventListener('click', e => { if(e.target.id==='lightbox') closeLightbox(); });
+document.getElementById('lbPrev').addEventListener('click', () => { _lbIdx = (_lbIdx-1+_lbImages.length)%_lbImages.length; showLbImage(); });
+document.getElementById('lbNext').addEventListener('click', () => { _lbIdx = (_lbIdx+1)%_lbImages.length; showLbImage(); });
+document.addEventListener('keydown', e => {
+  if (document.getElementById('lightbox').style.display==='flex') {
+    if (e.key==='Escape') closeLightbox();
+    if (e.key==='ArrowLeft')  { _lbIdx=(_lbIdx-1+_lbImages.length)%_lbImages.length; showLbImage(); }
+    if (e.key==='ArrowRight') { _lbIdx=(_lbIdx+1)%_lbImages.length; showLbImage(); }
+  }
+});
+
+function makeImgSection(title, groups) {
+  /* groups: [{label, images:[{name,data}]}] */
+  const allImgs = groups.flatMap(g => g.images);
+  if (!allImgs.length) return null;
+  const sec = document.createElement('div'); sec.className='detail-section';
+  const t   = document.createElement('div'); t.className='detail-section-title'; t.textContent=title;
+  sec.appendChild(t);
+  let offset = 0;
+  groups.forEach(g => {
+    if (!g.images.length) return;
+    const lbl = document.createElement('div'); lbl.className='img-group-label'; lbl.textContent=g.label;
+    const grid= document.createElement('div'); grid.className='img-preview-grid';
+    const startOffset = offset;
+    g.images.forEach((img, i) => {
+      const el = document.createElement('img');
+      el.className='img-thumb';
+      el.src = img.data;
+      el.alt = img.name||'이미지';
+      el.title = img.name||'이미지';
+      const captureIdx = startOffset + i;
+      el.addEventListener('click', () => openLightbox(allImgs, captureIdx));
+      grid.appendChild(el);
+    });
+    offset += g.images.length;
+    sec.appendChild(lbl);
+    sec.appendChild(grid);
+  });
+  return sec;
+}
+
+
 /* ── TOAST ── */
 .toast {
   position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px);
@@ -310,6 +373,11 @@ html.light .date-range-input { color-scheme:light; }
   .filter-group { display:none; }
   .stats-bar { grid-template-columns:repeat(2,1fr); }
 }
+.img-preview-grid { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.img-thumb { width:80px; height:80px; object-fit:cover; border-radius:6px; border:1px solid var(--border); cursor:pointer; transition:transform .15s, box-shadow .15s; }
+.img-thumb:hover { transform:scale(1.06); box-shadow:0 4px 12px rgba(0,0,0,.4); }
+.img-group-label { font-size:10px; color:var(--text-muted); font-family:var(--font-mono); letter-spacing:.08em; margin-top:6px; margin-bottom:2px; }
+
 </style>
 </head>
 <body>
@@ -416,6 +484,14 @@ html.light .date-range-input { color-scheme:light; }
   </div>
 </div>
 
+<!-- ═══ LIGHTBOX ═══ -->
+<div id="lightbox" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.92);align-items:center;justify-content:center;backdrop-filter:blur(6px);">
+  <button id="lbClose" style="position:absolute;top:18px;right:22px;background:none;border:none;color:#fff;font-size:28px;cursor:pointer;z-index:1;">✕</button>
+  <button id="lbPrev" style="position:absolute;left:16px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.12);border:none;color:#fff;font-size:24px;width:44px;height:44px;border-radius:50%;cursor:pointer;">‹</button>
+  <img id="lbImg" style="max-width:90vw;max-height:88vh;border-radius:8px;object-fit:contain;" src="" alt="">
+  <button id="lbNext" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.12);border:none;color:#fff;font-size:24px;width:44px;height:44px;border-radius:50%;cursor:pointer;">›</button>
+  <div id="lbCaption" style="position:absolute;bottom:18px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.6);font-size:12px;font-family:var(--font-mono);letter-spacing:.1em;"></div>
+</div>
 <!-- ═══ TOAST ═══ -->
 <div class="toast" id="toast"></div>
 
@@ -766,8 +842,12 @@ function openDetail(ev) {
     if (g.equipment)              body.appendChild(makeSection('장비 목록',  [['장비', g.equipment]]));
     if (g.req_topic||g.req_detail) body.appendChild(makeSection('의뢰 내용', [['주제',g.req_topic||'—'],['세부',g.req_detail||'—']]));
     if (g.special)                 body.appendChild(makeSection('특이사항',  [['내용', g.special]]));
-    const imgCount = (g.quoteImgs||[]).length + (g.refImgs||[]).length + (g.roomImgs||[]).length;
-    if (imgCount > 0) body.appendChild(makeSection('첨부 이미지', [['이미지 수', `${imgCount}개`]]));
+    const imgSec = makeImgSection('첨부 이미지', [
+      { label:'견적서 이미지', images: g.quoteImgs||[] },
+      { label:'참고 이미지',   images: g.refImgs  ||[] },
+      { label:'공간 이미지',   images: g.roomImgs ||[] },
+    ]);
+    if (imgSec) body.appendChild(imgSec);
   }
 
   /* 미팅/내방(purple) 전용 */
@@ -789,8 +869,10 @@ function openDetail(ev) {
     if (meetFields.length > 0) body.appendChild(makeSection('미팅/내방 정보', meetFields));
   }
 
-  if ((ev.attachments||[]).length > 0)
-    body.appendChild(makeSection('첨부 파일', [['파일 수', `${ev.attachments.length}개`]]));
+  if ((ev.attachments||[]).length > 0) {
+    const attachFields = ev.attachments.map((a,i) => [`파일 ${i+1}`, a.name||a]);
+    body.appendChild(makeSection('첨부 파일', attachFields));
+  }
 
   document.getElementById('detailOverlay').classList.add('open');
 }

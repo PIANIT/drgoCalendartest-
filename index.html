@@ -170,14 +170,14 @@
   }
   /* ── LIGHT theme ── */
   html.light {
-    --bg: #f7f4f0;
+    --bg: #ffffff;
     --surface: #ffffff;
-    --surface2: #efebe4;
-    --border: #d8d0c4;
+    --surface2: #f0f0f0;
+    --border: #dedede;
     --accent: #9c7d48;
     --accent2: #3a7a9a;
-    --text: #1e1812;
-    --text-muted: #7a6e60;
+    --text: #1a1a1a;
+    --text-muted: #666666;
     --red: #a84444;
     --green: #3a8a3a;
     --chip-gold-bg: #b89558;
@@ -192,7 +192,7 @@
     --chip-purple-text: #ffffff;
     --chip-teal-bg: #c96a20;
     --chip-teal-text: #ffffff;
-    --chip-single-bg: #e8e2d8;
+    --chip-single-bg: #e6e6e6;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
   body { background:var(--bg); color:var(--text); font-family:var(--font-main); min-height:100vh; overflow-x:hidden; transition:background 0.25s, color 0.25s; }
@@ -1164,6 +1164,20 @@
           <span class="color-setting-label">보조 배경색</span>
           <div class="color-setting-swatch" id="swatch-dark-surface2">
             <input type="color" id="colorPicker-dark-surface2" />
+          </div>
+        </div>
+      </div>
+      
+        <div class="color-setting-row">
+          <span class="color-setting-label">텍스트 색상</span>
+          <div class="color-setting-swatch" id="swatch-dark-text">
+            <input type="color" id="colorPicker-dark-text" />
+          </div>
+        </div>
+        <div class="color-setting-row">
+          <span class="color-setting-label">보조 텍스트</span>
+          <div class="color-setting-swatch" id="swatch-dark-text-muted">
+            <input type="color" id="colorPicker-dark-text-muted" />
           </div>
         </div>
       </div>
@@ -3574,16 +3588,20 @@ const COLOR_STORAGE_KEY      = 'cal_custom_colors';
 const THEME_STORAGE_KEY      = 'cal_theme_colors';
 
 const DEFAULT_DARK_THEME = {
-  accent:   '#d4bc96',
-  bg:       '#111111',
-  surface:  '#1c1c1c',
-  surface2: '#272727',
+  accent:      '#d4bc96',
+  bg:          '#111111',
+  surface:     '#1c1c1c',
+  surface2:    '#272727',
+  text:        '#f0ebe2',
+  textMuted:   '#a09890',
 };
 const DEFAULT_LIGHT_THEME = {
-  accent:   '#9c7d48',
-  bg:       '#f7f4f0',
-  surface:  '#ffffff',
-  surface2: '#efebe4',
+  accent:      '#9c7d48',
+  bg:          '#ffffff',
+  surface:     '#ffffff',
+  surface2:    '#f0f0f0',
+  text:        '#1a1a1a',
+  textMuted:   '#666666',
 };
 
 const DEFAULT_COLORS = {
@@ -3694,6 +3712,8 @@ function applyLightThemeVars(lightColors) {
     --surface: ${lightColors.surface} !important;
     --surface2: ${lightColors.surface2} !important;
     ${lightColors.accent ? `--accent: ${lightColors.accent} !important;` : ''}
+    ${lightColors.text ? `--text: ${lightColors.text} !important;` : ''}
+    ${lightColors.textMuted ? `--text-muted: ${lightColors.textMuted} !important;` : ''}
   }`;
 }
 
@@ -3719,6 +3739,8 @@ function applyDarkThemeVars(darkColors) {
     --surface: ${darkColors.surface} !important;
     --surface2: ${darkColors.surface2} !important;
     ${darkColors.accent ? `--accent: ${darkColors.accent} !important;` : ''}
+    ${darkColors.text ? `--text: ${darkColors.text} !important;` : ''}
+    ${darkColors.textMuted ? `--text-muted: ${darkColors.textMuted} !important;` : ''}
   }`;
 }
 
@@ -3729,8 +3751,8 @@ function loadAndApplyThemeColors() {
   applyDarkThemeVars(dark);
   applyLightThemeVars(light);
   /* 설정 패널 picker 값 반영 */
-  const dp = { bg:'dark-bg', surface:'dark-surface', surface2:'dark-surface2' };
-  const lp = { bg:'light-bg', surface:'light-surface', surface2:'light-surface2' };
+  const dp = { bg:'dark-bg', surface:'dark-surface', surface2:'dark-surface2', text:'dark-text', textMuted:'dark-text-muted' };
+  const lp = { bg:'light-bg', surface:'light-surface', surface2:'light-surface2', text:'light-text', textMuted:'light-text-muted' };
   Object.entries(dp).forEach(([k, id]) => {
     const el = document.getElementById(`colorPicker-${id}`);
     const sw = document.getElementById(`swatch-${id}`);
@@ -3760,7 +3782,7 @@ function saveThemeColor(theme, key, hex) {
 
 function _updateThemePickers(theme, colors) {
   const prefix = theme === 'dark' ? 'dark' : 'light';
-  [['bg','bg'],['surface','surface'],['surface2','surface2']].forEach(([k, id]) => {
+  [['bg','bg'],['surface','surface'],['surface2','surface2'],['text','text'],['textMuted','text-muted']].forEach(([k, id]) => {
     const picker = document.getElementById(`colorPicker-${prefix}-${id}`);
     const swatch = document.getElementById(`swatch-${prefix}-${id}`);
     if (picker) picker.value = colors[k];
@@ -3832,6 +3854,8 @@ settingsOverlay.addEventListener('click', closeSettings);
   ['colorPicker-dark-bg',       'dark', 'bg'],
   ['colorPicker-dark-surface',  'dark', 'surface'],
   ['colorPicker-dark-surface2', 'dark', 'surface2'],
+  ['colorPicker-dark-text',     'dark', 'text'],
+  ['colorPicker-dark-text-muted','dark','textMuted'],
 ].forEach(([id, theme, key]) => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('input', e => {
@@ -3847,6 +3871,8 @@ settingsOverlay.addEventListener('click', closeSettings);
   ['colorPicker-light-bg',       'light', 'bg'],
   ['colorPicker-light-surface',  'light', 'surface'],
   ['colorPicker-light-surface2', 'light', 'surface2'],
+  ['colorPicker-light-text',     'light', 'text'],
+  ['colorPicker-light-text-muted','light','textMuted'],
 ].forEach(([id, theme, key]) => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('input', e => {

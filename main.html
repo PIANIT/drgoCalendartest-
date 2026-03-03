@@ -24,9 +24,9 @@
   --tabbar-h: 38px;
 }
 html.light {
-  --bg:#f7f4f0; --surface:#ffffff; --surface2:#efebe4;
-  --border:#d8d0c4; --accent:#9c7d48; --accent2:#3a7a9a;
-  --text:#1e1812; --text-muted:#7a6e60; --red:#a84444; --green:#3a8a3a;
+  --bg:#ffffff; --surface:#ffffff; --surface2:#f0f0f0;
+  --border:#dedede; --accent:#9c7d48; --accent2:#3a7a9a;
+  --text:#1a1a1a; --text-muted:#666666; --red:#a84444; --green:#3a8a3a;
 }
 *{ margin:0; padding:0; box-sizing:border-box; }
 body {
@@ -338,6 +338,8 @@ body {
         <div class="color-setting-row"><span class="color-setting-label">배경색 (가장 어두운)</span><div class="color-setting-swatch" id="swatch-dark-bg"><input type="color" id="colorPicker-dark-bg"></div></div>
         <div class="color-setting-row"><span class="color-setting-label">카드/모달 색상</span><div class="color-setting-swatch" id="swatch-dark-surface"><input type="color" id="colorPicker-dark-surface"></div></div>
         <div class="color-setting-row"><span class="color-setting-label">보조 배경색</span><div class="color-setting-swatch" id="swatch-dark-surface2"><input type="color" id="colorPicker-dark-surface2"></div></div>
+        <div class="color-setting-row"><span class="color-setting-label">텍스트 색상</span><div class="color-setting-swatch" id="swatch-dark-text"><input type="color" id="colorPicker-dark-text"></div></div>
+        <div class="color-setting-row"><span class="color-setting-label">보조 텍스트</span><div class="color-setting-swatch" id="swatch-dark-text-muted"><input type="color" id="colorPicker-dark-text-muted"></div></div>
       </div>
       <button class="settings-reset-btn" id="resetDarkBtn" style="margin-top:8px;">↺ 다크 테마 초기화</button>
     </div>
@@ -348,6 +350,8 @@ body {
         <div class="color-setting-row"><span class="color-setting-label">배경색 (가장 밝은)</span><div class="color-setting-swatch" id="swatch-light-bg"><input type="color" id="colorPicker-light-bg"></div></div>
         <div class="color-setting-row"><span class="color-setting-label">카드/모달 색상</span><div class="color-setting-swatch" id="swatch-light-surface"><input type="color" id="colorPicker-light-surface"></div></div>
         <div class="color-setting-row"><span class="color-setting-label">보조 배경색</span><div class="color-setting-swatch" id="swatch-light-surface2"><input type="color" id="colorPicker-light-surface2"></div></div>
+        <div class="color-setting-row"><span class="color-setting-label">텍스트 색상</span><div class="color-setting-swatch" id="swatch-light-text"><input type="color" id="colorPicker-light-text"></div></div>
+        <div class="color-setting-row"><span class="color-setting-label">보조 텍스트</span><div class="color-setting-swatch" id="swatch-light-text-muted"><input type="color" id="colorPicker-light-text-muted"></div></div>
       </div>
       <button class="settings-reset-btn" id="resetLightBtn" style="margin-top:8px;">↺ 라이트 테마 초기화</button>
     </div>
@@ -702,13 +706,13 @@ function initWorkspace(displayName) {
 ══════════════════════════════════════ */
 (function() {
   const THEME_STORAGE_KEY = 'cal_theme_colors';
-  const DEFAULT_DARK_THEME  = { accent:'#d4bc96', bg:'#111111', surface:'#1c1c1c', surface2:'#272727' };
-  const DEFAULT_LIGHT_THEME = { accent:'#9c7d48', bg:'#f7f4f0', surface:'#ffffff', surface2:'#efebe4' };
+  const DEFAULT_DARK_THEME  = { accent:'#d4bc96', bg:'#111111', surface:'#1c1c1c', surface2:'#272727', text:'#f0ebe2', textMuted:'#a09890' };
+  const DEFAULT_LIGHT_THEME = { accent:'#9c7d48', bg:'#ffffff', surface:'#ffffff', surface2:'#f0f0f0', text:'#1a1a1a', textMuted:'#666666' };
 
   function applyLightThemeVars(c) {
     let el = document.getElementById('_light-theme-override');
     if (!el) { el = document.createElement('style'); el.id = '_light-theme-override'; document.head.appendChild(el); }
-    el.textContent = `html.light { --bg:${c.bg}!important; --surface:${c.surface}!important; --surface2:${c.surface2}!important; ${c.accent?`--accent:${c.accent}!important;`:''} }`;
+    el.textContent = `html.light { --bg:${c.bg}!important; --surface:${c.surface}!important; --surface2:${c.surface2}!important; ${c.accent?`--accent:${c.accent}!important;`:''} ${c.text?`--text:${c.text}!important;`:''} ${c.textMuted?`--text-muted:${c.textMuted}!important;`:''} }`;
   }
   function applyDarkThemeVars(c) {
     const isDark = !document.documentElement.classList.contains('light');
@@ -732,7 +736,7 @@ function initWorkspace(displayName) {
     syncPickersToValues(dark, light);
   }
   function syncPickersToValues(dark, light) {
-    [['dark-accent',dark.accent],['dark-bg',dark.bg],['dark-surface',dark.surface],['dark-surface2',dark.surface2],
+    [['dark-accent',dark.accent],['dark-bg',dark.bg],['dark-surface',dark.surface],['dark-surface2',dark.surface2],['dark-text',dark.text],['dark-text-muted',dark.textMuted],
      ['light-accent',light.accent],['light-bg',light.bg],['light-surface',light.surface],['light-surface2',light.surface2]
     ].forEach(([id, hex]) => {
       const p = document.getElementById('colorPicker-'+id);
@@ -790,8 +794,10 @@ function initWorkspace(displayName) {
 
   [['colorPicker-dark-accent','dark','accent'],['colorPicker-dark-bg','dark','bg'],
    ['colorPicker-dark-surface','dark','surface'],['colorPicker-dark-surface2','dark','surface2'],
+   ['colorPicker-dark-text','dark','text'],['colorPicker-dark-text-muted','dark','textMuted'],
    ['colorPicker-light-accent','light','accent'],['colorPicker-light-bg','light','bg'],
    ['colorPicker-light-surface','light','surface'],['colorPicker-light-surface2','light','surface2'],
+   ['colorPicker-light-text','light','text'],['colorPicker-light-text-muted','light','textMuted'],
   ].forEach(([id,theme,key]) => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('input', e => {
