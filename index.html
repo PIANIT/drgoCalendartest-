@@ -2577,7 +2577,9 @@ function openModal(evIdx){
   document.getElementById('goldTemplate').style.display='none';
   document.getElementById('commonFields').style.display='none';
   setColor(currentColor); setAllDay(ev.allDay!==false);
-  if (currentColor==='gold') loadGoldFields(ev); else resetGoldFields();
+  if (currentColor==='gold') { loadGoldFields(ev); resetTealFields(); }
+  else if (currentColor==='teal') { resetTealFields(); loadTealFields(ev); resetGoldFields(); }
+  else { resetGoldFields(); resetTealFields(); }
   setSpecialOpts(ev.specialOpts||[], ev.schedOpt||null);
   renderAttachments();
   document.getElementById('deleteBtn').style.display='';

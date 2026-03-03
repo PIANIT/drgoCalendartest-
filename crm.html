@@ -193,7 +193,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
 .form-input.error{border-color:var(--red);animation:shake .35s ease;}
 .form-select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M5 6L0 0h10z' fill='%23a09890'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
 .form-select option{background:var(--surface);}
-.form-textarea{resize:vertical;min-height:76px;line-height:1.6;}
+.form-textarea{resize:none;min-height:76px;line-height:1.6;overflow:hidden;}
 .btn-cancel{padding:9px 18px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-muted);font-family:var(--font-main);font-size:13px;cursor:pointer;transition:all .15s;}
 .btn-cancel:hover{border-color:var(--red);color:var(--red);}
 .btn-save{padding:9px 22px;background:var(--accent);color:#1a1207;border:none;border-radius:8px;font-family:var(--font-main);font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;}
@@ -308,7 +308,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
 .item-card-header{padding:12px 14px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
 .item-card-title{font-size:14px;font-weight:600;color:var(--text);}
 .item-card-meta{display:flex;align-items:center;gap:7px;margin-top:4px;flex-wrap:wrap;font-size:11px;color:var(--text-muted);}
-.item-card-body{padding:0 14px 10px;font-size:12px;color:var(--text-muted);line-height:1.6;}
+.item-card-body{padding:0 14px 10px;font-size:12px;color:var(--text-muted);line-height:1.6;white-space:pre-wrap;word-break:break-word;}
 .item-card-footer{padding:8px 14px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface2);font-size:11px;color:var(--text-muted);}
 .item-date{font-size:11px;font-family:var(--font-mono);color:var(--text-muted);white-space:nowrap;flex-shrink:0;}
 .status-chip{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-family:var(--font-mono);font-weight:600;letter-spacing:.04em;}
@@ -1165,6 +1165,7 @@ function initApp(){
     document.getElementById('cdEntryTime').value=nowLocalStr();
     document.getElementById('cdEntryText').value='';
     document.getElementById('consultDetailModal').classList.add('open');
+    setTimeout(()=>{ document.querySelectorAll('#consultDetailModal .form-textarea,.tl-textarea').forEach(autoResize); },30);
   }
 
   function renderTimeline(entries){
@@ -1313,6 +1314,23 @@ function initApp(){
     renderClientList();
     if(selectedClient){ const updated=clients.find(c=>c._id===selectedClient._id); if(updated){ selectedClient=updated; if(currentTab==='info') renderInfo(updated); } }
   },err=>{ clearTimeout(loadTO); setLoading(false); console.error(err); showToast('DB 연결 오류','error'); });
+
+
+  /* ── textarea 자동 높이 조절 ── */
+  function autoResize(el){
+    if(!el) return;
+    el.style.height='auto';
+    el.style.height=(el.scrollHeight+2)+'px';
+  }
+  function bindAutoResize(el){
+    if(!el||el._autoResize) return;
+    el._autoResize=true;
+    el.addEventListener('input',()=>autoResize(el));
+    autoResize(el);
+  }
+  function bindAllAutoResize(){
+    document.querySelectorAll('.form-textarea,.tl-textarea').forEach(bindAutoResize);
+  }
 
   /* filter/search */
   document.querySelectorAll('.cf-btn').forEach(btn=>btn.addEventListener('click',()=>{
@@ -1536,6 +1554,8 @@ function initApp(){
       document.getElementById('vrCalInfo').style.display='';
     }
     document.getElementById('visitReqModal').classList.add('open');
+    /* textarea 자동 높이 적용 */
+    setTimeout(()=>{ document.querySelectorAll('#visitReqModal .form-textarea').forEach(autoResize); },30);
     setTimeout(()=>document.getElementById('vrTitle').focus(),100);
   }
   /* 이미지 탭 렌더 함수 */
@@ -1687,7 +1707,7 @@ function initApp(){
   function renderVisitRepList(){
     const el=document.getElementById('visitRepList');
     if(!visitReps.length){ el.innerHTML='<div class="generic-empty">등록된 방문보고가 없습니다</div>'; return; }
-    el.innerHTML=visitReps.map(r=>`<div class="item-card" data-id="${r._id}"><div class="item-card-header"><div><div class="item-card-title">${esc(r.title||'(제목 없음)')}</div><div class="item-card-meta"><span class="status-chip ${r.result==='success'?'status-done':r.result==='fail'?'status-cancel':'status-pending'}">${REP_RESULT_LABEL[r.result]||'완료'}</span>${r.author?`<span>작성: ${esc(r.author)}</span>`:''} ${r.calEventId?'<span class="cal-linked-badge" style="font-size:9px;padding:1px 6px;">📅 캘린더 연동</span>':''}</div></div><div class="item-date">${r.visitDate||fmtDate(r.createdAt)}</div></div>${r.content?`<div class="item-card-body">${esc(r.content).slice(0,80)}…</div>`:''}</div>`).join('');
+    el.innerHTML=visitReps.map(r=>`<div class="item-card" data-id="${r._id}"><div class="item-card-header"><div><div class="item-card-title">${esc(r.title||'(제목 없음)')}</div><div class="item-card-meta"><span class="status-chip ${r.result==='success'?'status-done':r.result==='fail'?'status-cancel':'status-pending'}">${REP_RESULT_LABEL[r.result]||'완료'}</span>${r.author?`<span>작성: ${esc(r.author)}</span>`:''} ${r.calEventId?'<span class="cal-linked-badge" style="font-size:9px;padding:1px 6px;">📅 캘린더 연동</span>':''}</div></div><div class="item-date">${r.visitDate||fmtDate(r.createdAt)}</div></div>${r.content?`<div class="item-card-body">${esc(r.content)}</div>`:''}</div>`).join('');
     el.querySelectorAll('.item-card').forEach(c=>c.addEventListener('click',()=>openVisitRepModal(visitReps.find(r=>r._id===c.dataset.id))));
   }
   let repLinkedEvent=null;
@@ -1712,6 +1732,7 @@ function initApp(){
       if(item.calName||item.calPhone){ document.getElementById('repCalName').textContent=item.calName||'—'; document.getElementById('repCalPhone').textContent=item.calPhone||'—'; document.getElementById('repCalInfo').style.display=''; }
     }
     document.getElementById('visitRepModal').classList.add('open');
+    setTimeout(()=>{ document.querySelectorAll('#visitRepModal .form-textarea').forEach(autoResize); },30);
     setTimeout(()=>document.getElementById('repTitle').focus(),100);
   }
   setupCalSearch('repCalSearch','repCalResults',(ev)=>{
