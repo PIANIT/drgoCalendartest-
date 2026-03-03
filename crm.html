@@ -235,9 +235,9 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
 .crm-confirm-leave{padding:9px 18px;border-radius:8px;border:none;background:var(--red);color:#fff;font-family:var(--font-main);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
 .crm-confirm-leave:hover{filter:brightness(1.12);}
 .tl-add{margin-top:12px;border:1px solid var(--border);border-radius:9px;overflow:hidden;}
-.tl-add-head{padding:9px 13px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap;cursor:pointer;}
+.tl-add-head{padding:9px 13px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .taf-label{font-size:10px;font-family:var(--font-mono);color:var(--text-muted);letter-spacing:.1em;}
-.taf-dt{padding:5px 9px;background:var(--surface3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:11px;font-family:var(--font-mono);outline:none;transition:border-color .2s;flex:1;min-width:180px;cursor:pointer;}
+.taf-dt{padding:5px 9px;background:var(--surface3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:11px;font-family:var(--font-mono);outline:none;transition:border-color .2s;flex:1;min-width:180px;}
 .taf-dt:focus{border-color:var(--accent);}
 .tl-add-body{display:flex;align-items:flex-end;}
 .tl-textarea{flex:1;padding:11px 13px;background:var(--surface);border:none;color:var(--text);font-family:var(--font-main);font-size:13px;resize:none;outline:none;min-height:68px;line-height:1.6;}
@@ -1220,10 +1220,7 @@ function initApp(){
 
   /* timeline entry submit */
   /* 상담시간 영역 클릭 시 datetime 입력창 포커스 및 열기 */
-  document.querySelector('.tl-add-head').addEventListener('click', (e)=>{
-    const dtInput = document.getElementById('cdEntryTime');
-    if(e.target !== dtInput){ dtInput.focus(); try{ dtInput.showPicker(); }catch(_){} }
-  });
+  /* 상담시간 picker는 input 자체 클릭으로만 열림 */
 
   /* ── 타임라인 항목 수정/삭제 ── */
   async function handleTlAction(action, idx, sorted){
