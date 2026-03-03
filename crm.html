@@ -1071,7 +1071,7 @@ function initApp(){
       <div class="client-item${selectedClient&&selectedClient._id===c._id?' active':''}" data-id="${c._id}">
         <div class="client-avatar">${avatarChar(c.name)}</div>
         <div class="client-info">
-          <div class="client-name">${esc(c.name||'(이름 없음)')}${c.nick?` <span style="font-weight:400;color:var(--text-muted);font-size:11px;">/ ${esc(c.nick)}</span>`:''}</div>
+          <div class="client-name">${esc(c.nick||c.name||'(이름 없음)')}${c.nick&&c.name?` <span style="font-weight:400;color:var(--text-muted);font-size:11px;">/ ${esc(c.name)}</span>`:''}</div>
           <div class="client-meta">${esc(c.phone||'')}${c.platform?' · '+esc(c.platform):''}</div>
         </div>
         <span class="type-chip ${TYPE_CLASS[c.type]||'type-unknown'}">${TYPE_MAP[c.type]||'미정'}</span>
