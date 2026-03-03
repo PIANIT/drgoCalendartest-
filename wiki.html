@@ -551,6 +551,7 @@ const COL = 'wiki_articles';
 const $ = id => document.getElementById(id);
 function toast(msg){ const t=$('wikiToast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
 function formatDate(ts){ if(!ts)return''; const d=ts.toDate?ts.toDate():new Date(ts); return d.toLocaleDateString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit'}); }
+function formatDateTime(ts){ if(!ts)return''; const d=ts.toDate?ts.toDate():new Date(ts); return d.toLocaleString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}); }
 function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function saveRange(){ const sel=window.getSelection(); if(sel&&sel.rangeCount>0) savedRange=sel.getRangeAt(0).cloneRange(); }
 function restoreRange(){ if(!savedRange)return; const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(savedRange); }
@@ -688,9 +689,21 @@ async function openArticle(id){
   // author: DB에 저장된 값이 ID일 수도 있으므로 users 컬렉션에서 displayName 조회
   if(art.author){
     const authorName=await getAuthorName(art.author);
-    $('viewMeta').innerHTML=`<span>✏️ ${formatDate(art.updatedAt||art.createdAt)}</span><span>👤 ${escHtml(authorName)}</span>`;
+    // 수정일과 작성일 구분 표시
+    const isEdited = art.updatedAt && art.createdAt && 
+      (art.updatedAt.toDate ? art.updatedAt.toDate() : new Date(art.updatedAt)).getTime() !==
+      (art.createdAt.toDate ? art.createdAt.toDate() : new Date(art.createdAt)).getTime();
+    const dateLabel = isEdited ? '✏️ 수정' : '📅 작성';
+    const dateStr   = isEdited ? formatDateTime(art.updatedAt) : formatDateTime(art.createdAt);
+    const modifierLabel = isEdited ? '수정자' : '작성자';
+    $('viewMeta').innerHTML=`<span>${dateLabel} ${dateStr}</span><span>👤 ${escHtml(authorName)}</span>`;
   } else {
-    $('viewMeta').innerHTML=`<span>✏️ ${formatDate(art.updatedAt||art.createdAt)}</span>`;
+    const isEdited2 = art.updatedAt && art.createdAt &&
+      (art.updatedAt.toDate ? art.updatedAt.toDate() : new Date(art.updatedAt)).getTime() !==
+      (art.createdAt.toDate ? art.createdAt.toDate() : new Date(art.createdAt)).getTime();
+    const dateLabel2 = isEdited2 ? '✏️ 수정' : '📅 작성';
+    const dateStr2   = isEdited2 ? formatDateTime(art.updatedAt) : formatDateTime(art.createdAt);
+    $('viewMeta').innerHTML=`<span>${dateLabel2} ${dateStr2}</span>`;
   }
 }
 
@@ -932,9 +945,21 @@ async function saveArticle(){
   const author=currentUid ? await getAuthorName(currentUid) : getDisplayName();
   const data={title,content,category:selectedCat||'일반',author,updatedAt:serverTimestamp()};
   try{
-    if(editingId){await updateDoc(doc(db,COL,editingId),data);toast('문서가 수정되었습니다');}
-    else{data.createdAt=serverTimestamp();const ref=await addDoc(collection(db,COL),data);editingId=ref.id;}
-    closeEditModal();await loadArticles();openArticle(editingId);
+    if(editingId){
+      await updateDoc(doc(db,COL,editingId),data);
+      toast('문서가 수정되었습니다');
+    } else {
+      data.createdAt=serverTimestamp();
+      const ref=await addDoc(collection(db,COL),data);
+      editingId=ref.id;
+    }
+    closeEditModal();
+    // 저장 후 최신 데이터로 목록+상세 즉시 갱신
+    const freshSnap=await getDocs(query(collection(db,COL),orderBy('createdAt','desc')));
+    articles=freshSnap.docs.map(d=>({id:d.id,...d.data()}));
+    articles.forEach(a=>{if(a.category)categories.add(a.category);});
+    renderList();
+    await openArticle(editingId);
   }catch(e){console.error(e);toast('저장 실패: '+e.message);}
 }
 
