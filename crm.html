@@ -1359,6 +1359,7 @@ function initApp(){
   ══════════════════════════════════════════ */
   let _crmSnapshot = null;
   let _crmConfirmCb = null;
+  let _currentModalId = null; /* 현재 열린 모달 추적 */
 
   /* 모달별 감시 필드 정의 */
   const MODAL_FIELDS = {
@@ -1366,10 +1367,11 @@ function initApp(){
     consultModal:  ['cTitle','cType','cCounselor','cContent'],
     visitReqModal: ['vrTitle','vrDate','vrStatus','vrAssignee','vrType','vrAddress','vrEquipment','vrReqTopic','vrContent'],
     visitRepModal: ['repTitle','repDate','repAuthor','repResult','repContent','repNote'],
-    salesModal:    ['slTitle','slDate','slType','slAmount','slNote'],
+    salesModal:    ['slTitle','slDate','slType','slAmount','slBalance','slRefund','slPayStatus','slNote'],
   };
 
   function _crmTakeSnapshot(modalId) {
+    _currentModalId = modalId;
     const fields = MODAL_FIELDS[modalId] || [];
     const snap = { _modal: modalId };
     fields.forEach(id => {
@@ -1402,9 +1404,10 @@ function initApp(){
   /* tryClose: dirty하면 팝업, 아니면 바로 닫기 */
   function crmTryClose(modalId, closeFn) {
     if (_crmIsDirty(modalId)) {
-      _crmShowConfirm(() => { _crmSnapshot = null; closeFn(); });
+      _crmShowConfirm(() => { _crmSnapshot = null; _currentModalId = null; closeFn(); });
     } else {
       _crmSnapshot = null;
+      _currentModalId = null;
       closeFn();
     }
   }
@@ -1977,8 +1980,17 @@ function initApp(){
   document.getElementById('salesModalClose').addEventListener('click',()=>crmTryClose('salesModal',()=>document.getElementById('salesModal').classList.remove('open')));
   document.getElementById('salesCancelBtn').addEventListener('click',()=>crmTryClose('salesModal',()=>document.getElementById('salesModal').classList.remove('open')));
 
+  /* overlay 배경 클릭 - dirty check 적용 모달은 crmTryClose 경유 */
+  const DIRTY_MODALS = new Set(['clientModal','consultModal','visitReqModal','visitRepModal','salesModal']);
   ['clientModal','consultModal','consultDetailModal','visitReqModal','visitRepModal','salesModal'].forEach(id=>{
-    document.getElementById(id).addEventListener('click',e=>{ if(e.target.id===id) document.getElementById(id).classList.remove('open'); });
+    document.getElementById(id).addEventListener('click',e=>{
+      if(e.target.id !== id) return;
+      if(DIRTY_MODALS.has(id)){
+        crmTryClose(id, ()=>document.getElementById(id).classList.remove('open'));
+      } else {
+        document.getElementById(id).classList.remove('open');
+      }
+    });
   });
 }
 
