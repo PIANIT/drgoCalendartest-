@@ -336,6 +336,11 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
 #lightbox.open{display:flex;}
 #lightboxImg{max-width:92vw;max-height:88vh;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.6);}
 
+
+.vr-img-tab{padding:4px 12px;border-radius:14px;border:1px solid var(--border);background:none;color:var(--text-muted);font-size:11px;font-family:var(--font-mono);cursor:pointer;transition:all .15s;}
+.vr-img-tab.active{border-color:var(--accent);color:var(--accent);background:rgba(212,188,150,.12);}
+.vr-img-tab:hover{border-color:var(--accent);color:var(--accent);}
+
 </style>
 </head>
 <body>
@@ -665,12 +670,24 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
           <div><label class="form-label">견적 총액</label><div class="field-readonly" id="vrCalEstimate">—</div></div>
           <div><label class="form-label">잔금</label><div class="field-readonly" id="vrCalBalance">—</div></div>
         </div>
-        <div style="margin-bottom:14px;"><label class="form-label">견적서 이미지</label><div class="quote-images-wrap" id="vrQuoteImages"></div></div>
+        <div style="margin-bottom:14px;">
+          <label class="form-label">첨부 이미지 <span id="vrImgCount" style="color:var(--accent);font-size:11px;"></span></label>
+          <div id="vrImgTabs" style="display:none;margin-bottom:8px;display:flex;gap:6px;flex-wrap:wrap;">
+            <button id="vrImgTab_quote" class="vr-img-tab active" data-type="quote">견적서</button>
+            <button id="vrImgTab_ref"   class="vr-img-tab" data-type="ref">참고 이미지</button>
+            <button id="vrImgTab_room"  class="vr-img-tab" data-type="room">공간 이미지</button>
+          </div>
+          <div class="quote-images-wrap" id="vrQuoteImages"></div>
+          <div class="quote-images-wrap" id="vrRefImages"   style="display:none;"></div>
+          <div class="quote-images-wrap" id="vrRoomImages"  style="display:none;"></div>
+        </div>
       </div>
       <div class="form-section-head">의뢰 내용</div>
       <div class="form-group"><label class="form-label">제목 <span class="req">*</span></label><input class="form-input" id="vrTitle" placeholder="방문의뢰 제목"></div>
-      <div class="form-group"><label class="form-label">주소</label><input class="form-input" id="vrAddress" placeholder="방문 주소"></div>
-      <div class="form-group"><label class="form-label">요청 내용</label><textarea class="form-textarea" id="vrContent" placeholder="방문 의뢰 내용을 입력하세요" style="min-height:90px;"></textarea></div>
+      <div class="form-group"><label class="form-label">방문 주소</label><input class="form-input" id="vrAddress" placeholder="방문 주소"></div>
+      <div class="form-group"><label class="form-label">장비 목록 <span style="font-size:10px;color:var(--accent);">캘린더 연동 시 자동입력</span></label><textarea class="form-textarea" id="vrEquipment" placeholder="장비 목록" style="min-height:70px;"></textarea></div>
+      <div class="form-group"><label class="form-label">의뢰 주제 <span style="font-size:10px;color:var(--accent);">캘린더 연동 시 자동입력</span></label><input class="form-input" id="vrReqTopic" placeholder="의뢰 주제"></div>
+      <div class="form-group"><label class="form-label">요청 내용 <span style="font-size:10px;color:var(--accent);">캘린더 연동 시 자동입력</span></label><textarea class="form-textarea" id="vrContent" placeholder="방문 의뢰 내용을 입력하세요" style="min-height:90px;"></textarea></div>
     </div>
     <div class="modal-footer">
       <button class="btn-danger" id="visitReqDeleteBtn" style="display:none;margin-right:auto;">삭제</button>
@@ -1410,42 +1427,108 @@ function initApp(){
     document.getElementById('vrType').value=item?.type||'visit';
     document.getElementById('vrTitle').value=item?.title||'';
     document.getElementById('vrAddress').value=item?.address||selectedClient?.address||'';
+    document.getElementById('vrEquipment').value=item?.equipment||'';
+    document.getElementById('vrReqTopic').value=item?.reqTopic||'';
     document.getElementById('vrContent').value=item?.content||'';
     if(item?.calEventId){
       vrLinkedEvent={_id:item.calEventId,title:item.calTitle};
       document.getElementById('vrLinkedTitle').textContent=item.calTitle||item.calEventId;
       document.getElementById('vrLinkedBadge').style.display='';
-      if(item.calEstimate||item.calBalance){
-        document.getElementById('vrCalName').textContent=item.calName||'—';
-        document.getElementById('vrCalPhone').textContent=item.calPhone||'—';
-        document.getElementById('vrCalEstimate').textContent=item.calEstimate?fmtAmount(item.calEstimate):'—';
-        document.getElementById('vrCalBalance').textContent=item.calBalance?fmtAmount(item.calBalance):'없음';
-        document.getElementById('vrQuoteImages').innerHTML=(item.calQuoteImgs||[]).map(img=>`<img class="quote-img-thumb" src="${img.data||img}" alt="견적서">`).join('');
-        document.getElementById('vrQuoteImages').querySelectorAll('.quote-img-thumb').forEach(img=>img.addEventListener('click',()=>showLightbox(img.src)));
-        document.getElementById('vrCalInfo').style.display='';
-      }
+      document.getElementById('vrCalName').textContent=item.calName||'—';
+      document.getElementById('vrCalPhone').textContent=item.calPhone||'—';
+      document.getElementById('vrCalEstimate').textContent=item.calEstimate?fmtAmount(item.calEstimate):'—';
+      document.getElementById('vrCalBalance').textContent=item.calBalance?fmtAmount(item.calBalance):'없음';
+      renderVrImages({quote:item.calQuoteImgs||[], ref:item.calRefImgs||[], room:item.calRoomImgs||[]});
+      document.getElementById('vrCalInfo').style.display='';
     }
     document.getElementById('visitReqModal').classList.add('open');
     setTimeout(()=>document.getElementById('vrTitle').focus(),100);
   }
+  /* 이미지 탭 렌더 함수 */
+  function renderVrImages(imgSets){
+    const quoteImgs = imgSets.quote||[];
+    const refImgs   = imgSets.ref||[];
+    const roomImgs  = imgSets.room||[];
+    const total = quoteImgs.length + refImgs.length + roomImgs.length;
+    const countEl = document.getElementById('vrImgCount');
+    if(countEl) countEl.textContent = total ? `(${total}장)` : '';
+    const tabsEl = document.getElementById('vrImgTabs');
+    if(tabsEl) tabsEl.style.display = total ? 'flex' : 'none';
+    function renderSet(containerId, imgs){
+      const el = document.getElementById(containerId);
+      if(!el) return;
+      el.innerHTML = imgs.map(img=>`<img class="quote-img-thumb" src="${img.data||img}" alt="이미지">`).join('');
+      el.querySelectorAll('.quote-img-thumb').forEach(i=>i.addEventListener('click',()=>showLightbox(i.src)));
+    }
+    renderSet('vrQuoteImages', quoteImgs);
+    renderSet('vrRefImages',   refImgs);
+    renderSet('vrRoomImages',  roomImgs);
+    /* 탭 버튼 이벤트 */
+    document.querySelectorAll('.vr-img-tab').forEach(btn=>{
+      btn.onclick = ()=>{
+        document.querySelectorAll('.vr-img-tab').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        const type=btn.dataset.type;
+        document.getElementById('vrQuoteImages').style.display = type==='quote' ? '' : 'none';
+        document.getElementById('vrRefImages').style.display   = type==='ref'   ? '' : 'none';
+        document.getElementById('vrRoomImages').style.display  = type==='room'  ? '' : 'none';
+      };
+    });
+    /* 기본: 견적서 탭 활성 */
+    document.querySelectorAll('.vr-img-tab').forEach(b=>b.classList.remove('active'));
+    const firstTab = document.getElementById('vrImgTab_quote');
+    if(firstTab) firstTab.classList.add('active');
+    document.getElementById('vrQuoteImages').style.display = '';
+    document.getElementById('vrRefImages').style.display   = 'none';
+    document.getElementById('vrRoomImages').style.display  = 'none';
+  }
+
   setupCalSearch('vrCalSearch','vrCalResults',(ev)=>{
     vrLinkedEvent=ev;
     document.getElementById('vrCalResults').style.display='none';
     document.getElementById('vrLinkedTitle').textContent=ev.title||ev._id;
     document.getElementById('vrLinkedBadge').style.display='';
+    /* 날짜 */
     document.getElementById('vrDate').value=ev.startDate||document.getElementById('vrDate').value;
+    /* 제목 */
     if(!document.getElementById('vrTitle').value) document.getElementById('vrTitle').value=ev.title||'';
+    /* 주소: ev.address (캘린더 제목 아래 주소 필드) */
+    if(ev.address) document.getElementById('vrAddress').value=ev.address;
+    /* 캘린더 연동 정보 */
     const name=ev.gold?.name||ev.name||''; const phone=ev.gold?.phone||ev.phone||'';
-    const est=ev.gold?.estimate_amount||''; const bal=ev.gold?.balance_amount||''; const imgs=ev.quoteImgs||[];
+    const est=ev.gold?.estimate_amount||''; const bal=ev.gold?.balance_amount||'';
     document.getElementById('vrCalName').textContent=name||'—';
     document.getElementById('vrCalPhone').textContent=phone||'—';
     document.getElementById('vrCalEstimate').textContent=est?fmtAmount(est):'—';
     document.getElementById('vrCalBalance').textContent=bal?fmtAmount(bal):'없음';
-    document.getElementById('vrQuoteImages').innerHTML=imgs.map(img=>`<img class="quote-img-thumb" src="${img.data||img}" alt="견적서">`).join('');
-    document.getElementById('vrQuoteImages').querySelectorAll('.quote-img-thumb').forEach(img=>img.addEventListener('click',()=>showLightbox(img.src)));
+    /* 장비목록 자동입력 */
+    const equipment=ev.gold?.equipment||'';
+    if(equipment) document.getElementById('vrEquipment').value=equipment;
+    /* 의뢰 주제 자동입력 */
+    const reqTopic=ev.gold?.req_topic||'';
+    if(reqTopic) document.getElementById('vrReqTopic').value=reqTopic;
+    /* 의뢰 내용(req_detail) 자동입력 */
+    const reqDetail=ev.gold?.req_detail||'';
+    if(reqDetail) document.getElementById('vrContent').value=reqDetail;
+    /* 이미지 세트 전체 표시 */
+    const imgSets = {
+      quote: ev.gold?.quoteImgs || ev.quoteImgs || [],
+      ref:   ev.gold?.refImgs   || ev.refImgs   || [],
+      room:  ev.gold?.roomImgs  || ev.roomImgs  || [],
+    };
+    renderVrImages(imgSets);
     document.getElementById('vrCalInfo').style.display='';
   });
-  document.getElementById('vrUnlinkBtn').addEventListener('click',()=>{ vrLinkedEvent=null; document.getElementById('vrLinkedBadge').style.display='none'; document.getElementById('vrCalInfo').style.display='none'; });
+  document.getElementById('vrUnlinkBtn').addEventListener('click',()=>{
+    vrLinkedEvent=null;
+    document.getElementById('vrLinkedBadge').style.display='none';
+    document.getElementById('vrCalInfo').style.display='none';
+    document.getElementById('vrImgCount').textContent='';
+    ['vrQuoteImages','vrRefImages','vrRoomImages'].forEach(id=>{
+      const el=document.getElementById(id); if(el){el.innerHTML=''; el.style.display=id==='vrQuoteImages'?'':'none';}
+    });
+    const tabsEl=document.getElementById('vrImgTabs'); if(tabsEl) tabsEl.style.display='none';
+  });
   document.getElementById('visitReqDeleteBtn').addEventListener('click',async()=>{
     if(!editingVrId||!selectedClient) return;
     const ok=await showConfirm('방문의뢰 삭제','이 방문의뢰를 삭제하시겠습니까?','🗑️');
@@ -1458,8 +1541,20 @@ function initApp(){
     if(!title){ document.getElementById('vrTitle').classList.add('error'); setTimeout(()=>document.getElementById('vrTitle').classList.remove('error'),600); return; }
     if(!selectedClient) return;
     const btn=document.getElementById('visitReqSaveBtn'); btn.disabled=true; btn.textContent='저장 중…';
-    const data={ title, visitDate:document.getElementById('vrDate').value, status:document.getElementById('vrStatus').value, assignee:document.getElementById('vrAssignee').value.trim(), type:document.getElementById('vrType').value, address:document.getElementById('vrAddress').value.trim(), content:document.getElementById('vrContent').value.trim() };
-    if(vrLinkedEvent){ data.calEventId=vrLinkedEvent._id; data.calTitle=vrLinkedEvent.title||''; data.calName=document.getElementById('vrCalName').textContent; data.calPhone=document.getElementById('vrCalPhone').textContent; const et=document.getElementById('vrCalEstimate').textContent; data.calEstimate=et&&et!=='—'?et.replace(/[^0-9]/g,''):''; const bt=document.getElementById('vrCalBalance').textContent; data.calBalance=bt&&bt!=='없음'&&bt!=='—'?bt.replace(/[^0-9]/g,''):''; }
+    const data={ title, visitDate:document.getElementById('vrDate').value, status:document.getElementById('vrStatus').value, assignee:document.getElementById('vrAssignee').value.trim(), type:document.getElementById('vrType').value, address:document.getElementById('vrAddress').value.trim(), equipment:document.getElementById('vrEquipment').value.trim(), reqTopic:document.getElementById('vrReqTopic').value.trim(), content:document.getElementById('vrContent').value.trim() };
+    if(vrLinkedEvent){
+      data.calEventId=vrLinkedEvent._id; data.calTitle=vrLinkedEvent.title||'';
+      data.calName=document.getElementById('vrCalName').textContent;
+      data.calPhone=document.getElementById('vrCalPhone').textContent;
+      const et=document.getElementById('vrCalEstimate').textContent;
+      data.calEstimate=et&&et!=='—'?et.replace(/[^0-9]/g,''):'';
+      const bt=document.getElementById('vrCalBalance').textContent;
+      data.calBalance=bt&&bt!=='없음'&&bt!=='—'?bt.replace(/[^0-9]/g,''):'';
+      /* 이미지 데이터 저장 (base64 포함) */
+      data.calQuoteImgs=Array.from(document.getElementById('vrQuoteImages').querySelectorAll('img')).map(i=>({data:i.src,name:''}));
+      data.calRefImgs  =Array.from(document.getElementById('vrRefImages').querySelectorAll('img')).map(i=>({data:i.src,name:''}));
+      data.calRoomImgs =Array.from(document.getElementById('vrRoomImages').querySelectorAll('img')).map(i=>({data:i.src,name:''}));
+    }
     try{
       if(editingVrId){ await updateDoc(doc(db,`crm_clients/${selectedClient._id}/visit_requests`,editingVrId),data); showToast('수정되었습니다','success'); }
       else { data.createdAt=serverTimestamp(); await addDoc(vrCol(selectedClient._id),data); showToast('방문의뢰가 등록되었습니다','success'); }
