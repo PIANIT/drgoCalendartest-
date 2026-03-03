@@ -28,6 +28,8 @@
   --chip-green-text: #08200a;
   --chip-purple-bg: #9b70c8;
   --chip-purple-text: #f0eaff;
+  --chip-teal-bg: #5ab8a8;
+  --chip-teal-text: #042018;
   --font-main: "Malgun Gothic","맑은 고딕",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
   --font-mono: 'DM Mono',"Malgun Gothic","맑은 고딕",monospace;
 }
@@ -40,6 +42,7 @@ html.light {
   --chip-red-bg: #b85858; --chip-red-text: #ffffff;
   --chip-green-bg: #58b058; --chip-green-text: #ffffff;
   --chip-purple-bg: #7b50a8; --chip-purple-text: #ffffff;
+  --chip-teal-bg: #3a9a8a; --chip-teal-text: #ffffff;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 body { background:var(--bg); color:var(--text); font-family:var(--font-main); min-height:100vh; }
@@ -147,6 +150,7 @@ header {
 .filter-btn.f-blue.active  { border-color:var(--chip-blue-bg);  background:rgba(122,174,200,0.15); color:var(--chip-blue-bg); }
 .filter-btn.f-red.active   { border-color:var(--chip-red-bg);   background:rgba(200,112,112,0.15); color:var(--chip-red-bg); }
 .filter-btn.f-green.active { border-color:var(--chip-green-bg); background:rgba(112,200,112,0.15); color:var(--chip-green-bg); }
+.filter-btn.f-teal.active  { border-color:var(--chip-teal-bg);  background:rgba(90,184,168,0.15);  color:var(--chip-teal-bg);   }
 .filter-btn.f-purple.active{ border-color:var(--chip-purple-bg);background:rgba(155,112,200,0.15); color:var(--chip-purple-bg); }
 .color-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
 .cd-gold  { background:var(--chip-gold-bg); }
@@ -293,6 +297,7 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
 .ms-blue  { background:var(--chip-blue-bg); }
 .ms-red   { background:var(--chip-red-bg); }
 .ms-green { background:var(--chip-green-bg); }
+.ms-teal  { background:var(--chip-teal-bg); }
 .ms-purple{ background:var(--chip-purple-bg); }
 .modal-header { padding:20px 24px 16px; display:flex; align-items:flex-start; justify-content:space-between; gap:12px; border-bottom:1px solid var(--border); }
 .modal-header-info { flex:1; min-width:0; }
@@ -629,6 +634,10 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
     <div class="stat-value gold" id="st-gold">—</div>
   </div>
   <div class="stat-card">
+    <div class="stat-label">원격/방송룸</div>
+    <div class="stat-value" style="color:var(--chip-teal-bg);" id="st-teal">—</div>
+  </div>
+  <div class="stat-card">
     <div class="stat-label">사내업무</div>
     <div class="stat-value blue" id="st-blue">—</div>
   </div>
@@ -788,6 +797,7 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
   <div class="filter-group" id="filterGroup">
     <button class="filter-btn active" data-filter="all">전체</button>
     <button class="filter-btn f-gold" data-filter="gold"><span class="color-dot cd-gold"></span>방문의뢰</button>
+    <button class="filter-btn f-teal" data-filter="teal"><span class="color-dot cd-teal" style="background:var(--chip-teal-bg);border-radius:50%;width:8px;height:8px;display:inline-block;"></span>원격/방송룸</button>
     <button class="filter-btn f-blue" data-filter="blue"><span class="color-dot cd-blue"></span>사내업무</button>
     <button class="filter-btn f-red"  data-filter="red" ><span class="color-dot cd-red"></span>휴가관련</button>
     <button class="filter-btn f-green" data-filter="green"><span class="color-dot cd-green"></span>촬영관련</button>
@@ -997,7 +1007,7 @@ const LOCK_KEY    = 'cal_admin_lock';
 const MAX_TRIES   = 5;
 const LOCK_MS     = 120000;
 
-const TYPE_LABELS    = { gold:'방문의뢰', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방' };
+const TYPE_LABELS    = { gold:'방문의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방' };
 const SPECIAL_LABELS = { car:'🚗차량', brief:'💼제품', return:'←', group:'👥2인', urgent:'🚨긴급', ladder:'🪜사다리' };
 const SCHED_LABELS   = { suggest:'💬제안', hope:'🙏희망', target:'🎯목표' };
 
@@ -1399,6 +1409,7 @@ function applyFilters() {
 function updateStats() {
   document.getElementById('st-total').textContent = allEvents.length;
   document.getElementById('st-gold').textContent  = allEvents.filter(e=>(e.color||'gold')==='gold').length;
+  document.getElementById('st-teal').textContent  = allEvents.filter(e=>e.color==='teal').length;
   document.getElementById('st-blue').textContent  = allEvents.filter(e=>e.color==='blue').length;
   document.getElementById('st-red').textContent   = allEvents.filter(e=>e.color==='red').length;
   document.getElementById('st-green').textContent = allEvents.filter(e=>e.color==='green').length;
@@ -1540,6 +1551,16 @@ function openDetail(ev) {
     if (imgCount > 0) body.appendChild(makeSection('첨부 이미지', [['이미지 수', `${imgCount}개`]]));
   }
 
+  if (c === 'teal' && ev.teal) {
+    const t = ev.teal;
+    const modeLabel = t.mode === 'studio' ? '방송룸 이용' : '원격';
+    const tf = [['유형', modeLabel]];
+    if (t.name)     tf.push(['이름/닉네임', t.name]);
+    if (t.platform) tf.push(['방송 플랫폼', t.platform]);
+    if (t.content)  tf.push(['의뢰/이용 내용', t.content]);
+    if (t.desc)     tf.push(['상세 설명', t.desc]);
+    body.appendChild(makeSection('원격/방송룸 정보', tf));
+  }
   if (c === 'purple') {
     const meetFields = [];
     if (ev.name)    meetFields.push(['담당자/참석자', ev.name]);

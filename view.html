@@ -339,6 +339,7 @@ html.light .date-range-input { color-scheme:light; }
 <div class="stats-bar">
   <div class="stat-card"><div class="stat-label">전체</div><div class="stat-value" id="st-total">—</div></div>
   <div class="stat-card"><div class="stat-label">개인의뢰</div><div class="stat-value gold"   id="st-gold">—</div></div>
+  <div class="stat-card"><div class="stat-label">원격/방송룸</div><div class="stat-value" style="color:var(--chip-teal-bg);" id="st-teal">—</div></div>
   <div class="stat-card"><div class="stat-label">사내업무</div><div class="stat-value blue"   id="st-blue">—</div></div>
   <div class="stat-card"><div class="stat-label">휴가관련</div><div class="stat-value red"    id="st-red">—</div></div>
   <div class="stat-card"><div class="stat-label">촬영관련</div><div class="stat-value green"  id="st-green">—</div></div>
@@ -354,6 +355,7 @@ html.light .date-range-input { color-scheme:light; }
   <div class="filter-group" id="filterGroup">
     <button class="filter-btn active" data-filter="all">전체</button>
     <button class="filter-btn f-gold"   data-filter="gold">  <span class="color-dot cd-gold"></span>개인의뢰</button>
+    <button class="filter-btn f-teal"   data-filter="teal">  <span class="color-dot cd-teal" style="background:var(--chip-teal-bg);"></span>원격/방송룸</button>
     <button class="filter-btn f-blue"   data-filter="blue">  <span class="color-dot cd-blue"></span>사내업무</button>
     <button class="filter-btn f-red"    data-filter="red">   <span class="color-dot cd-red"></span>휴가관련</button>
     <button class="filter-btn f-green"  data-filter="green"> <span class="color-dot cd-green"></span>촬영관련</button>
@@ -506,7 +508,7 @@ if (isAuth()) {
 }
 
 /* ── CONSTANTS ── */
-const TYPE_LABELS    = { gold:'개인의뢰', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방' };
+const TYPE_LABELS    = { gold:'개인의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방' };
 const SPECIAL_LABELS = { car:'🚗차량', brief:'💼제품', 'return':'←당김', group:'👥2인', urgent:'🚨긴급', ladder:'🪜사다리' };
 const SCHED_LABELS   = { suggest:'💬제안', hope:'🙏희망', target:'🎯목표' };
 
@@ -646,6 +648,7 @@ function applyFilters() {
 function updateStats() {
   document.getElementById('st-total').textContent  = allEvents.length;
   document.getElementById('st-gold').textContent   = allEvents.filter(e=>(e.color||'gold')==='gold').length;
+  document.getElementById('st-teal').textContent  = allEvents.filter(e=>e.color==='teal').length;
   document.getElementById('st-blue').textContent   = allEvents.filter(e=>e.color==='blue').length;
   document.getElementById('st-red').textContent    = allEvents.filter(e=>e.color==='red').length;
   document.getElementById('st-green').textContent  = allEvents.filter(e=>e.color==='green').length;
@@ -764,6 +767,16 @@ function openDetail(ev) {
   }
 
   /* 미팅/내방(purple) 전용 */
+  if (c === 'teal' && ev.teal) {
+    const t = ev.teal;
+    const modeLabel = t.mode === 'studio' ? '방송룸 이용' : '원격';
+    const tealFields = [['유형', modeLabel]];
+    if (t.name)     tealFields.push(['이름/닉네임', t.name]);
+    if (t.platform) tealFields.push(['방송 플랫폼', t.platform]);
+    if (t.content)  tealFields.push(['의뢰/이용 내용', t.content]);
+    if (t.desc)     tealFields.push(['상세 설명', t.desc]);
+    body.appendChild(makeSection('원격/방송룸 정보', tealFields));
+  }
   if (c === 'purple') {
     const meetFields = [];
     if (ev.name)    meetFields.push(['담당자/참석자', ev.name]);

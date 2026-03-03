@@ -151,6 +151,8 @@
     --chip-green-text: #08200a;
     --chip-purple-bg: #9b70c8;
     --chip-purple-text: #f0eaff;
+    --chip-teal-bg: #5ab8a8;
+    --chip-teal-text: #042018;
     --chip-single-bg: #303030;
   }
   /* ── LIGHT theme ── */
@@ -175,6 +177,8 @@
     --chip-green-text: #ffffff;
     --chip-purple-bg: #7b50a8;
     --chip-purple-text: #ffffff;
+    --chip-teal-bg: #3a9a8a;
+    --chip-teal-text: #ffffff;
     --chip-single-bg: #e8e2d8;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
@@ -246,6 +250,7 @@
   .filter-btn.active.f-red    { background:rgba(200,122,122,0.15); border-color:var(--chip-red-bg); }
   .filter-btn.active.f-green  { background:rgba(122,200,122,0.15); border-color:var(--chip-green-bg); }
   .filter-btn.active.f-purple { background:rgba(180,122,200,0.15); border-color:var(--chip-purple-bg); }
+  .filter-btn.active.f-teal   { background:rgba(90,184,168,0.15);  border-color:var(--chip-teal-bg); }
   /* 비활성 상태 - dot 흐리게 */
   .filter-btn:not(.active) .filter-dot { opacity:0.25; }
   .filter-btn:not(.active) { opacity:0.55; }
@@ -256,6 +261,7 @@
   .legend-dot.red    { background:#c87a7a; }
   .legend-dot.green  { background:#7ac87a; }
   .legend-dot.purple { background:#9b70c8; }
+  .legend-dot.teal   { background:#5ab8a8; }
 
   .calendar-wrap { padding:20px 32px; }
   .weekdays { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; margin-bottom:4px; }
@@ -350,6 +356,7 @@
   .event-chip.single.color-red    { background:var(--chip-red-bg-soft,    rgba(200,122,122,0.22)); border-left-color:var(--chip-red-bg);    color:var(--text); }
   .event-chip.single.color-green  { background:var(--chip-green-bg-soft,  rgba(122,200,122,0.22)); border-left-color:var(--chip-green-bg);  color:var(--text); }
   .event-chip.single.color-purple { background:var(--chip-purple-bg-soft, rgba(155,112,200,0.22)); border-left-color:var(--chip-purple-bg); color:var(--text); }
+  .event-chip.single.color-teal   { background:var(--chip-teal-bg-soft,   rgba(90,184,168,0.22)); border-left-color:var(--chip-teal-bg);   color:var(--text); }
 
   .span-chip-overlay {
     position:absolute;
@@ -379,6 +386,7 @@
   .span-chip.color-red   { background:var(--chip-red-bg);   color:var(--chip-red-text); font-weight:600; }
   .span-chip.color-green  { background:var(--chip-green-bg);  color:var(--chip-green-text);  font-weight:600; }
   .span-chip.color-purple { background:var(--chip-purple-bg); color:var(--chip-purple-text); font-weight:600; }
+  .span-chip.color-teal   { background:var(--chip-teal-bg);   color:var(--chip-teal-text);   font-weight:600; }
   .span-chip.is-start { border-radius:4px 0 0 4px; }
   .span-chip.is-end   { border-radius:0 4px 4px 0; }
   .span-chip.is-solo  { border-radius:4px; }
@@ -466,11 +474,13 @@
   .day-popover-item.color-red   { border-left-color:var(--chip-red-bg);   background:rgba(200,122,122,0.08); }
   .day-popover-item.color-green  { border-left-color:var(--chip-green-bg);  background:rgba(122,200,122,0.08); }
   .day-popover-item.color-purple { border-left-color:var(--chip-purple-bg); background:rgba(155,112,200,0.08); }
+  .day-popover-item.color-teal   { border-left-color:var(--chip-teal-bg);   background:rgba(90,184,168,0.08); }
   .day-popover-item:hover.color-gold  { background:rgba(200,176,138,0.18); }
   .day-popover-item:hover.color-blue  { background:rgba(138,180,200,0.18); }
   .day-popover-item:hover.color-red   { background:rgba(200,122,122,0.18); }
   .day-popover-item:hover.color-green  { background:rgba(122,200,122,0.18); }
   .day-popover-item:hover.color-purple { background:rgba(155,112,200,0.18); }
+  .day-popover-item:hover.color-teal   { background:rgba(90,184,168,0.18); }
   .day-popover-item-title { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .day-popover-item-time { font-family:var(--font-mono); font-size:11px; color:var(--text-muted); flex-shrink:0; }
 
@@ -495,6 +505,7 @@
   .modal-strip.color-blue  { background:var(--accent2); }
   .modal-strip.color-red   { background:var(--red); }
   .modal-strip.color-green { background:var(--green); }
+  .modal-strip.color-teal  { background:var(--chip-teal-bg); }
 
   .type-badge {
     display:inline-flex; align-items:center; gap:5px;
@@ -507,6 +518,7 @@
   .type-badge.red   { color:#c87a7a; border-color:rgba(200,122,122,0.35); background:rgba(200,122,122,0.08); }
   .type-badge.green  { color:#7ac87a; border-color:rgba(122,200,122,0.35); background:rgba(122,200,122,0.08); }
   .type-badge.purple { color:#9b70c8; border-color:rgba(155,112,200,0.35); background:rgba(155,112,200,0.08); }
+  .type-badge.teal   { color:#5ab8a8; border-color:rgba(90,184,168,0.35);  background:rgba(90,184,168,0.08); }
 
   .modal-header { padding:20px 28px 0; display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
   .modal-date-badge { font-family:var(--font-mono); font-size:11px; color:var(--accent); letter-spacing:0.15em; }
@@ -655,6 +667,8 @@
   .color-dot.active[data-color="red"]    { background:rgba(200,122,122,0.35); border-color:#c87a7a; }
   .color-dot.active[data-color="green"]  { background:rgba(122,200,122,0.35); border-color:#7ac87a; }
   .color-dot.active[data-color="purple"] { background:rgba(155,112,200,0.35); border-color:#9b70c8; }
+  .color-dot[data-color="teal"]   { background:rgba(90,184,168,0.18); color:#5ab8a8; }
+  .color-dot.active[data-color="teal"]   { background:rgba(90,184,168,0.35); border-color:#5ab8a8; }
   .color-dot:hover { filter:brightness(1.15); }
   .color-dot.locked-dot { pointer-events:none; opacity:0.5; }
 
@@ -899,6 +913,7 @@
     .mv-event-card.color-red   { border-left-color:var(--chip-red-bg); }
     .mv-event-card.color-green  { border-left-color:var(--chip-green-bg); }
     .mv-event-card.color-purple { border-left-color:var(--chip-purple-bg); }
+    .mv-event-card.color-teal   { border-left-color:var(--chip-teal-bg); }
     .mv-event-card-body { flex:1; min-width:0; }
     .mv-event-title { font-size:14px; font-weight:600; color:var(--text); white-space:normal; overflow:hidden; word-break:break-word; margin-bottom:3px; }
     .mv-event-meta { font-size:11px; color:var(--text-muted); display:flex; gap:8px; flex-wrap:wrap; }
@@ -908,6 +923,7 @@
     .mv-event-badge.red    { background:rgba(200,122,122,0.2); color:var(--red); }
     .mv-event-badge.green  { background:rgba(122,200,122,0.2); color:var(--green); }
     .mv-event-badge.purple { background:rgba(155,112,200,0.2); color:var(--chip-purple-bg); }
+    .mv-event-badge.teal   { background:rgba(90,184,168,0.2);  color:var(--chip-teal-bg); }
     .mv-day-nav { display:flex; align-items:center; justify-content:space-between; padding:6px 14px 10px; }
     .mv-day-nav-label { font-size:15px; font-weight:700; color:var(--text); }
     .mv-day-nav-sub { font-size:11px; color:var(--text-muted); font-family:var(--font-mono); }
@@ -970,6 +986,7 @@
 
 <div class="legend" id="filterBar">
   <button class="filter-btn active f-gold"   data-filter="gold">  <span class="filter-dot" id="fd-gold"></span>방문의뢰</button>
+  <button class="filter-btn active f-teal"   data-filter="teal">  <span class="filter-dot" id="fd-teal"></span>원격/방송룸</button>
   <button class="filter-btn active f-blue"   data-filter="blue">  <span class="filter-dot" id="fd-blue"></span>사내업무</button>
   <button class="filter-btn active f-red"    data-filter="red">   <span class="filter-dot" id="fd-red"></span>휴가관련</button>
   <button class="filter-btn active f-green"  data-filter="green"> <span class="filter-dot" id="fd-green"></span>촬영관련</button>
@@ -1047,6 +1064,12 @@
           <span class="color-setting-label">방문의뢰</span>
           <div class="color-setting-swatch" id="swatch-gold">
             <input type="color" id="colorPicker-gold" />
+          </div>
+        </div>
+        <div class="color-setting-row">
+          <span class="color-setting-label">원격/방송룸</span>
+          <div class="color-setting-swatch" id="swatch-teal">
+            <input type="color" id="colorPicker-teal" />
           </div>
         </div>
         <div class="color-setting-row">
@@ -1284,6 +1307,7 @@
         <div class="field-label">의뢰 유형 / 색상</div>
         <div class="color-row" id="colorRow">
           <div class="color-dot" data-color="gold">방문의뢰</div>
+          <div class="color-dot" data-color="teal">원격/방송룸</div>
           <div class="color-dot" data-color="blue">사내업무</div>
           <div class="color-dot" data-color="red">휴가관련</div>
           <div class="color-dot" data-color="green">촬영관련</div>
@@ -1314,6 +1338,59 @@
         <div style="margin-top:12px" class="field-group">
           <label class="field-label" for="modalDesc">상세 설명</label>
           <textarea class="field-textarea" id="modalDesc" placeholder="상세 내용을 입력하세요"></textarea>
+        </div>
+      </div>
+
+      <div id="tealTemplate" style="display:none; flex-direction:column; gap:14px;">
+        <!-- 원격/방송룸 모드 선택 -->
+        <div class="field-group">
+          <label class="field-label">유형 선택</label>
+          <div class="radio-group" id="teal_mode_group">
+            <div class="radio-btn active" data-val="remote">🖥 원격</div>
+            <div class="radio-btn" data-val="studio">🎙 방송룸 이용</div>
+          </div>
+        </div>
+
+        <!-- 원격 전용 필드 -->
+        <div id="teal_remote_fields">
+          <div class="field-row">
+            <div class="field-group">
+              <label class="field-label" for="t_remote_name">원격 대상자 이름(닉네임)</label>
+              <input class="field-input" id="t_remote_name" placeholder="이름 또는 닉네임" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="t_remote_platform">방송 플랫폼</label>
+              <input class="field-input" id="t_remote_platform" placeholder="유튜브, 아프리카TV 등" />
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="t_remote_content">원격 의뢰 내용</label>
+            <textarea class="field-textarea" id="t_remote_content" placeholder="원격으로 진행할 내용을 입력하세요"></textarea>
+          </div>
+        </div>
+
+        <!-- 방송룸 전용 필드 -->
+        <div id="teal_studio_fields" style="display:none;">
+          <div class="field-row">
+            <div class="field-group">
+              <label class="field-label" for="t_studio_name">방송룸 이용자 이름(닉네임)</label>
+              <input class="field-input" id="t_studio_name" placeholder="이름 또는 닉네임" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="t_studio_platform">방송 플랫폼</label>
+              <input class="field-input" id="t_studio_platform" placeholder="유튜브, 아프리카TV 등" />
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="t_studio_content">방송룸 이용 내용</label>
+            <textarea class="field-textarea" id="t_studio_content" placeholder="방송룸 이용 내용을 입력하세요"></textarea>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="field-group">
+          <label class="field-label" for="t_desc">상세 설명</label>
+          <textarea class="field-textarea" id="t_desc" placeholder="추가 상세 내용을 입력하세요"></textarea>
         </div>
       </div>
 
@@ -1485,18 +1562,10 @@
   <div class="log-modal">
     <div class="log-modal-header">
       <div class="log-modal-title">📋 변경 로그</div>
-      <span id="logTotalCount" style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono);margin-left:6px;"></span>
       <button class="log-modal-close" id="logOverlayClose">✕</button>
     </div>
     <div class="log-modal-body" id="logModalBody">
       <div class="log-loading">로딩 중…</div>
-    </div>
-    <div class="log-pagination" id="logPagination" style="display:none;">
-      <button class="log-pg-btn" id="logPgFirst" title="처음">«</button>
-      <button class="log-pg-btn" id="logPgPrev"  title="이전">‹</button>
-      <div id="logPgNums" style="display:flex;gap:4px;"></div>
-      <button class="log-pg-btn" id="logPgNext"  title="다음">›</button>
-      <button class="log-pg-btn" id="logPgLast"  title="마지막">»</button>
     </div>
   </div>
 </div>
@@ -1538,7 +1607,7 @@
 .log-modal {
   background:var(--surface); border:1px solid var(--border); border-radius:16px;
   width:100%; max-width:520px; max-height:80vh; display:flex; flex-direction:column;
-  animation:modalIn 0.2s ease; overflow:hidden;
+  animation:modalIn 0.2s ease;
 }
 @keyframes modalIn { from{opacity:0;transform:translateY(12px) scale(0.97)} to{opacity:1;transform:none} }
 .log-modal-header {
@@ -1555,77 +1624,47 @@
   display:flex; align-items:center; justify-content:center; transition:all 0.15s;
 }
 .log-modal-close:hover { border-color:var(--red); color:var(--red); }
-.log-modal-body { overflow-y:auto; padding:16px 22px 12px; display:flex; flex-direction:column; gap:12px; flex:1; min-height:0; }
+.log-modal-body { overflow-y:auto; padding:16px 22px 20px; display:flex; flex-direction:column; gap:12px; }
 .log-entry {
   background:var(--surface2); border-radius:10px; border:1px solid var(--border);
-  overflow:hidden; flex-shrink:0;
+  overflow:hidden;
 }
 .log-entry-header {
   display:flex; align-items:center; gap:10px;
   padding:10px 14px; border-bottom:1px solid var(--border);
   background:rgba(255,255,255,0.02);
-  flex-wrap:wrap;
 }
 .log-type-badge {
   font-family:var(--font-mono); font-size:10px; font-weight:700;
   letter-spacing:0.12em; padding:3px 8px; border-radius:4px; text-transform:uppercase;
-  flex-shrink:0;
 }
 .log-type-create { background:rgba(136,212,136,0.2); color:var(--green); border:1px solid rgba(136,212,136,0.3); }
 .log-type-update { background:rgba(144,188,212,0.2); color:var(--accent2); border:1px solid rgba(144,188,212,0.3); }
 .log-user {
   font-family:var(--font-mono); font-size:12px; color:var(--accent); font-weight:600;
-  flex-shrink:0;
 }
 .log-time {
   font-family:var(--font-mono); font-size:11px; color:var(--text-muted); margin-left:auto;
-  white-space:nowrap;
 }
-.log-changes { padding:10px 14px; display:flex; flex-direction:column; gap:8px; }
-.log-change-row { display:grid; grid-template-columns:80px 1fr; gap:8px; align-items:start; }
+.log-changes { padding:10px 14px; display:flex; flex-direction:column; gap:6px; }
+.log-change-row { display:grid; grid-template-columns:90px 1fr; gap:8px; align-items:start; }
 .log-field-name {
-  font-family:var(--font-mono); font-size:10px; letter-spacing:0.08em;
-  color:var(--text-muted); text-transform:uppercase; padding-top:4px;
-  word-break:keep-all; line-height:1.5;
+  font-family:var(--font-mono); font-size:10px; letter-spacing:0.1em;
+  color:var(--text-muted); text-transform:uppercase; padding-top:2px;
 }
-.log-diff { display:flex; flex-direction:column; gap:4px; }
+.log-diff { display:flex; flex-direction:column; gap:3px; }
 .log-before {
   font-size:12px; color:var(--red); background:rgba(212,136,136,0.1);
-  border-radius:4px; padding:4px 8px; text-decoration:line-through; opacity:0.8;
-  white-space:pre-wrap; word-break:break-word; line-height:1.5;
+  border-radius:4px; padding:2px 7px; text-decoration:line-through; opacity:0.8;
+  word-break:break-all;
 }
 .log-after {
   font-size:12px; color:var(--green); background:rgba(136,212,136,0.1);
-  border-radius:4px; padding:4px 8px;
-  white-space:pre-wrap; word-break:break-word; line-height:1.5;
+  border-radius:4px; padding:2px 7px;
+  word-break:break-all;
 }
 .log-empty { text-align:center; padding:40px 0; color:var(--text-muted); font-size:13px; }
 .log-loading { text-align:center; padding:40px 0; color:var(--text-muted); font-size:13px; }
-/* 페이지네이션 */
-.log-pagination {
-  display:flex; align-items:center; justify-content:center; gap:8px;
-  padding:12px 22px 16px; border-top:1px solid var(--border); flex-shrink:0;
-}
-.log-pg-btn {
-  background:none; border:1px solid var(--border); color:var(--text-muted);
-  width:30px; height:30px; border-radius:7px; cursor:pointer; font-size:13px;
-  display:flex; align-items:center; justify-content:center;
-  transition:all 0.15s; font-family:var(--font-main);
-}
-.log-pg-btn:hover:not(:disabled) { border-color:var(--accent); color:var(--accent); }
-.log-pg-btn:disabled { opacity:0.3; cursor:default; }
-.log-pg-info {
-  font-family:var(--font-mono); font-size:11px; color:var(--text-muted);
-  min-width:80px; text-align:center;
-}
-.log-pg-num {
-  background:none; border:1px solid transparent; color:var(--text-muted);
-  width:28px; height:28px; border-radius:6px; cursor:pointer; font-size:11px;
-  font-family:var(--font-mono); display:flex; align-items:center; justify-content:center;
-  transition:all 0.15s;
-}
-.log-pg-num:hover { border-color:var(--accent); color:var(--accent); }
-.log-pg-num.active { border-color:var(--accent); color:var(--accent); background:rgba(212,188,150,.12); font-weight:700; }
 .btn-log {
   background:none; border:1px solid var(--border); color:var(--text-muted);
   padding:7px 14px; border-radius:8px; font-size:12px; font-weight:600;
@@ -1781,7 +1820,7 @@ else { showAuth(); updateLockUI(); setTimeout(() => document.getElementById('aut
 
 
 const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
-const TYPE_LABELS = { gold:'방문의뢰', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방' };
+const TYPE_LABELS = { gold:'방문의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방' };
 
 const KR_HOLIDAYS = {
   '2024-01-01':'1월 1일','2024-02-09':'설날 전날','2024-02-10':'설날','2024-02-11':'설날 다음 날','2024-02-12':'대체공휴일(설날)',
@@ -2132,14 +2171,16 @@ function setColor(c){
   badge.textContent='● '+TYPE_LABELS[c];
 
   const isGold   = c==='gold';
+  const isTeal   = c==='teal';
   const isBlue   = c==='blue';
   const isRed    = c==='red';
 
-  /* gold: goldTemplate 표시, 나머지: commonFields */
-  document.getElementById('commonFields').style.display  = isGold?'none':'flex';
+  /* gold: goldTemplate, teal: tealTemplate, 나머지: commonFields */
+  document.getElementById('commonFields').style.display  = (isGold||isTeal)?'none':'flex';
   document.getElementById('commonFields').style.flexDirection='column';
   document.getElementById('goldTemplate').style.display  = isGold?'flex':'none';
-  document.getElementById('generalAttachSection').style.display = isGold?'none':'block';
+  document.getElementById('tealTemplate').style.display  = isTeal?'flex':'none';
+  document.getElementById('generalAttachSection').style.display = (isGold||isRed)?'none':'block';
 
   /* 사내업무(blue), 휴가관련(red): 일정관련옵션 + 특수옵션 숨김 */
   const hideSchedSpecial = isBlue || isRed;
@@ -2284,6 +2325,83 @@ document.getElementById('g_order_group').addEventListener('click', e => {
   g.querySelectorAll('.radio-btn').forEach(btn => btn.addEventListener('click', updateTopicEtc));
 })();
 
+
+/* ──────────────────────────────────────────
+   원격/방송룸(teal) 폼 로직
+──────────────────────────────────────────── */
+function initTealForm() {
+  const modeGroup = document.getElementById('teal_mode_group');
+  if (!modeGroup || modeGroup._tealInit) return;
+  modeGroup._tealInit = true;
+  modeGroup.addEventListener('click', e => {
+    const btn = e.target.closest('.radio-btn');
+    if (!btn) return;
+    modeGroup.querySelectorAll('.radio-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const mode = btn.dataset.val;
+    document.getElementById('teal_remote_fields').style.display = mode === 'remote' ? '' : 'none';
+    document.getElementById('teal_studio_fields').style.display = mode === 'studio' ? '' : 'none';
+  });
+}
+initTealForm();
+
+function resetTealFields() {
+  ['t_remote_name','t_remote_platform','t_remote_content',
+   't_studio_name','t_studio_platform','t_studio_content','t_desc'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  /* 모드 원격으로 초기화 */
+  const mg = document.getElementById('teal_mode_group');
+  if (mg) {
+    mg.querySelectorAll('.radio-btn').forEach(b => b.classList.remove('active'));
+    const first = mg.querySelector('[data-val="remote"]');
+    if (first) first.classList.add('active');
+  }
+  document.getElementById('teal_remote_fields').style.display = '';
+  document.getElementById('teal_studio_fields').style.display = 'none';
+}
+
+function collectTealFields() {
+  const mg   = document.getElementById('teal_mode_group');
+  const mode = mg?.querySelector('.radio-btn.active')?.dataset?.val || 'remote';
+  const data = { mode };
+  if (mode === 'remote') {
+    data.name     = document.getElementById('t_remote_name')?.value.trim()    || '';
+    data.platform = document.getElementById('t_remote_platform')?.value.trim()|| '';
+    data.content  = document.getElementById('t_remote_content')?.value.trim() || '';
+  } else {
+    data.name     = document.getElementById('t_studio_name')?.value.trim()    || '';
+    data.platform = document.getElementById('t_studio_platform')?.value.trim()|| '';
+    data.content  = document.getElementById('t_studio_content')?.value.trim() || '';
+  }
+  data.desc = document.getElementById('t_desc')?.value.trim() || '';
+  return data;
+}
+
+function loadTealFields(ev) {
+  const t = ev.teal || {};
+  const mode = t.mode || 'remote';
+  /* 모드 버튼 설정 */
+  const mg = document.getElementById('teal_mode_group');
+  if (mg) {
+    mg.querySelectorAll('.radio-btn').forEach(b => b.classList.remove('active'));
+    const btn = mg.querySelector(`[data-val="${mode}"]`);
+    if (btn) btn.classList.add('active');
+  }
+  document.getElementById('teal_remote_fields').style.display = mode === 'remote' ? '' : 'none';
+  document.getElementById('teal_studio_fields').style.display = mode === 'studio' ? '' : 'none';
+  if (mode === 'remote') {
+    const el1=document.getElementById('t_remote_name');     if(el1) el1.value=t.name||'';
+    const el2=document.getElementById('t_remote_platform'); if(el2) el2.value=t.platform||'';
+    const el3=document.getElementById('t_remote_content');  if(el3) el3.value=t.content||'';
+  } else {
+    const el1=document.getElementById('t_studio_name');     if(el1) el1.value=t.name||'';
+    const el2=document.getElementById('t_studio_platform'); if(el2) el2.value=t.platform||'';
+    const el3=document.getElementById('t_studio_content');  if(el3) el3.value=t.content||'';
+  }
+  const descEl=document.getElementById('t_desc'); if(descEl) descEl.value=t.desc||'';
+}
+
 function resetGoldFields(){
   ['g_name','g_phone','g_platform','g_equipment','g_req_topic','g_req_detail','g_special','g_balance_amount','g_estimate_amount'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
@@ -2417,7 +2535,8 @@ function openModal(evIdx){
   });
   currentAttachments=ev.attachments?JSON.parse(JSON.stringify(ev.attachments)):[];
   currentColor=ev.color||'gold'; isLocked=ev.locked||false;
-  /* setColor 전에 goldTemplate/commonFields 초기화 (의뢰유형 버그 수정) */
+  /* setColor 전에 goldTemplate/commonFields/tealTemplate 초기화 */
+  resetTealFields();
   document.getElementById('goldTemplate').style.display='none';
   document.getElementById('commonFields').style.display='none';
   setColor(currentColor); setAllDay(ev.allDay!==false);
@@ -2502,6 +2621,7 @@ async function saveEvent(){
       updatedAt:serverTimestamp(),
     };
     if (currentColor==='gold') evData.gold=collectGoldTextFields();
+    if (currentColor==='teal') { const td=collectTealFields(); evData.teal=td; evData.desc=td.desc||evData.desc; }
 
     /* ── 수정 시 변경 내역 계산 ── */
     const prevEv = isNew ? null : events.find(e=>e._id===editingId);
@@ -2561,7 +2681,7 @@ const GOLD_FIELD_LABELS = {
   delivery:'수령 방법', balance:'잔금 여부', balance_amount:'잔금 금액',
   estimate_amount:'견적 총액',
 };
-const COLOR_LABELS = {gold:'개인의뢰', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방'};
+const COLOR_LABELS = {gold:'개인의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방'};
 const SPECIAL_LABELS_LOG = { car:'🚗 차량', brief:'💼 제품', return:'← 반납', group:'👥 2인', urgent:'🚨 긴급', ladder:'▤ 사다리' };
 const SCHED_LABELS_LOG   = { suggest:'💬 제안', hope:'🙏 희망', target:'🎯 목표' };
 
@@ -2591,6 +2711,7 @@ function calcChanges(prev, next) {
 
     let pvDisp = pv, nvDisp = nv;
     if (f==='color')        { pvDisp=COLOR_LABELS[pv]||pv;  nvDisp=COLOR_LABELS[nv]||nv; }
+    if (f==='teal')         { pvDisp=JSON.stringify(pv); nvDisp=JSON.stringify(nv); }
     if (f==='allDay')       { pvDisp=pv==='true'?'종일':'시간지정'; nvDisp=nv==='true'?'종일':'시간지정'; }
     if (f==='schedOpt')     { pvDisp=SCHED_LABELS_LOG[pv]||pv||'(없음)'; nvDisp=SCHED_LABELS_LOG[nv]||nv||'(없음)'; }
     if (f==='locked')       { pvDisp=pv==='true'?'잠금':'해제'; nvDisp=nv==='true'?'잠금':'해제'; }
@@ -2912,6 +3033,7 @@ document.getElementById('lockBtn').addEventListener('click', async ()=>{
         specialOpts:[...specialOpts], updatedAt:serverTimestamp(),
       };
       if (currentColor==='gold') evData.gold=collectGoldTextFields();
+    if (currentColor==='teal') { const td=collectTealFields(); evData.teal=td; evData.desc=td.desc||evData.desc; }
       await setDoc(doc(db,'events',docId), evData);
       editingId=docId;
       document.getElementById('deleteBtn').style.display='';
@@ -3134,7 +3256,7 @@ let _modalSnapshot = null;  // 모달 열릴 때 찍은 스냅샷
 let _confirmCallback = null; // 확인 후 실행할 함수
 
 function _takeSnapshot() {
-  const ids = ['modalTitle','modalLocation','modalName','modalAddress','modalDesc',
+  const ids = ['modalTitle','modalLocation','modalName','modalAddress','modalDesc','t_remote_name','t_remote_platform','t_remote_content','t_studio_name','t_studio_platform','t_studio_content','t_desc',
     'startDate','endDate','startTime','endTime',
     'g_name','g_phone','g_platform','g_topic_etc','g_equipment',
     'g_req_topic','g_req_detail','g_special','g_balance_amount',
@@ -3160,7 +3282,7 @@ function _takeSnapshot() {
 
 function _isDirty() {
   if (!_modalSnapshot) return false;
-  const ids = ['modalTitle','modalLocation','modalName','modalAddress','modalDesc',
+  const ids = ['modalTitle','modalLocation','modalName','modalAddress','modalDesc','t_remote_name','t_remote_platform','t_remote_content','t_studio_name','t_studio_platform','t_studio_content','t_desc',
     'startDate','endDate','startTime','endTime',
     'g_name','g_phone','g_platform','g_topic_etc','g_equipment',
     'g_req_topic','g_req_detail','g_special','g_balance_amount',
@@ -3225,99 +3347,12 @@ document.getElementById('logOverlay').addEventListener('click', e => {
     document.getElementById('logOverlay').classList.remove('open');
 });
 
-/* ── 변경 로그 페이지네이션 상태 ── */
-let _logAllData = [];
-let _logPage    = 1;
-const LOG_PER_PAGE = 5;
-
-function renderLogPage(page) {
-  _logPage = page;
-  const body  = document.getElementById('logModalBody');
-  const pgBar = document.getElementById('logPagination');
-  const total = _logAllData.length;
-  const totalPages = Math.ceil(total / LOG_PER_PAGE);
-  const start = (page - 1) * LOG_PER_PAGE;
-  const slice = _logAllData.slice(start, start + LOG_PER_PAGE);
-
-  body.innerHTML = '';
-  body.scrollTop = 0;
-
-  slice.forEach(log => {
-    const ts = log.createdAt || log.updatedAt;
-    const timeStr = ts?.toDate ? ts.toDate().toLocaleString('ko-KR', {
-      year:'numeric', month:'2-digit', day:'2-digit',
-      hour:'2-digit', minute:'2-digit'
-    }) : '—';
-
-    const entry = document.createElement('div');
-    entry.className = 'log-entry';
-    const isCreate = log.type === 'create';
-    entry.innerHTML = `
-      <div class="log-entry-header">
-        <span class="log-type-badge ${isCreate ? 'log-type-create' : 'log-type-update'}">${isCreate ? '생성' : '수정'}</span>
-        <span class="log-user">👤 ${log.userId || '(알 수 없음)'}</span>
-        <span class="log-time">${timeStr}</span>
-      </div>`;
-
-    if (!isCreate && log.changes && log.changes.length > 0) {
-      const changesEl = document.createElement('div');
-      changesEl.className = 'log-changes';
-      log.changes.forEach(ch => {
-        const row = document.createElement('div');
-        row.className = 'log-change-row';
-        row.innerHTML = `
-          <span class="log-field-name">${ch.field}</span>
-          <div class="log-diff">
-            <span class="log-before">${escapeHtml(ch.before)||'(없음)'}</span>
-            <span class="log-after">${escapeHtml(ch.after)||'(없음)'}</span>
-          </div>`;
-        changesEl.appendChild(row);
-      });
-      entry.appendChild(changesEl);
-    }
-    body.appendChild(entry);
-  });
-
-  /* 페이지네이션 바 */
-  if (totalPages <= 1) {
-    pgBar.style.display = 'none';
-    return;
-  }
-  pgBar.style.display = 'flex';
-  document.getElementById('logPgFirst').disabled = page <= 1;
-  document.getElementById('logPgPrev').disabled  = page <= 1;
-  document.getElementById('logPgNext').disabled  = page >= totalPages;
-  document.getElementById('logPgLast').disabled  = page >= totalPages;
-
-  /* 페이지 번호 버튼 (최대 5개) */
-  const numsEl = document.getElementById('logPgNums');
-  numsEl.innerHTML = '';
-  const range = 2;
-  let pgStart = Math.max(1, page - range);
-  let pgEnd   = Math.min(totalPages, page + range);
-  if (pgEnd - pgStart < 4) {
-    pgStart = Math.max(1, pgEnd - 4);
-    pgEnd   = Math.min(totalPages, pgStart + 4);
-  }
-  for (let p = pgStart; p <= pgEnd; p++) {
-    const btn = document.createElement('button');
-    btn.className = 'log-pg-num' + (p === page ? ' active' : '');
-    btn.textContent = p;
-    btn.addEventListener('click', () => renderLogPage(p));
-    numsEl.appendChild(btn);
-  }
-}
-
 async function openLogOverlay() {
   if (!editingId) return;
-  const overlay    = document.getElementById('logOverlay');
-  const body       = document.getElementById('logModalBody');
-  const pgBar      = document.getElementById('logPagination');
-  const countLabel = document.getElementById('logTotalCount');
+  const overlay = document.getElementById('logOverlay');
+  const body    = document.getElementById('logModalBody');
   overlay.classList.add('open');
   body.innerHTML = '<div class="log-loading">로딩 중…</div>';
-  pgBar.style.display = 'none';
-  if (countLabel) countLabel.textContent = '';
 
   try {
     const q = query(
@@ -3325,10 +3360,13 @@ async function openLogOverlay() {
       where('eventId', '==', editingId),
       orderBy('createdAt', 'desc')
     );
+    /* createdAt 또는 updatedAt 기준 정렬 — Firestore는 두 필드 혼용 불가,
+       대신 단일 타임스탬프 필드(ts)로 로그 저장하도록 openLogOverlay에서 처리 */
     let snap;
     try {
       snap = await getDocs(q);
     } catch(e) {
+      /* index 미생성 시 fallback: orderBy 없이 가져와서 JS 정렬 */
       snap = await getDocs(query(collection(db, 'eventLogs'), where('eventId', '==', editingId)));
     }
 
@@ -3337,28 +3375,59 @@ async function openLogOverlay() {
       return;
     }
 
-    _logAllData = snap.docs
+    const logs = snap.docs
       .map(d => ({ id: d.id, ...d.data() }))
       .sort((a, b) => {
         const ta = (a.createdAt?.seconds||a.updatedAt?.seconds||0);
         const tb = (b.createdAt?.seconds||b.updatedAt?.seconds||0);
-        return tb - ta;
+        return tb - ta; /* 최신 순 */
       });
 
-    if (countLabel) countLabel.textContent = `(총 ${_logAllData.length}건)`;
-    renderLogPage(1);
+    body.innerHTML = '';
+    logs.forEach(log => {
+      const ts = log.createdAt || log.updatedAt;
+      const timeStr = ts?.toDate ? ts.toDate().toLocaleString('ko-KR', {
+        year:'numeric', month:'2-digit', day:'2-digit',
+        hour:'2-digit', minute:'2-digit'
+      }) : '—';
 
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+
+      const isCreate = log.type === 'create';
+      entry.innerHTML = `
+        <div class="log-entry-header">
+          <span class="log-type-badge ${isCreate ? 'log-type-create' : 'log-type-update'}">
+            ${isCreate ? '생성' : '수정'}
+          </span>
+          <span class="log-user">👤 ${log.userId || '(알 수 없음)'}</span>
+          <span class="log-time">${timeStr}</span>
+        </div>`;
+
+      if (!isCreate && log.changes && log.changes.length > 0) {
+        const changesEl = document.createElement('div');
+        changesEl.className = 'log-changes';
+        log.changes.forEach(ch => {
+          const row = document.createElement('div');
+          row.className = 'log-change-row';
+          row.innerHTML = `
+            <span class="log-field-name">${ch.field}</span>
+            <div class="log-diff">
+              <span class="log-before">${escapeHtml(ch.before)||'(없음)'}</span>
+              <span class="log-after">${escapeHtml(ch.after)||'(없음)'}</span>
+            </div>`;
+          changesEl.appendChild(row);
+        });
+        entry.appendChild(changesEl);
+      }
+
+      body.appendChild(entry);
+    });
   } catch(err) {
     body.innerHTML = `<div class="log-empty">⚠️ 로그 불러오기 실패: ${err.message}</div>`;
     console.error('log fetch error:', err);
   }
 }
-
-/* 페이지네이션 버튼 이벤트 */
-document.getElementById('logPgFirst').addEventListener('click', () => renderLogPage(1));
-document.getElementById('logPgPrev').addEventListener('click',  () => renderLogPage(_logPage - 1));
-document.getElementById('logPgNext').addEventListener('click',  () => renderLogPage(_logPage + 1));
-document.getElementById('logPgLast').addEventListener('click',  () => renderLogPage(Math.ceil(_logAllData.length / LOG_PER_PAGE)));
 
 function escapeHtml(str) {
   return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -3413,6 +3482,7 @@ const DEFAULT_LIGHT_THEME = {
 
 const DEFAULT_COLORS = {
   gold:   '#c8a870',
+  teal:   '#5ab8a8',
   blue:   '#7aaec8',
   red:    '#c87070',
   green:  '#70c870',
@@ -4417,7 +4487,7 @@ document.getElementById('mvDayNext').addEventListener('click',()=>{ mvSelDate=ad
    필터링
 ══════════════════════════════════════ */
 const FILTER_KEY = 'cal_filter_state';
-let activeFilters = new Set(['gold','blue','red','green','purple']);
+let activeFilters = new Set(['gold','teal','blue','red','green','purple']);
 
 function filteredEvents() {
   return events.filter(ev => activeFilters.has(ev.color || 'gold'));
@@ -4444,11 +4514,11 @@ function applyFilterUI() {
 }
 
 function updateFilterDots() {
-  ['gold','blue','red','green','purple'].forEach(key => {
+  ['gold','teal','blue','red','green','purple'].forEach(key => {
     const dot = document.getElementById(`fd-${key}`);
     if (!dot) return;
     const color = getComputedStyle(document.documentElement).getPropertyValue(`--chip-${key}-bg`).trim()
-                  || { gold:'#c8a870', blue:'#7aaec8', red:'#c87070', green:'#70c870', purple:'#9b70c8' }[key];
+                  || { gold:'#c8a870', teal:'#5ab8a8', blue:'#7aaec8', red:'#c87070', green:'#70c870', purple:'#9b70c8' }[key];
     dot.style.background = color;
   });
 }
