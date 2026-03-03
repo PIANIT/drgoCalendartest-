@@ -2948,8 +2948,8 @@ function _showLockedCompact(){
   if (schedFg) schedFg.style.display='none';
 
   /* ── 4. 의뢰유형 field-group 숨기기 ── */
-  /* colorRow는 modal-header로 이동 */
-  if (colorFg) colorFg.style.display='none';
+  /* colorRow는 modal-header로 이동 - field-group 없으므로 처리 불필요 */
+  const colorFg = null; /* colorRow는 modal-header 내에 있어 field-group 없음 */
 
   /* ── 5. 특수옵션 field-group 숨기기 ── */
   const spFg = document.getElementById('specialOpts')?.closest('.field-group');
@@ -2979,7 +2979,7 @@ function _showLockedCompact(){
     cMeta.appendChild(sp);
   });
   /* 삽입 위치: schedFg 또는 colorFg 중 앞쪽 기준 */
-  const insertAnchor = schedFg || colorFg || spFg;
+  const insertAnchor = schedFg || spFg;
   if (insertAnchor) insertAnchor.parentNode.insertBefore(cMeta, insertAnchor);
 }
 

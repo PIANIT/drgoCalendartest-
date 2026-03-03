@@ -1770,6 +1770,136 @@ function initApp(){
     document.getElementById(id).addEventListener('click',e=>{ if(e.target.id===id) document.getElementById(id).classList.remove('open'); });
   });
 }
+
+/* ══════════════════════════════════════
+   색상/테마 설정 패널 (공통)
+══════════════════════════════════════ */
+const THEME_STORAGE_KEY = 'cal_theme_colors';
+const DEFAULT_DARK_THEME  = { accent:'#d4bc96', bg:'#111111', surface:'#1c1c1c', surface2:'#272727' };
+const DEFAULT_LIGHT_THEME = { accent:'#7a5c2e', bg:'#f5f2ed', surface:'#ffffff', surface2:'#f0ece4' };
+
+function applyDarkThemeVars(colors) {
+  const root = document.documentElement;
+  const isDark = !root.classList.contains('light');
+  if (isDark) {
+    if (colors.bg)       root.style.setProperty('--bg',       colors.bg);
+    if (colors.surface)  root.style.setProperty('--surface',  colors.surface);
+    if (colors.surface2) root.style.setProperty('--surface2', colors.surface2);
+    if (colors.accent)   root.style.setProperty('--accent',   colors.accent);
+  }
+  let el = document.getElementById('_dark-theme-override');
+  if (!el) { el = document.createElement('style'); el.id='_dark-theme-override'; document.head.appendChild(el); }
+  el.textContent = `:root:not(.light) {
+    ${colors.bg       ? `--bg: ${colors.bg} !important;`       : ''}
+    ${colors.surface  ? `--surface: ${colors.surface} !important;`  : ''}
+    ${colors.surface2 ? `--surface2: ${colors.surface2} !important;` : ''}
+    ${colors.accent   ? `--accent: ${colors.accent} !important;`   : ''}
+  }`;
+}
+
+function applyLightThemeVars(colors) {
+  let el = document.getElementById('_light-theme-override');
+  if (!el) { el = document.createElement('style'); el.id='_light-theme-override'; document.head.appendChild(el); }
+  el.textContent = `html.light {
+    ${colors.bg       ? `--bg: ${colors.bg} !important;`       : ''}
+    ${colors.surface  ? `--surface: ${colors.surface} !important;`  : ''}
+    ${colors.surface2 ? `--surface2: ${colors.surface2} !important;` : ''}
+    ${colors.accent   ? `--accent: ${colors.accent} !important;`   : ''}
+  }`;
+}
+
+function loadAndApplyThemeColors() {
+  const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || '{}');
+  const dark  = { ...DEFAULT_DARK_THEME,  ...(saved.dark  || {}) };
+  const light = { ...DEFAULT_LIGHT_THEME, ...(saved.light || {}) };
+  applyDarkThemeVars(dark);
+  applyLightThemeVars(light);
+  /* 패널 picker 값 반영 */
+  [['dark-accent','dark','accent'],['dark-bg','dark','bg'],['dark-surface','dark','surface'],['dark-surface2','dark','surface2'],
+   ['light-accent','light','accent'],['light-bg','light','bg'],['light-surface','light','surface'],['light-surface2','light','surface2']
+  ].forEach(([id, theme, key]) => {
+    const colors = theme==='dark' ? dark : light;
+    const picker = document.getElementById(`colorPicker-${id}`);
+    const swatch = document.getElementById(`swatch-${id}`);
+    if (picker && colors[key]) picker.value = colors[key];
+    if (swatch && colors[key]) swatch.style.background = colors[key];
+  });
+}
+
+function saveThemeColor(theme, key, hex) {
+  const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || '{}');
+  if (!saved[theme]) saved[theme] = {};
+  saved[theme][key] = hex;
+  localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(saved));
+  const cur  = { ...DEFAULT_DARK_THEME,  ...(saved.dark  || {}) };
+  const curl = { ...DEFAULT_LIGHT_THEME, ...(saved.light || {}) };
+  if (theme === 'dark')  applyDarkThemeVars(cur);
+  if (theme === 'light') applyLightThemeVars(curl);
+}
+
+function resetDarkTheme() {
+  const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || '{}');
+  delete saved.dark;
+  localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(saved));
+  const el = document.getElementById('_dark-theme-override'); if (el) el.remove();
+  applyDarkThemeVars(DEFAULT_DARK_THEME);
+  ['accent','bg','surface','surface2'].forEach(k => {
+    const p = document.getElementById(`colorPicker-dark-${k}`);
+    const s = document.getElementById(`swatch-dark-${k}`);
+    if (p) p.value = DEFAULT_DARK_THEME[k];
+    if (s) s.style.background = DEFAULT_DARK_THEME[k];
+  });
+}
+function resetLightTheme() {
+  const saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || '{}');
+  delete saved.light;
+  localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(saved));
+  const el = document.getElementById('_light-theme-override'); if (el) el.remove();
+  applyLightThemeVars(DEFAULT_LIGHT_THEME);
+  ['accent','bg','surface','surface2'].forEach(k => {
+    const p = document.getElementById(`colorPicker-light-${k}`);
+    const s = document.getElementById(`swatch-light-${k}`);
+    if (p) p.value = DEFAULT_LIGHT_THEME[k];
+    if (s) s.style.background = DEFAULT_LIGHT_THEME[k];
+  });
+}
+
+function openSettings() {
+  document.getElementById('settingsOverlay')?.classList.add('open');
+  document.getElementById('settingsPanel')?.classList.add('open');
+  loadAndApplyThemeColors();
+}
+function closeSettings() {
+  document.getElementById('settingsOverlay')?.classList.remove('open');
+  document.getElementById('settingsPanel')?.classList.remove('open');
+}
+
+/* 이벤트 바인딩 - DOM 완성 후 실행 */
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('settingsBtn')?.addEventListener('click', openSettings);
+  document.getElementById('settingsCloseBtn')?.addEventListener('click', closeSettings);
+  document.getElementById('settingsOverlay')?.addEventListener('click', closeSettings);
+
+  [['colorPicker-dark-accent','dark','accent'],['colorPicker-dark-bg','dark','bg'],
+   ['colorPicker-dark-surface','dark','surface'],['colorPicker-dark-surface2','dark','surface2'],
+   ['colorPicker-light-accent','light','accent'],['colorPicker-light-bg','light','bg'],
+   ['colorPicker-light-surface','light','surface'],['colorPicker-light-surface2','light','surface2'],
+  ].forEach(([id, theme, key]) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', e => {
+      const sw = document.getElementById(`swatch-${theme}-${key}`);
+      if (sw) sw.style.background = e.target.value;
+      saveThemeColor(theme, key, e.target.value);
+    });
+  });
+
+  document.getElementById('resetDarkBtn')?.addEventListener('click', resetDarkTheme);
+  document.getElementById('resetLightBtn')?.addEventListener('click', resetLightTheme);
+});
+
+/* 초기 색상 적용 (CSS 변수는 DOMContentLoaded 전에도 가능) */
+loadAndApplyThemeColors();
+
 </script>
 
 <div class="settings-overlay" id="settingsOverlay"></div>
