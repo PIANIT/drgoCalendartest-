@@ -861,6 +861,8 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
     <div class="toolbar-right" style="margin-left:auto;">
       <button class="action-btn" id="crmLogCreateBtn">🆕 신규 등록</button>
       <button class="action-btn" id="crmLogDeleteBtn">🗑 삭제 내역</button>
+      <button class="action-btn" id="crmExportBtn">📤 백업</button>
+      <button class="action-btn" id="crmImportBtn">📥 복원</button>
       <button class="action-btn danger" id="crmBulkDeleteBtn" style="display:none;">🗑 선택 삭제</button>
     </div>
   </div>
@@ -892,6 +894,8 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
     <div class="toolbar-right" style="margin-left:auto;">
       <button class="action-btn" id="wikiLogCreateBtn">🆕 신규 등록</button>
       <button class="action-btn" id="wikiLogDeleteBtn">🗑 삭제 내역</button>
+      <button class="action-btn" id="wikiExportBtn">📤 백업</button>
+      <button class="action-btn" id="wikiImportBtn">📥 복원</button>
       <button class="action-btn danger" id="wikiBulkDeleteBtn" style="display:none;">🗑 선택 삭제</button>
     </div>
   </div>
@@ -929,9 +933,24 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
       <span class="modal-id" id="detailId"></span>
       <div style="display:flex;gap:10px;">
         <button class="btn-modal-del" id="detailDeleteBtn">🗑 삭제</button>
+        <button class="action-btn" id="detailChangeLogBtn" style="font-size:12px;padding:6px 12px;">📋 수정내역</button>
         <button class="btn-modal-close" id="detailCloseBtn">닫기</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ═══ CHANGE LOG MODAL ═══ -->
+<div class="log-modal-overlay" id="changeLogOverlay">
+  <div class="log-modal-box">
+    <div class="log-modal-head">
+      <div>
+        <div class="log-modal-head-title">📋 수정내역</div>
+        <div class="log-modal-head-sub" id="changeLogTitle" style="margin-top:2px;font-size:12px;color:var(--text-muted);"></div>
+      </div>
+      <button class="icon-btn" id="changeLogClose">✕</button>
+    </div>
+    <div class="log-modal-body" id="changeLogBody"></div>
   </div>
 </div>
 
@@ -1222,13 +1241,16 @@ function initApp() {
 
   document.getElementById('importConfirmBtn').addEventListener('click', () => {
     if (!importData) return;
+    const sectLabel = {calendar:'캘린더',crm:'CRM',wiki:'위키'}[_importSect]||_importSect;
+    const count = Array.isArray(importData) ? importData.length : Object.keys(importData).length;
     showConfirm(
       '📥 데이터 복원',
-      `${importData.length}개 일정을 복원하시겠습니까?\n동일 ID의 일정은 덮어쓰기 됩니다.`,
+      `${count}개 항목을 복원하시겠습니까? (${sectLabel})\n동일 ID의 항목은 덮어쓰기 됩니다.`,
       async () => {
-        const dataToRestore = importData; // 클로저로 캡처
+        const dataToRestore = importData;
+        const sect = _importSect;
         closeImport();
-        await runImport(dataToRestore, db); // db 명시적 전달
+        await runImportSect(dataToRestore, sect, _backupDb||db);
       },
       '복원 실행', 'import'
     );
@@ -1264,6 +1286,17 @@ function initApp() {
     const id = document.getElementById('detailId').dataset.id;
     if (id) deleteEventById(id, db);
   });
+  document.getElementById('detailChangeLogBtn').addEventListener('click', () => {
+    const id = document.getElementById('detailId').dataset.id;
+    const title = document.getElementById('detailTitle').textContent;
+    if (id) openChangeLog(id, title, db);
+  });
+  document.getElementById('changeLogClose').addEventListener('click', () =>
+    document.getElementById('changeLogOverlay').classList.remove('open'));
+  document.getElementById('changeLogOverlay').addEventListener('click', e => {
+    if(e.target===document.getElementById('changeLogOverlay'))
+      document.getElementById('changeLogOverlay').classList.remove('open');
+  });
 
   /* -- 확인 다이얼로그 -- */
   document.getElementById('confirmCancel').addEventListener('click', () => document.getElementById('confirmOverlay').classList.remove('open'));
@@ -1275,7 +1308,7 @@ function initApp() {
   /* -- ESC -- */
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
-      ['detailOverlay','importOverlay','confirmOverlay','createLogOverlay','deleteLogOverlay','backupModalOverlay'].forEach(id => {
+      ['detailOverlay','importOverlay','confirmOverlay','createLogOverlay','deleteLogOverlay','backupModalOverlay','changeLogOverlay'].forEach(id => {
         document.getElementById(id)?.classList.remove('open');
       });
     }
@@ -1585,6 +1618,70 @@ function openDetail(ev) {
   document.getElementById('detailOverlay').classList.add('open');
 }
 
+
+/* ══════════════════════════════
+   수정내역 모달
+══════════════════════════════ */
+async function openChangeLog(eventId, title, db) {
+  const overlay = document.getElementById('changeLogOverlay');
+  const body    = document.getElementById('changeLogBody');
+  const titleEl = document.getElementById('changeLogTitle');
+  titleEl.textContent = title || eventId;
+  overlay.classList.add('open');
+  body.innerHTML = '<div class="log-empty-msg">로딩 중…</div>';
+
+  try {
+    const q = query(
+      collection(db,'eventLogs'),
+      where('eventId','==',eventId),
+      where('type','==','update'),
+      orderBy('createdAt','desc')
+    );
+    const snap = await getDocs(q);
+    const logs = snap.docs.map(d=>({_id:d.id,...d.data()}));
+
+    if (!logs.length) {
+      body.innerHTML = '<div class="log-empty-msg">수정 내역이 없습니다</div>';
+      return;
+    }
+
+    body.innerHTML = '';
+    logs.forEach(log => {
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+
+      const ts = log.createdAt?.toDate ? log.createdAt.toDate() : new Date(log.createdAt||0);
+      const timeStr = ts.toLocaleString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+      const uid = log.userId || '알 수 없음';
+
+      const head = document.createElement('div');
+      head.className = 'log-entry-header';
+      head.innerHTML = `<div class="log-entry-title">✏️ 수정됨</div><div class="log-entry-meta">${timeStr} · ${uid}</div>`;
+      entry.appendChild(head);
+
+      if (log.changes && log.changes.length > 0) {
+        const changesWrap = document.createElement('div');
+        changesWrap.className = 'log-changes';
+        log.changes.forEach(ch => {
+          const row = document.createElement('div');
+          row.className = 'log-change-row';
+          row.innerHTML = `
+            <span class="log-change-field">${ch.field||'항목'}</span>
+            <span class="log-change-before">${ch.before||'(없음)'}</span>
+            <span class="log-change-arrow">→</span>
+            <span class="log-change-after">${ch.after||'(없음)'}</span>`;
+          changesWrap.appendChild(row);
+        });
+        entry.appendChild(changesWrap);
+      }
+      body.appendChild(entry);
+    });
+  } catch(e) {
+    console.error(e);
+    body.innerHTML = `<div class="log-empty-msg">오류: ${e.message}</div>`;
+  }
+}
+
 function makeSection(title, fields) {
   const sec  = document.createElement('div'); sec.className = 'detail-section';
   const t    = document.createElement('div'); t.className = 'detail-section-title'; t.textContent = title;
@@ -1639,6 +1736,36 @@ function updateBackupEstimate(db) {
   if (selOnly && selectedIds.size > 0) warn.push(`선택 항목: ${selectedIds.size}개`);
   if (withImg) warn.push('🖼 이미지 포함 ZIP 백업');
   document.getElementById('backupEstimate').textContent = warn.join(' · ');
+}
+
+
+/* ══════════════════════════════
+   탭별 단독 백업 / 복원
+══════════════════════════════ */
+async function openSingleBackup(sect, db) {
+  // 해당 섹션만 선택된 상태로 백업 모달 오픈
+  document.querySelectorAll('.backup-sect-btn').forEach(b => {
+    b.classList.toggle('on', b.dataset.sect === sect);
+  });
+  _backupDb = db;
+  document.getElementById('backupModalOverlay').classList.add('open');
+  updateBackupEstimate(db);
+}
+
+/* 탭별 복원 - 섹션을 구분한 import */
+let _importSect = 'calendar';
+async function openSingleImport(sect, db) {
+  _importSect = sect;
+  _backupDb   = db;
+  /* 안내 메시지 업데이트 */
+  const sectLabel = {calendar:'캘린더', crm:'CRM', wiki:'위키'}[sect] || sect;
+  document.querySelector('#importOverlay .modal-event-title').textContent =
+    `JSON 파일에서 복원 (${sectLabel})`;
+  /* 경고문도 섹션별 안내 */
+  const warn = document.querySelector('#importOverlay .modal-body > div:last-of-type');
+  if (warn) warn.innerHTML = `⚠️ <strong>주의:</strong> 복원 시 기존 DB의 동일한 ID를 가진 항목은 덮어쓰기 됩니다. 복원 전 현재 데이터를 백업하는 것을 권장합니다. (대상: <strong>${sectLabel}</strong>)`;
+  closeImport();
+  document.getElementById('importOverlay').classList.add('open');
 }
 
 async function runBackup(db) {
@@ -1849,13 +1976,35 @@ function handleImportFile(file) {
   const reader = new FileReader();
   reader.onload = e => {
     try {
-      const data = JSON.parse(e.target.result);
-      if (!Array.isArray(data)) { showToast('잘못된 JSON 형식입니다', 'error'); return; }
+      const raw = JSON.parse(e.target.result);
+      /* 통합 백업 JSON (object with section keys) vs 단일 배열 */
+      let data, count, preview;
+      const sect = _importSect;
+      if (Array.isArray(raw)) {
+        data    = raw;
+        count   = raw.length;
+        preview = `✓ ${count}개 항목 확인됨`;
+      } else if (raw[sect] && Array.isArray(raw[sect])) {
+        /* 통합 JSON에서 해당 섹션 추출 */
+        data    = raw[sect];
+        count   = data.length;
+        const sectLabel={calendar:'캘린더',crm:'CRM',wiki:'위키'}[sect]||sect;
+        preview = `✓ 통합 백업 파일 — ${sectLabel} ${count}개 항목`;
+      } else if (raw._meta && (raw.calendar||raw.crm||raw.wiki)) {
+        /* 통합 백업인데 해당 섹션 없음 → 안내 */
+        const avail=Object.keys(raw).filter(k=>k!=='_meta').join(', ');
+        showToast(`이 파일에 ${sect} 데이터가 없습니다 (포함: ${avail})`, 'error');
+        return;
+      } else {
+        data    = raw;
+        count   = typeof raw === 'object' ? Object.keys(raw).length : 0;
+        preview = `✓ ${count}개 항목 확인됨`;
+      }
       importData = data;
       const prev = document.getElementById('importPreview');
       prev.style.display = '';
-      prev.textContent = `✓ ${data.length}개 일정 확인됨\n최초 일정: ${data[0]?.startDate||'?'}\n마지막 일정: ${data[data.length-1]?.startDate||'?'}`;
-      document.getElementById('importInfo').textContent = `${file.name} · ${data.length}개`;
+      prev.textContent = preview;
+      document.getElementById('importInfo').textContent = `${file.name} · ${count}개`;
       document.getElementById('importConfirmBtn').disabled = false;
     } catch { showToast('JSON 파싱 오류', 'error'); }
   };
@@ -1868,6 +2017,64 @@ function closeImport() {
   document.getElementById('importConfirmBtn').disabled = true;
   document.getElementById('importFile').value = '';
   importData = null;
+}
+
+
+/* ── 섹션별 복원 함수 ── */
+async function runImportSect(data, sect, db) {
+  if (sect === 'calendar' || !sect) {
+    /* 기존 calendar 복원 */
+    const arr = Array.isArray(data) ? data : (data.calendar||[]);
+    await runImport(arr, db);
+    return;
+  }
+
+  const overlay = document.getElementById('progressOverlay');
+  const bar     = document.getElementById('progressBar');
+  const txt     = document.getElementById('progressText');
+  const title   = document.getElementById('progressTitle');
+  overlay.style.display = 'flex';
+
+  const arr = Array.isArray(data) ? data : (data[sect]||[]);
+  const total = arr.length;
+  title.textContent = `복원 중… (총 ${total}개)`;
+  bar.style.width = '0%'; txt.textContent = `0 / ${total}`;
+
+  let ok=0, fail=0, skip=0;
+
+  for (let i=0; i<arr.length; i++) {
+    const item = arr[i];
+    try {
+      const id = item._id || item.id;
+      if (!id) { skip++; continue; }
+      const { _id, id:_i2, updatedAt, createdAt, _subcollections, ...rawData } = item;
+      const sanitized = stripTimestamps(JSON.parse(JSON.stringify(rawData)));
+      const colName = sect==='crm' ? 'crm_clients' : 'wiki_articles';
+      await setDoc(doc(db, colName, id), { ...sanitized, updatedAt: serverTimestamp() });
+
+      /* CRM 서브컬렉션 복원 */
+      if (sect==='crm' && item._subcollections) {
+        for (const [subName, subDocs] of Object.entries(item._subcollections)) {
+          for (const sd of (subDocs||[])) {
+            const sid=sd._id||sd.id; if(!sid) continue;
+            const {_id:s1,id:s2,updatedAt:s3,createdAt:s4,...sData}=sd;
+            await setDoc(doc(db,`crm_clients/${id}/${subName}`,sid), {
+              ...stripTimestamps(JSON.parse(JSON.stringify(sData))), updatedAt:serverTimestamp()
+            });
+          }
+        }
+      }
+      ok++;
+    } catch(e) { console.error(e); fail++; title.textContent=`⚠️ 오류 (${e.message})`; }
+    const pct=Math.round(((i+1)/total)*100);
+    bar.style.width=pct+'%'; txt.textContent=`${i+1} / ${total}`;
+    if(fail===0) title.textContent=`복원 중… ${pct}%`;
+    if(i%5===0) await new Promise(r=>setTimeout(r,0));
+  }
+
+  overlay.style.display='none';
+  const msg=`복원 완료: ${ok}개 성공`+(fail?`, ${fail}개 실패`:'')+(skip?`, ${skip}개 건너뜀`:'');
+  showToast(msg, ok>0?'success':'error');
 }
 
 async function runImport(data, db) {
@@ -2069,6 +2276,9 @@ function initCrmSection(db) {
 
   document.getElementById('crmLogCreateBtn').addEventListener('click',()=>openLogModal('create','crm',db));
   document.getElementById('crmLogDeleteBtn').addEventListener('click',()=>openLogModal('delete','crm',db));
+  /* CRM 탭 백업/복원 */
+  document.getElementById('crmExportBtn').addEventListener('click',()=> openSingleBackup('crm', db));
+  document.getElementById('crmImportBtn').addEventListener('click',()=> openSingleImport('crm', db));
 
   document.getElementById('crmBulkDeleteBtn').addEventListener('click',()=>{
     if(!_crmSelectedIds.size) return;
@@ -2164,6 +2374,9 @@ function initWikiSection(db) {
 
   document.getElementById('wikiLogCreateBtn').addEventListener('click',()=>openLogModal('create','wiki',db));
   document.getElementById('wikiLogDeleteBtn').addEventListener('click',()=>openLogModal('delete','wiki',db));
+  /* 위키 탭 백업/복원 */
+  document.getElementById('wikiExportBtn').addEventListener('click',()=> openSingleBackup('wiki', db));
+  document.getElementById('wikiImportBtn').addEventListener('click',()=> openSingleImport('wiki', db));
 
   document.getElementById('wikiBulkDeleteBtn').addEventListener('click',()=>{
     if(!_wikiSelectedIds.size) return;
