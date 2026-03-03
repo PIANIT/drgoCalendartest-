@@ -1209,6 +1209,18 @@
             <input type="color" id="colorPicker-light-surface2" />
           </div>
         </div>
+        <div class="color-setting-row">
+          <span class="color-setting-label">텍스트 색상</span>
+          <div class="color-setting-swatch" id="swatch-light-text">
+            <input type="color" id="colorPicker-light-text" />
+          </div>
+        </div>
+        <div class="color-setting-row">
+          <span class="color-setting-label">보조 텍스트</span>
+          <div class="color-setting-swatch" id="swatch-light-text-muted">
+            <input type="color" id="colorPicker-light-text-muted" />
+          </div>
+        </div>
       </div>
       <button class="settings-reset-btn" id="resetLightBtn" style="margin-top:8px;">↺ 라이트 테마 초기화</button>
     </div>
@@ -3774,7 +3786,9 @@ function saveThemeColor(theme, key, hex) {
   const curl = { ...DEFAULT_LIGHT_THEME, ...(saved.light || {}) };
   if (theme === 'dark')  applyDarkThemeVars(cur);
   if (theme === 'light') applyLightThemeVars(curl);
-  const sw = document.getElementById(`swatch-${theme === 'dark' ? 'dark' : 'light'}-${key === 'surface2' ? 'surface2' : key}`);
+  const keyToId = { surface2:'surface2', text:'text', textMuted:'text-muted' };
+  const swKey = keyToId[key] || key;
+  const sw = document.getElementById(`swatch-${theme === 'dark' ? 'dark' : 'light'}-${swKey}`);
   if (sw) sw.style.background = hex;
 }
 
