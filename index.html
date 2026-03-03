@@ -151,8 +151,8 @@
     --chip-green-text: #08200a;
     --chip-purple-bg: #9b70c8;
     --chip-purple-text: #f0eaff;
-    --chip-teal-bg: #5ab8a8;
-    --chip-teal-text: #042018;
+    --chip-teal-bg: #e8894a;
+    --chip-teal-text: #1a0a00;
     --chip-single-bg: #303030;
   }
   /* ── LIGHT theme ── */
@@ -177,7 +177,7 @@
     --chip-green-text: #ffffff;
     --chip-purple-bg: #7b50a8;
     --chip-purple-text: #ffffff;
-    --chip-teal-bg: #3a9a8a;
+    --chip-teal-bg: #c96a20;
     --chip-teal-text: #ffffff;
     --chip-single-bg: #e8e2d8;
   }
@@ -250,7 +250,7 @@
   .filter-btn.active.f-red    { background:rgba(200,122,122,0.15); border-color:var(--chip-red-bg); }
   .filter-btn.active.f-green  { background:rgba(122,200,122,0.15); border-color:var(--chip-green-bg); }
   .filter-btn.active.f-purple { background:rgba(180,122,200,0.15); border-color:var(--chip-purple-bg); }
-  .filter-btn.active.f-teal   { background:rgba(90,184,168,0.15);  border-color:var(--chip-teal-bg); }
+  .filter-btn.active.f-teal   { background:rgba(232,137,74,0.15);  border-color:var(--chip-teal-bg); }
   /* 비활성 상태 - dot 흐리게 */
   .filter-btn:not(.active) .filter-dot { opacity:0.25; }
   .filter-btn:not(.active) { opacity:0.55; }
@@ -261,7 +261,7 @@
   .legend-dot.red    { background:#c87a7a; }
   .legend-dot.green  { background:#7ac87a; }
   .legend-dot.purple { background:#9b70c8; }
-  .legend-dot.teal   { background:#5ab8a8; }
+  .legend-dot.teal   { background:#e8894a; }
 
   .calendar-wrap { padding:20px 32px; }
   .weekdays { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; margin-bottom:4px; }
@@ -356,7 +356,7 @@
   .event-chip.single.color-red    { background:var(--chip-red-bg-soft,    rgba(200,122,122,0.22)); border-left-color:var(--chip-red-bg);    color:var(--text); }
   .event-chip.single.color-green  { background:var(--chip-green-bg-soft,  rgba(122,200,122,0.22)); border-left-color:var(--chip-green-bg);  color:var(--text); }
   .event-chip.single.color-purple { background:var(--chip-purple-bg-soft, rgba(155,112,200,0.22)); border-left-color:var(--chip-purple-bg); color:var(--text); }
-  .event-chip.single.color-teal   { background:var(--chip-teal-bg-soft,   rgba(90,184,168,0.22)); border-left-color:var(--chip-teal-bg);   color:var(--text); }
+  .event-chip.single.color-teal   { background:var(--chip-teal-bg-soft,   rgba(232,137,74,0.22)); border-left-color:var(--chip-teal-bg);   color:var(--text); }
 
   .span-chip-overlay {
     position:absolute;
@@ -474,13 +474,13 @@
   .day-popover-item.color-red   { border-left-color:var(--chip-red-bg);   background:rgba(200,122,122,0.08); }
   .day-popover-item.color-green  { border-left-color:var(--chip-green-bg);  background:rgba(122,200,122,0.08); }
   .day-popover-item.color-purple { border-left-color:var(--chip-purple-bg); background:rgba(155,112,200,0.08); }
-  .day-popover-item.color-teal   { border-left-color:var(--chip-teal-bg);   background:rgba(90,184,168,0.08); }
+  .day-popover-item.color-teal   { border-left-color:var(--chip-teal-bg);   background:rgba(232,137,74,0.08); }
   .day-popover-item:hover.color-gold  { background:rgba(200,176,138,0.18); }
   .day-popover-item:hover.color-blue  { background:rgba(138,180,200,0.18); }
   .day-popover-item:hover.color-red   { background:rgba(200,122,122,0.18); }
   .day-popover-item:hover.color-green  { background:rgba(122,200,122,0.18); }
   .day-popover-item:hover.color-purple { background:rgba(155,112,200,0.18); }
-  .day-popover-item:hover.color-teal   { background:rgba(90,184,168,0.18); }
+  .day-popover-item:hover.color-teal   { background:rgba(232,137,74,0.18); }
   .day-popover-item-title { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .day-popover-item-time { font-family:var(--font-mono); font-size:11px; color:var(--text-muted); flex-shrink:0; }
 
@@ -518,7 +518,7 @@
   .type-badge.red   { color:#c87a7a; border-color:rgba(200,122,122,0.35); background:rgba(200,122,122,0.08); }
   .type-badge.green  { color:#7ac87a; border-color:rgba(122,200,122,0.35); background:rgba(122,200,122,0.08); }
   .type-badge.purple { color:#9b70c8; border-color:rgba(155,112,200,0.35); background:rgba(155,112,200,0.08); }
-  .type-badge.teal   { color:#5ab8a8; border-color:rgba(90,184,168,0.35);  background:rgba(90,184,168,0.08); }
+  .type-badge.teal   { color:#e8894a; border-color:rgba(232,137,74,0.35);  background:rgba(232,137,74,0.08); }
 
   .modal-header { padding:20px 28px 0; display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
   .modal-date-badge { font-family:var(--font-mono); font-size:11px; color:var(--accent); letter-spacing:0.15em; }
@@ -667,8 +667,8 @@
   .color-dot.active[data-color="red"]    { background:rgba(200,122,122,0.35); border-color:#c87a7a; }
   .color-dot.active[data-color="green"]  { background:rgba(122,200,122,0.35); border-color:#7ac87a; }
   .color-dot.active[data-color="purple"] { background:rgba(155,112,200,0.35); border-color:#9b70c8; }
-  .color-dot[data-color="teal"]   { background:rgba(90,184,168,0.18); color:#5ab8a8; }
-  .color-dot.active[data-color="teal"]   { background:rgba(90,184,168,0.35); border-color:#5ab8a8; }
+  .color-dot[data-color="teal"]   { background:rgba(232,137,74,0.18); color:#e8894a; }
+  .color-dot.active[data-color="teal"]   { background:rgba(232,137,74,0.35); border-color:#e8894a; }
   .color-dot:hover { filter:brightness(1.15); }
   .color-dot.locked-dot { pointer-events:none; opacity:0.5; }
 
@@ -923,7 +923,7 @@
     .mv-event-badge.red    { background:rgba(200,122,122,0.2); color:var(--red); }
     .mv-event-badge.green  { background:rgba(122,200,122,0.2); color:var(--green); }
     .mv-event-badge.purple { background:rgba(155,112,200,0.2); color:var(--chip-purple-bg); }
-    .mv-event-badge.teal   { background:rgba(90,184,168,0.2);  color:var(--chip-teal-bg); }
+    .mv-event-badge.teal   { background:rgba(232,137,74,0.2);  color:var(--chip-teal-bg); }
     .mv-day-nav { display:flex; align-items:center; justify-content:space-between; padding:6px 14px 10px; }
     .mv-day-nav-label { font-size:15px; font-weight:700; color:var(--text); }
     .mv-day-nav-sub { font-size:11px; color:var(--text-muted); font-family:var(--font-mono); }
@@ -1352,7 +1352,7 @@
         </div>
 
         <!-- 원격 전용 필드 -->
-        <div id="teal_remote_fields">
+        <div id="teal_remote_fields" style="display:flex; flex-direction:column; gap:12px;">
           <div class="field-row">
             <div class="field-group">
               <label class="field-label" for="t_remote_name">원격 대상자 이름(닉네임)</label>
@@ -1363,14 +1363,14 @@
               <input class="field-input" id="t_remote_platform" placeholder="유튜브, 아프리카TV 등" />
             </div>
           </div>
-          <div class="field-group">
+          <div class="field-group" style="margin-top:4px;">
             <label class="field-label" for="t_remote_content">원격 의뢰 내용</label>
             <textarea class="field-textarea" id="t_remote_content" placeholder="원격으로 진행할 내용을 입력하세요"></textarea>
           </div>
         </div>
 
         <!-- 방송룸 전용 필드 -->
-        <div id="teal_studio_fields" style="display:none;">
+        <div id="teal_studio_fields" style="display:none; flex-direction:column; gap:12px;">
           <div class="field-row">
             <div class="field-group">
               <label class="field-label" for="t_studio_name">방송룸 이용자 이름(닉네임)</label>
@@ -1381,16 +1381,10 @@
               <input class="field-input" id="t_studio_platform" placeholder="유튜브, 아프리카TV 등" />
             </div>
           </div>
-          <div class="field-group">
+          <div class="field-group" style="margin-top:4px;">
             <label class="field-label" for="t_studio_content">방송룸 이용 내용</label>
             <textarea class="field-textarea" id="t_studio_content" placeholder="방송룸 이용 내용을 입력하세요"></textarea>
           </div>
-        </div>
-
-        <div class="divider"></div>
-        <div class="field-group">
-          <label class="field-label" for="t_desc">상세 설명</label>
-          <textarea class="field-textarea" id="t_desc" placeholder="추가 상세 내용을 입력하세요"></textarea>
         </div>
       </div>
 
@@ -2182,14 +2176,14 @@ function setColor(c){
   document.getElementById('tealTemplate').style.display  = isTeal?'flex':'none';
   document.getElementById('generalAttachSection').style.display = (isGold||isRed)?'none':'block';
 
-  /* 사내업무(blue), 휴가관련(red): 일정관련옵션 + 특수옵션 숨김 */
-  const hideSchedSpecial = isBlue || isRed;
+  /* 사내업무(blue), 휴가관련(red), 원격/방송룸(teal): 일정관련옵션 + 특수옵션 숨김 */
+  const hideSchedSpecial = isBlue || isRed || isTeal;
   const schedFg = document.getElementById('scheduleOpts')?.closest('.field-group');
   const spFg    = document.getElementById('specialOpts')?.closest('.field-group');
   if (schedFg) schedFg.style.display = hideSchedSpecial ? 'none' : '';
   if (spFg)    spFg.style.display    = hideSchedSpecial ? 'none' : '';
 
-  /* 사내업무(blue), 휴가관련(red): 이름/담당자 행 숨김 */
+  /* 사내업무(blue), 휴가관련(red), 원격/방송룸(teal): 이름/담당자 행 숨김 */
   const nameFg = document.getElementById('modalName')?.closest('.field-group');
   if (nameFg) nameFg.style.display = hideSchedSpecial ? 'none' : '';
 
@@ -2339,8 +2333,8 @@ function initTealForm() {
     modeGroup.querySelectorAll('.radio-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     const mode = btn.dataset.val;
-    document.getElementById('teal_remote_fields').style.display = mode === 'remote' ? '' : 'none';
-    document.getElementById('teal_studio_fields').style.display = mode === 'studio' ? '' : 'none';
+    document.getElementById('teal_remote_fields').style.display = mode === 'remote' ? 'flex' : 'none';
+    document.getElementById('teal_studio_fields').style.display = mode === 'studio' ? 'flex' : 'none';
   });
 }
 initTealForm();
@@ -2357,7 +2351,7 @@ function resetTealFields() {
     const first = mg.querySelector('[data-val="remote"]');
     if (first) first.classList.add('active');
   }
-  document.getElementById('teal_remote_fields').style.display = '';
+  document.getElementById('teal_remote_fields').style.display = 'flex';
   document.getElementById('teal_studio_fields').style.display = 'none';
 }
 
@@ -2388,8 +2382,8 @@ function loadTealFields(ev) {
     const btn = mg.querySelector(`[data-val="${mode}"]`);
     if (btn) btn.classList.add('active');
   }
-  document.getElementById('teal_remote_fields').style.display = mode === 'remote' ? '' : 'none';
-  document.getElementById('teal_studio_fields').style.display = mode === 'studio' ? '' : 'none';
+  document.getElementById('teal_remote_fields').style.display = mode === 'remote' ? 'flex' : 'none';
+  document.getElementById('teal_studio_fields').style.display = mode === 'studio' ? 'flex' : 'none';
   if (mode === 'remote') {
     const el1=document.getElementById('t_remote_name');     if(el1) el1.value=t.name||'';
     const el2=document.getElementById('t_remote_platform'); if(el2) el2.value=t.platform||'';
@@ -3482,7 +3476,7 @@ const DEFAULT_LIGHT_THEME = {
 
 const DEFAULT_COLORS = {
   gold:   '#c8a870',
-  teal:   '#5ab8a8',
+  teal:   '#e8894a',
   blue:   '#7aaec8',
   red:    '#c87070',
   green:  '#70c870',
@@ -4518,7 +4512,7 @@ function updateFilterDots() {
     const dot = document.getElementById(`fd-${key}`);
     if (!dot) return;
     const color = getComputedStyle(document.documentElement).getPropertyValue(`--chip-${key}-bg`).trim()
-                  || { gold:'#c8a870', teal:'#5ab8a8', blue:'#7aaec8', red:'#c87070', green:'#70c870', purple:'#9b70c8' }[key];
+                  || { gold:'#c8a870', teal:'#e8894a', blue:'#7aaec8', red:'#c87070', green:'#70c870', purple:'#9b70c8' }[key];
     dot.style.background = color;
   });
 }

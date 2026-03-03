@@ -26,7 +26,9 @@
   --chip-red-text: #200808;
   --chip-green-bg: #70c870;
   --chip-green-text: #08200a;
-  --chip-purple-bg: #9b70c8;
+  --chip-teal-bg: #e8894a;
+    --chip-teal-text: #1a0a00;
+    --chip-purple-bg: #9b70c8;
   --chip-purple-text: #f0eaff;
   --font-main: "Malgun Gothic","맑은 고딕",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
   --font-mono: 'DM Mono',"Malgun Gothic","맑은 고딕",monospace;
@@ -40,6 +42,7 @@ html.light {
   --chip-red-bg: #b85858; --chip-red-text: #ffffff;
   --chip-green-bg: #58b058; --chip-green-text: #ffffff;
   --chip-purple-bg: #7b50a8; --chip-purple-text: #ffffff;
+    --chip-teal-bg: #c96a20; --chip-teal-text: #ffffff;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 body { background:var(--bg); color:var(--text); font-family:var(--font-main); min-height:100vh; }
@@ -245,6 +248,7 @@ html.light .date-range-input { color-scheme:light; }
 .ms-blue   { background:var(--chip-blue-bg); }
 .ms-red    { background:var(--chip-red-bg); }
 .ms-green  { background:var(--chip-green-bg); }
+.ms-teal   { background:var(--chip-teal-bg); }
 .ms-purple { background:var(--chip-purple-bg); }
 .modal-header { padding:20px 24px 16px; display:flex; align-items:flex-start; justify-content:space-between; gap:12px; border-bottom:1px solid var(--border); }
 .modal-header-info { flex:1; min-width:0; }
