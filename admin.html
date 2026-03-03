@@ -575,7 +575,7 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
   background:#fff; border-radius:50%; transition:transform 0.2s; pointer-events:none;
 }
 .backup-toggle input:checked ~ .backup-toggle-track .backup-toggle-thumb { transform:translateX(18px); }
-.backup-section-select { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+.backup-section-select { display:none; }
 .backup-sect-btn {
   padding:7px 14px; border-radius:7px; border:1px solid var(--border);
   background:var(--surface2); color:var(--text-muted); font-size:12px;
@@ -1731,9 +1731,9 @@ function stripTimestamps(obj) {
 
 function openBackupModal(section) {
   _backupDb = arguments[1] || _backupDb;
-  /* 현재 섹션 버튼 활성화 */
+  /* 해당 섹션만 on, 나머지 off (UI는 숨겨짐) */
   document.querySelectorAll('.backup-sect-btn').forEach(b => {
-    if (b.dataset.sect === section) b.classList.add('on');
+    b.classList.toggle('on', b.dataset.sect === section);
   });
   document.getElementById('backupModalOverlay').classList.add('open');
   updateBackupEstimate(_backupDb);
