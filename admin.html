@@ -956,6 +956,42 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
   </div>
 </div>
 
+<!-- ═══ CRM DETAIL MODAL ═══ -->
+<div class="modal-overlay" id="crmDetailOverlay">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <div class="modal-header-info">
+        <div class="modal-badge" id="crmDetailBadge"></div>
+        <div class="modal-event-title" id="crmDetailTitle"></div>
+      </div>
+      <button class="modal-close" id="crmDetailClose">✕</button>
+    </div>
+    <div class="modal-body" id="crmDetailBody" style="max-height:65vh;overflow-y:auto;"></div>
+    <div class="modal-footer">
+      <span class="modal-id" id="crmDetailId" style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono);"></span>
+      <button class="btn-modal-close" id="crmDetailCloseBtn">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ WIKI DETAIL MODAL ═══ -->
+<div class="modal-overlay" id="wikiDetailOverlay">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-header">
+      <div class="modal-header-info">
+        <div class="modal-badge" id="wikiDetailBadge" style="background:var(--accent2);color:#fff;"></div>
+        <div class="modal-event-title" id="wikiDetailTitle"></div>
+      </div>
+      <button class="modal-close" id="wikiDetailClose">✕</button>
+    </div>
+    <div class="modal-body" id="wikiDetailBody" style="max-height:65vh;overflow-y:auto;"></div>
+    <div class="modal-footer">
+      <span class="modal-id" id="wikiDetailId" style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono);"></span>
+      <button class="btn-modal-close" id="wikiDetailCloseBtn">닫기</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ IMPORT MODAL ═══ -->
 <div class="modal-overlay" id="importOverlay">
   <div class="modal import-modal">
@@ -1050,6 +1086,7 @@ let importData      = null;
 let dateFrom        = '';
 let dateTo          = '';
 let _backupDb       = null;
+let _db             = null;  /* initApp에서 설정, renderCrm/renderWiki에서 사용 */
 let _importSect     = 'calendar';
 let _crmAll = [], _crmFiltered = [], _crmSelectedIds = new Set(), _crmPage = 1;
 let _wikiAll = [], _wikiFiltered = [], _wikiSelectedIds = new Set(), _wikiPage = 1;
@@ -1237,10 +1274,18 @@ function initApp() {
 
   /* -- 백업 모달 -- */
   _backupDb = db;
+  _db = db;
   document.getElementById('exportBtn').addEventListener('click', () => openBackupModal('calendar'));
 
   /* -- 복원 -- */
   document.getElementById('importBtn').addEventListener('click', () => {
+    _importSect = 'calendar';
+    _backupDb   = db;
+    /* 모달 타이틀/경고문 캘린더용으로 초기화 */
+    const titleEl = document.querySelector('#importOverlay .modal-event-title');
+    if (titleEl) titleEl.textContent = 'JSON 파일에서 복원 (캘린더)';
+    const warn = document.querySelector('#importOverlay .modal-body > div:last-of-type');
+    if (warn) warn.innerHTML = '⚠️ <strong>주의:</strong> 복원 시 기존 DB의 동일한 ID를 가진 항목은 덮어쓰기 됩니다. 복원 전 현재 데이터를 백업하는 것을 권장합니다. (대상: <strong>캘린더</strong>)';
     document.getElementById('importOverlay').classList.add('open');
   });
   document.getElementById('importClose').addEventListener('click', closeImport);
@@ -1325,7 +1370,7 @@ function initApp() {
   /* -- ESC -- */
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
-      ['detailOverlay','importOverlay','confirmOverlay','createLogOverlay','deleteLogOverlay','backupModalOverlay','changeLogOverlay'].forEach(id => {
+      ['detailOverlay','importOverlay','confirmOverlay','createLogOverlay','deleteLogOverlay','backupModalOverlay','changeLogOverlay','crmDetailOverlay','wikiDetailOverlay'].forEach(id => {
         document.getElementById(id)?.classList.remove('open');
       });
     }
@@ -1722,7 +1767,10 @@ function stripTimestamps(obj) {
   if (obj === null || obj === undefined) return obj;
   if (typeof obj !== 'object') return obj;
   if (Array.isArray(obj)) return obj.map(stripTimestamps);
-  if ('seconds' in obj && 'nanoseconds' in obj) return null;
+  /* Firestore Timestamp → ISO 문자열로 보존 (null로 버리지 않음) */
+  if ('seconds' in obj && 'nanoseconds' in obj) {
+    return new Date(obj.seconds * 1000).toISOString();
+  }
   const result = {};
   for (const [k, v] of Object.entries(obj)) result[k] = stripTimestamps(v);
   return result;
@@ -2080,8 +2128,13 @@ async function runImportSect(data, sect, db) {
           for (const sd of (subDocs||[])) {
             const sid=sd._id||sd.id; if(!sid) continue;
             const {_id:s1,id:s2,updatedAt:s3,createdAt:s4,...sData}=sd;
+            const subCreatedAt = s4
+              ? (s4.seconds ? new Date(s4.seconds*1000) : new Date(s4))
+              : null;
             await setDoc(doc(db,`crm_clients/${id}/${subName}`,sid), {
-              ...stripTimestamps(JSON.parse(JSON.stringify(sData))), updatedAt:serverTimestamp()
+              ...stripTimestamps(JSON.parse(JSON.stringify(sData))),
+              updatedAt: serverTimestamp(),
+              createdAt: subCreatedAt || serverTimestamp()
             });
           }
         }
@@ -2121,10 +2174,14 @@ async function runImport(data, db) {
 
       const { _id, id: _id2, updatedAt, createdAt, ...rawData } = ev;
       const sanitized = stripTimestamps(JSON.parse(JSON.stringify(rawData)));
+      const origCreatedAt = createdAt
+        ? (createdAt.seconds ? new Date(createdAt.seconds*1000) : new Date(createdAt))
+        : null;
 
       await setDoc(doc(db, 'events', id), {
         ...sanitized,
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
+        createdAt: origCreatedAt || serverTimestamp()
       });
       ok++;
     } catch(err) {
@@ -2272,6 +2329,73 @@ function showToast(msg, type='info') {
 ══════════════════════════════════════════ */
 const CRM_PAGE=25;
 
+
+/* ══════════════════════════════════════
+   CRM 상세보기
+══════════════════════════════════════ */
+function openCrmDetail(c) {
+  const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  document.getElementById('crmDetailBadge').textContent = '👤 고객';
+  document.getElementById('crmDetailBadge').style.cssText = 'background:var(--accent2);color:#fff;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;';
+  document.getElementById('crmDetailTitle').textContent = c.name || '(이름 없음)';
+  document.getElementById('crmDetailId').textContent = 'ID: ' + c._id;
+  const TYPE_M = {unknown:'미정',personal:'개인',enter:'엔터',corp:'기업',rental:'렌탈'};
+  const rows = [
+    ['닉네임', c.nick],
+    ['전화번호', c.phone],
+    ['유형', TYPE_M[c.type]||c.type],
+    ['플랫폼', c.platform],
+    ['스트리밍 ID', c.streamId],
+    ['방송 주제', c.streamTopic],
+    ['주소', c.address],
+    ['PC 사양', c.pcSpec],
+    ['장비 목록', c.equipment],
+    ['메모', c.note],
+  ];
+  let html = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+  rows.forEach(([label,val])=>{
+    if(!val) return;
+    html += `<tr><td style="padding:7px 12px;color:var(--text-muted);font-size:11px;white-space:nowrap;width:110px;vertical-align:top;">${label}</td><td style="padding:7px 12px;color:var(--text);white-space:pre-wrap;word-break:break-word;">${esc(val)}</td></tr>`;
+  });
+  html += '</table>';
+  document.getElementById('crmDetailBody').innerHTML = html || '<div style="color:var(--text-muted);padding:16px;">상세 정보가 없습니다.</div>';
+  document.getElementById('crmDetailOverlay').classList.add('open');
+}
+
+/* ══════════════════════════════════════
+   위키 상세보기
+══════════════════════════════════════ */
+function openWikiDetail(a) {
+  const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  document.getElementById('wikiDetailBadge').textContent = a.category || '일반';
+  document.getElementById('wikiDetailTitle').textContent = a.title || '(제목 없음)';
+  document.getElementById('wikiDetailId').textContent = 'ID: ' + a._id;
+  const updDate = a.updatedAt?.toDate
+    ? a.updatedAt.toDate().toLocaleString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})
+    : (a.updatedAt?.seconds ? new Date(a.updatedAt.seconds*1000).toLocaleString('ko-KR') : '—');
+  const rows = [
+    ['분류', a.category],
+    ['작성자', a.author || a.authorName],
+    ['수정일시', updDate],
+  ];
+  let html = '<table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:14px;">';
+  rows.forEach(([label,val])=>{
+    if(!val) return;
+    html += `<tr><td style="padding:7px 12px;color:var(--text-muted);font-size:11px;white-space:nowrap;width:90px;vertical-align:top;">${label}</td><td style="padding:7px 12px;color:var(--text);">${esc(val)}</td></tr>`;
+  });
+  html += '</table>';
+  if(a.content){
+    html += `<div style="padding:0 12px 12px;"><div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;font-family:var(--font-mono);letter-spacing:.08em;">CONTENT</div><div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:13px;color:var(--text);line-height:1.7;max-height:300px;overflow-y:auto;">${a.content}</div></div>`;
+  }
+  document.getElementById('wikiDetailBody').innerHTML = html;
+  document.getElementById('wikiDetailOverlay').classList.add('open');
+}
+
+document.getElementById('crmDetailClose').addEventListener('click',    ()=>document.getElementById('crmDetailOverlay').classList.remove('open'));
+document.getElementById('crmDetailCloseBtn').addEventListener('click', ()=>document.getElementById('crmDetailOverlay').classList.remove('open'));
+document.getElementById('wikiDetailClose').addEventListener('click',    ()=>document.getElementById('wikiDetailOverlay').classList.remove('open'));
+document.getElementById('wikiDetailCloseBtn').addEventListener('click',()=>document.getElementById('wikiDetailOverlay').classList.remove('open'));
+
 function initCrmSection(db) {
   /* 실시간 리스너 */
   onSnapshot(collection(db,'crm_clients'), snap => {
@@ -2332,6 +2456,7 @@ function renderCrm() {
       <div class="gr-cell">${c.platform||'—'}</div>
       <div><span class="row-badge" style="background:var(--surface2);color:var(--text-muted);border:1px solid var(--border);">${TYPE_M[c.type]||c.type||'—'}</span></div>
       <div class="row-actions">
+        <button class="row-action-btn" data-crmviewid="${c._id}" title="상세보기">🔍</button>
         <button class="row-action-btn del" data-crmdelid="${c._id}" title="삭제">🗑</button>
       </div>`;
     row.addEventListener('click',e=>{
@@ -2342,11 +2467,15 @@ function renderCrm() {
       if(_crmSelectedIds.size) document.getElementById('crmSelCount').textContent=`${_crmSelectedIds.size}개 선택됨`;
       renderCrm();
     });
+    row.querySelector('[data-crmviewid]')?.addEventListener('click', e=>{
+      e.stopPropagation();
+      openCrmDetail(c);
+    });
     row.querySelector('[data-crmdelid]')?.addEventListener('click',async e=>{
       e.stopPropagation();
       showConfirm('🗑 CRM 삭제',`"${c.name||'?'}" 고객을 삭제하시겠습니까?`,async()=>{
-        await recordLog(db,'crm_clients',c._id,'delete',{name:c.name||'?'});
-        await deleteDoc(doc(db,'crm_clients',c._id));
+        await recordLog(_db,'crm_clients',c._id,'delete',{name:c.name||'?'});
+        await deleteDoc(doc(_db,'crm_clients',c._id));
         showToast('삭제 완료','success');
       });
     });
@@ -2430,6 +2559,7 @@ function renderWiki() {
       <div class="gr-cell" style="font-family:var(--font-mono);font-size:11px;">${updDate}</div>
       <div style="display:flex;gap:4px;flex-wrap:wrap;">${tags||'—'}</div>
       <div class="row-actions">
+        <button class="row-action-btn" data-wikiviewid="${a._id}" title="상세보기">🔍</button>
         <button class="row-action-btn del" data-wikidelid="${a._id}" title="삭제">🗑</button>
       </div>`;
     row.addEventListener('click',e=>{
@@ -2440,11 +2570,15 @@ function renderWiki() {
       if(_wikiSelectedIds.size) document.getElementById('wikiSelCount').textContent=`${_wikiSelectedIds.size}개 선택됨`;
       renderWiki();
     });
+    row.querySelector('[data-wikiviewid]')?.addEventListener('click', e=>{
+      e.stopPropagation();
+      openWikiDetail(a);
+    });
     row.querySelector('[data-wikidelid]')?.addEventListener('click',async e=>{
       e.stopPropagation();
       showConfirm('🗑 위키 삭제',`"${a.title||'?'}" 문서를 삭제하시겠습니까?`,async()=>{
-        await recordLog(db,'wiki_articles',a._id,'delete',{title:a.title||'?'});
-        await deleteDoc(doc(db,'wiki_articles',a._id));
+        await recordLog(_db,'wiki_articles',a._id,'delete',{title:a.title||'?'});
+        await deleteDoc(doc(_db,'wiki_articles',a._id));
         showToast('삭제 완료','success');
       });
     });
