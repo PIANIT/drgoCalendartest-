@@ -822,7 +822,7 @@
   .pc-span-chip.is-end   { border-radius:0 4px 4px 0; }
   .pc-span-chip.is-solo  { border-radius:4px; }
   .pc-week-cell {
-    min-height:140px; padding:8px 6px 6px;
+    min-height:var(--week-cell-h,220px); padding:8px 6px 6px;
     background:var(--surface); position:relative;
     border-right:1px solid var(--border); cursor:pointer;
     transition:background 0.12s;
@@ -1064,6 +1064,7 @@
     <div class="weekdays" id="pcWeekDays"></div>
     <div id="pcWeekGrid"></div>
   </div>
+  <div class="cal-resize-handle" id="weekResizeHandle" title="드래그하여 높이 조절"></div>
 </div>
 
 <div id="pcDayView" style="display:none;">
@@ -4835,7 +4836,9 @@ function renderPcWeek() {
 
   const CELL_PAD=8, NUM_H=30, LANE_H=24;
   const SINGLE_OFFSET=CELL_PAD+NUM_H+maxLane*LANE_H+(maxLane>0?4:0);
-  const MIN_CELL_H=SINGLE_OFFSET+80;
+  /* --week-cell-h CSS 변수 기준, 레인 공간은 별도로 보장 */
+  const baseH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--week-cell-h')||'220',10);
+  const MIN_CELL_H = Math.max(baseH, SINGLE_OFFSET+80);
 
   const row=document.createElement('div');
   row.className='pc-week-row';
@@ -4864,7 +4867,10 @@ function renderPcWeek() {
     if (holiday) { const hl=document.createElement('div'); hl.className='pc-week-holiday'; hl.textContent=holiday; cell.appendChild(hl); }
     if (maxLane>0) { const spacer=document.createElement('div'); spacer.style.height=(maxLane*LANE_H)+'px'; spacer.style.flexShrink='0'; cell.appendChild(spacer); }
 
-    const MAX_SHOW=4;
+    /* 셀 높이에 비례해 표시 가능한 단일 이벤트 수 동적 계산 */
+    const availableForSingle = MIN_CELL_H - SINGLE_OFFSET - 24; /* 24: more-badge 여유 */
+    const CHIP_H_WK = 26;
+    const MAX_SHOW = Math.max(2, Math.floor(availableForSingle / CHIP_H_WK));
     const dayEvs=singleMap[dk]||[];
     dayEvs.slice(0,MAX_SHOW).forEach(({ev,idx})=>{
       const chip=document.createElement('div');
@@ -5463,6 +5469,8 @@ function renderAll() {
   const calWrap = document.getElementById('daysGrid')?.closest('.calendar-wrap');
   if (calWrap) calWrap.style.display = (!mobile && pcView==='month') ? '' : (mobile ? 'none' : 'none');
   document.getElementById('pcWeekView').style.display  = (!mobile && pcView==='week') ? '' : 'none';
+  const _wkHandle = document.getElementById('weekResizeHandle');
+  if (_wkHandle) _wkHandle.style.display = (!mobile && pcView==='week') ? '' : 'none';
   document.getElementById('pcDayView').style.display   = (!mobile && pcView==='day')  ? '' : 'none';
 
   if (mobile) {
@@ -5539,6 +5547,56 @@ function calcMaxChips(lanes) {
   }
   document.addEventListener('mouseup',  stopDrag);
   document.addEventListener('touchend', stopDrag);
+})();
+
+/* ── 주간 뷰 셀 높이 드래그 조절 ── */
+(function(){
+  const WEEK_H_KEY = 'cal_week_cell_h';
+  const DEFAULT_H  = 220;
+  let savedH = parseInt(localStorage.getItem(WEEK_H_KEY)||DEFAULT_H, 10);
+  document.documentElement.style.setProperty('--week-cell-h', savedH+'px');
+
+  const handle = document.getElementById('weekResizeHandle');
+  if (!handle) return;
+
+  let dragging=false, startY=0, startH=0;
+
+  handle.addEventListener('mousedown', e=>{
+    dragging=true; startY=e.clientY; startH=savedH;
+    document.body.style.userSelect='none';
+    document.body.style.cursor='ns-resize';
+    e.preventDefault();
+  });
+  handle.addEventListener('touchstart', e=>{
+    dragging=true; startY=e.touches[0].clientY; startH=savedH;
+    e.preventDefault();
+  }, {passive:false});
+
+  document.addEventListener('mousemove', e=>{
+    if (!dragging) return;
+    const delta = e.clientY - startY;
+    const newH  = Math.max(120, Math.min(500, startH + delta));
+    document.documentElement.style.setProperty('--week-cell-h', newH+'px');
+  });
+  document.addEventListener('touchmove', e=>{
+    if (!dragging) return;
+    const delta = e.touches[0].clientY - startY;
+    const newH  = Math.max(120, Math.min(500, startH + delta));
+    document.documentElement.style.setProperty('--week-cell-h', newH+'px');
+  }, {passive:true});
+
+  function stopWeekDrag(){
+    if (!dragging) return;
+    dragging=false;
+    document.body.style.userSelect='';
+    document.body.style.cursor='';
+    savedH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--week-cell-h')||DEFAULT_H,10);
+    localStorage.setItem(WEEK_H_KEY, savedH);
+    if (typeof renderPcWeek==='function' && document.getElementById('pcWeekView')?.style.display!=='none')
+      renderPcWeek();
+  }
+  document.addEventListener('mouseup',  stopWeekDrag);
+  document.addEventListener('touchend', stopWeekDrag);
 })();
 
 window.addEventListener('resize',()=>{ renderAll(); });
