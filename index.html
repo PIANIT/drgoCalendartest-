@@ -1377,6 +1377,18 @@
       </div>
 
       <div class="field-group" style="margin-top:10px;">
+        <div class="field-label">일정 옵션</div>
+        <div class="special-opts" id="schedEventOpts">
+          <div class="special-opt-btn" data-seopt="fast">    <span class="opt-icon">←</span>빠른 일정 희망</div>
+          <div class="special-opt-btn" data-seopt="urgent">  <span class="opt-icon">🚨</span>긴급 일정</div>
+          <div class="special-opt-btn" data-seopt="after">   <span class="opt-icon">→</span><span id="schedAfterLabel">□</span>일 이후 희망</div>
+        </div>
+        <div id="schedAfterWrap" style="display:none;margin-top:8px;">
+          <input class="field-input" id="schedAfterReason" placeholder="사유를 입력하세요" style="font-size:13px;" />
+        </div>
+      </div>
+
+      <div class="field-group" style="margin-top:10px;">
         <div class="field-label">일정 관련 옵션</div>
         <div class="special-opts" id="scheduleOpts">
           <div class="sched-opt-btn" data-sopt="suggest"><span class="opt-icon">💬</span>제안</div>
@@ -1395,18 +1407,6 @@
           <div class="special-opt-btn" data-opt="brief">  <span class="opt-icon">💼</span>들고 갈 제품 있음</div>
           <div class="special-opt-btn" data-opt="group">  <span class="opt-icon">👥</span>2인필수 작업</div>
           <div class="special-opt-btn" data-opt="ladder"> <span class="opt-icon">▤</span>사다리 필요</div>
-        </div>
-      </div>
-
-      <div class="field-group" style="margin-top:10px;">
-        <div class="field-label">일정 옵션</div>
-        <div class="special-opts" id="schedEventOpts">
-          <div class="special-opt-btn" data-seopt="fast">    <span class="opt-icon">←</span>빠른 일정 희망</div>
-          <div class="special-opt-btn" data-seopt="urgent">  <span class="opt-icon">🚨</span>긴급 일정</div>
-          <div class="special-opt-btn" data-seopt="after">   <span class="opt-icon">→</span><span id="schedAfterLabel">00</span>일 이후 희망</div>
-        </div>
-        <div id="schedAfterWrap" style="display:none;margin-top:8px;">
-          <input class="field-input" id="schedAfterReason" placeholder="사유를 입력하세요" style="font-size:13px;" />
         </div>
       </div>
 
@@ -2272,7 +2272,7 @@ let specialOpts=new Set();
 const SPECIAL_ICONS = { car:'🚗', brief:'💼', return:'←', group:'👥', urgent:'🚨', ladder:'▤' };
 /* 일정 옵션 */
 let schedEventOpts = new Set(); // 'fast', 'urgent', 'after'
-let schedAfterDays = 7;
+let schedAfterDays = 0;
 const SCHED_EVENT_ICONS = { fast:'←', urgent:'🚨', after:'→' };
 const SCHED_EVENT_LABELS_LOG = { fast:'← 빠른 일정 희망', urgent:'🚨 긴급 일정', after:'→ {n}일 이후 희망' };
 const SCHED_OPTS = {
@@ -2381,9 +2381,11 @@ document.getElementById('specialOpts').addEventListener('click', e => {
 document.getElementById('schedEventOpts').addEventListener('click', e => {
   if (isLocked) return;
   /* '00' 숫자 클릭 → 모달 */
-  if (e.target.id === 'schedAfterLabel') {
-    document.getElementById('afterDayNum').textContent = schedAfterDays;
+  if (e.target.id === 'schedAfterLabel' || e.target.closest('.special-opt-btn[data-seopt="after"]')) {
+    const inp = document.getElementById('afterDayInput');
+    if (inp) inp.value = (schedAfterDays && schedAfterDays !== '□') ? schedAfterDays : '';
     document.getElementById('afterDayModalOverlay').classList.add('open');
+    setTimeout(()=>{ const inp2=document.getElementById('afterDayInput'); if(inp2) inp2.focus(); }, 80);
     return;
   }
   const btn = e.target.closest('.special-opt-btn');
@@ -2401,25 +2403,29 @@ document.getElementById('schedEventOpts').addEventListener('click', e => {
 
 /* afterDay 모달 */
 (function(){
-  let _tmpDays = 7;
-  const numEl = document.getElementById('afterDayNum');
+  function getInpVal() {
+    return parseInt(document.getElementById('afterDayInput')?.value||'0', 10);
+  }
+  function setInpVal(v) {
+    const inp = document.getElementById('afterDayInput');
+    if (inp) inp.value = v > 0 ? v : '';
+  }
 
   document.getElementById('afterDayMinus').addEventListener('click', () => {
-    _tmpDays = Math.max(1, parseInt(numEl.textContent||'7',10) - 1);
-    numEl.textContent = _tmpDays;
+    const cur = getInpVal(); setInpVal(Math.max(1, cur > 0 ? cur - 1 : 1));
   });
   document.getElementById('afterDayPlus').addEventListener('click', () => {
-    _tmpDays = Math.min(999, parseInt(numEl.textContent||'7',10) + 1);
-    numEl.textContent = _tmpDays;
+    const cur = getInpVal(); setInpVal(Math.min(999, cur > 0 ? cur + 1 : 1));
   });
   document.querySelectorAll('.after-day-preset').forEach(btn => {
-    btn.addEventListener('click', () => {
-      _tmpDays = parseInt(btn.dataset.d, 10);
-      numEl.textContent = _tmpDays;
-    });
+    btn.addEventListener('click', () => { setInpVal(parseInt(btn.dataset.d, 10)); });
   });
   document.getElementById('afterDayConfirm').addEventListener('click', () => {
-    schedAfterDays = parseInt(numEl.textContent||'7',10);
+    const val = getInpVal();
+    if (!val || val < 1) {
+      document.getElementById('afterDayInput')?.focus(); return;
+    }
+    schedAfterDays = val;
     const lbl = document.getElementById('schedAfterLabel');
     if (lbl) lbl.textContent = schedAfterDays;
     document.getElementById('afterDayModalOverlay').classList.remove('open');
@@ -2460,12 +2466,12 @@ function setSpecialOpts(opts, sopt, seOpts, afterDays, afterReason) {
 
   /* 일정 옵션 복원 */
   schedEventOpts = new Set(seOpts||[]);
-  schedAfterDays = afterDays||7;
+  schedAfterDays = afterDays||0;
   document.querySelectorAll('#schedEventOpts .special-opt-btn').forEach(btn => {
     btn.classList.toggle('active', schedEventOpts.has(btn.dataset.seopt));
   });
   const afterLabel = document.getElementById('schedAfterLabel');
-  if (afterLabel) afterLabel.textContent = schedAfterDays;
+  if (afterLabel) afterLabel.textContent = (schedAfterDays && schedAfterDays > 0) ? schedAfterDays : '□';
   const afterWrap = document.getElementById('schedAfterWrap');
   if (afterWrap) afterWrap.style.display = schedEventOpts.has('after') ? '' : 'none';
   const afterReasonEl = document.getElementById('schedAfterReason');
@@ -2784,7 +2790,7 @@ function openNewModal(dk){
   });
   currentAttachments=[]; currentColor='gold'; isLocked=false;
   document.getElementById('notifSelect').value='';
-  setColor('gold'); setAllDay(false); setSpecialOpts([],null,[],7,'');
+  setColor('gold'); setAllDay(false); setSpecialOpts([],null,[],0,'');
   resetGoldFields(); renderAttachments();
   document.getElementById('deleteBtn').style.display='none';
   document.getElementById('logBtn').style.display='none';
@@ -2828,7 +2834,7 @@ function openModal(evIdx){
   if (currentColor==='gold') { loadGoldFields(ev); resetTealFields(); }
   else if (currentColor==='teal') { resetTealFields(); loadTealFields(ev); resetGoldFields(); }
   else { resetGoldFields(); resetTealFields(); }
-  setSpecialOpts(ev.specialOpts||[], ev.schedOpt||null, ev.schedEventOpts||[], ev.schedAfterDays||7, ev.schedAfterReason||'');
+  setSpecialOpts(ev.specialOpts||[], ev.schedOpt||null, ev.schedEventOpts||[], ev.schedAfterDays||0, ev.schedAfterReason||'');
   renderAttachments();
   document.getElementById('deleteBtn').style.display='';
   document.getElementById('logBtn').style.display='';
@@ -3002,6 +3008,15 @@ function calcChanges(prev, next) {
       const pa = [...(pv||[])].sort(), na = [...(nv||[])].sort();
       if (JSON.stringify(pa) === JSON.stringify(na)) continue;
       changes.push({ field: LOG_FIELD_LABELS[f], before: formatSpecialOpts(pv), after: formatSpecialOpts(nv) });
+      continue;
+    }
+    if (f === 'schedEventOpts') {
+      const pa = [...(Array.isArray(pv)?pv:[])].sort();
+      const na = [...(Array.isArray(nv)?nv:[])].sort();
+      if (JSON.stringify(pa) === JSON.stringify(na)) continue;
+      const fmtSe = arr => (Array.isArray(arr)&&arr.length)
+        ? arr.map(k=>SCHED_EVENT_LABELS_LOG[k]||k).join(', ') : '(없음)';
+      changes.push({ field: LOG_FIELD_LABELS[f], before: fmtSe(pv), after: fmtSe(nv) });
       continue;
     }
 
@@ -3623,9 +3638,9 @@ let _confirmCallback = null; // 확인 후 실행할 함수
 function _takeSnapshot() {
   const ids = ['modalTitle','modalLocation','modalName','modalAddress','modalDesc','t_remote_name','t_remote_platform','t_remote_content','t_studio_name','t_studio_platform','t_studio_content','t_desc',
     'startDate','endDate','startTime','endTime',
-    'g_name','g_phone','g_platform','g_topic_etc','g_equipment',
+    'g_name','g_phone','g_platform_etc','g_budget_etc','g_topic_etc','g_equipment',
     'g_req_topic','g_req_detail','g_special','g_balance_amount',
-    'g_estimate_amount','goldStartDate'];
+    'g_estimate_amount','goldStartDate','schedAfterReason'];
   const snap = {};
   ids.forEach(id => {
     const el = document.getElementById(id);
@@ -3636,7 +3651,12 @@ function _takeSnapshot() {
   snap._allDay = isAllDay;
   snap._schedOpt = schedOpt;
   snap._specialOpts = JSON.stringify([...specialOpts].sort());
+  snap._schedEventOpts = JSON.stringify([...schedEventOpts].sort());
+  snap._schedAfterDays = schedAfterDays;
+  snap._schedAfterReason = document.getElementById('schedAfterReason')?.value||'';
   snap._topic = getRadio('g_topic_group');
+  snap._platform = getRadio('g_platform_group');
+  snap._budget = getRadio('g_budget_group');
   snap._career = getRadio('g_career_group');
   snap._paid = getRadio('g_paid_group');
   snap._order = getRadio('g_order_group');
@@ -3649,9 +3669,9 @@ function _isDirty() {
   if (!_modalSnapshot) return false;
   const ids = ['modalTitle','modalLocation','modalName','modalAddress','modalDesc','t_remote_name','t_remote_platform','t_remote_content','t_studio_name','t_studio_platform','t_studio_content','t_desc',
     'startDate','endDate','startTime','endTime',
-    'g_name','g_phone','g_platform','g_topic_etc','g_equipment',
+    'g_name','g_phone','g_platform_etc','g_budget_etc','g_topic_etc','g_equipment',
     'g_req_topic','g_req_detail','g_special','g_balance_amount',
-    'g_estimate_amount','goldStartDate'];
+    'g_estimate_amount','goldStartDate','schedAfterReason'];
   const snap = {};
   ids.forEach(id => {
     const el = document.getElementById(id);
@@ -3661,7 +3681,12 @@ function _isDirty() {
   snap._allDay = isAllDay;
   snap._schedOpt = schedOpt;
   snap._specialOpts = JSON.stringify([...specialOpts].sort());
+  snap._schedEventOpts = JSON.stringify([...schedEventOpts].sort());
+  snap._schedAfterDays = schedAfterDays;
+  snap._schedAfterReason = document.getElementById('schedAfterReason')?.value||'';
   snap._topic = getRadio('g_topic_group');
+  snap._platform = getRadio('g_platform_group');
+  snap._budget = getRadio('g_budget_group');
   snap._career = getRadio('g_career_group');
   snap._paid = getRadio('g_paid_group');
   snap._order = getRadio('g_order_group');
@@ -5241,25 +5266,29 @@ function slideAnimate(el,toLeft,callback){
 })();
 </script>
 
-<!-- 00일 이후 희망 숫자 지정 모달 -->
+<!-- □일 이후 희망 숫자 지정 모달 -->
 <div class="modal-overlay" id="afterDayModalOverlay" style="z-index:3100;">
   <div class="modal" style="max-width:300px;padding:0;overflow:hidden;">
     <div style="padding:20px 24px 16px;">
-      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:16px;">📅 며칠 이후 희망?</div>
-      <div style="display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:16px;">
-        <button id="afterDayMinus" style="width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:20px;line-height:1;cursor:pointer;">−</button>
-        <div style="display:flex;align-items:baseline;gap:4px;">
-          <span id="afterDayNum" style="font-size:40px;font-weight:700;color:var(--accent);font-family:var(--font-mono);min-width:56px;text-align:center;">7</span>
-          <span style="font-size:16px;color:var(--text-muted);">일</span>
-        </div>
-        <button id="afterDayPlus"  style="width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:20px;line-height:1;cursor:pointer;">+</button>
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px;">📅 며칠 이후 희망?</div>
+      <!-- 프리셋 버튼 -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;">
+        <button class="after-day-preset" data-d="3"  style="padding:5px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;">3일</button>
+        <button class="after-day-preset" data-d="5"  style="padding:5px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;">5일</button>
+        <button class="after-day-preset" data-d="7"  style="padding:5px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;">7일</button>
+        <button class="after-day-preset" data-d="14" style="padding:5px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;">14일</button>
+        <button class="after-day-preset" data-d="30" style="padding:5px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;">30일</button>
       </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:4px;">
-        <button class="after-day-preset" data-d="3"  style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;cursor:pointer;">3일</button>
-        <button class="after-day-preset" data-d="5"  style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;cursor:pointer;">5일</button>
-        <button class="after-day-preset" data-d="7"  style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;cursor:pointer;">7일</button>
-        <button class="after-day-preset" data-d="14" style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;cursor:pointer;">14일</button>
-        <button class="after-day-preset" data-d="30" style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;cursor:pointer;">30일</button>
+      <!-- 직접 입력 + ±버튼 -->
+      <div style="display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:4px;">
+        <button id="afterDayMinus" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:18px;line-height:1;cursor:pointer;flex-shrink:0;">−</button>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <input id="afterDayInput" type="number" min="1" max="999"
+            style="width:70px;text-align:center;font-size:28px;font-weight:700;color:var(--accent);font-family:var(--font-mono);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:4px 6px;outline:none;"
+            placeholder="□" />
+          <span style="font-size:15px;color:var(--text-muted);">일</span>
+        </div>
+        <button id="afterDayPlus"  style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:18px;line-height:1;cursor:pointer;flex-shrink:0;">+</button>
       </div>
     </div>
     <div style="display:flex;gap:8px;padding:0 16px 16px;">
