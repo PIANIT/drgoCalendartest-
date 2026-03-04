@@ -715,10 +715,16 @@
   }
   .img-upload-zone:hover, .img-upload-zone.drag-over { border-color:var(--accent); background:rgba(200,176,138,0.04); color:var(--accent); }
   .img-upload-zone input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
-  .img-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(80px,1fr)); gap:7px; margin-top:6px; }
-  .img-item { position:relative; border-radius:7px; overflow:hidden; border:1px solid var(--border); background:var(--surface2); aspect-ratio:1; }
-  .img-item img { width:100%; height:100%; object-fit:cover; cursor:zoom-in; }
-  .img-remove { position:absolute; top:3px; right:3px; background:rgba(0,0,0,0.75); border:none; color:#fff; width:18px; height:18px; border-radius:50%; cursor:pointer; font-size:10px; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.2s; }
+  .img-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:10px; margin-top:6px; }
+  .img-item { position:relative; border-radius:8px; overflow:visible; border:1px solid var(--border); background:var(--surface2); display:flex; flex-direction:column; }
+  .img-item .img-thumb-wrap { position:relative; aspect-ratio:1; overflow:hidden; border-radius:8px 8px 0 0; }
+  .img-item img { width:100%; height:100%; object-fit:cover; cursor:zoom-in; display:block; }
+  .img-item .img-filename { font-size:10px; color:var(--text-muted); padding:3px 7px 2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border-top:1px solid var(--border); background:var(--surface2); }
+  .img-item .img-note { font-size:11px; padding:3px 6px 5px; background:transparent; border:none; border-top:1px solid var(--border); color:var(--text); width:100%; box-sizing:border-box; resize:none; font-family:var(--font-main); line-height:1.4; min-height:30px; outline:none; border-radius:0 0 8px 8px; }
+  .img-item .img-note::placeholder { color:var(--text-muted); }
+  .img-item .img-note:focus { background:rgba(255,255,255,0.03); }
+  .img-item .img-note:disabled { opacity:0.6; cursor:default; background:transparent; }
+  .img-remove { position:absolute; top:4px; right:4px; background:rgba(0,0,0,0.75); border:none; color:#fff; width:18px; height:18px; border-radius:50%; cursor:pointer; font-size:10px; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.2s; z-index:1; }
   .img-item:hover .img-remove { opacity:1; }
   .img-remove.hidden { display:none !important; }
 
@@ -2913,9 +2919,9 @@ function loadGoldFields(ev){
   const spRWrap2=document.getElementById('specialReasonWrap');
   if(spRWrap2) spRWrap2.style.display=(specialOpts.size>0)&&(g.specialReason)?'':'none';
   goldImgs={
-    quote:(g.quoteImgs||[]).map(i=>({name:i.name,data:i.data})),
-    ref:  (g.refImgs  ||[]).map(i=>({name:i.name,data:i.data})),
-    room: (g.roomImgs ||[]).map(i=>({name:i.name,data:i.data})),
+    quote:(g.quoteImgs||[]).map(i=>({name:i.name,data:i.data,note:i.note||''})),
+    ref:  (g.refImgs  ||[]).map(i=>({name:i.name,data:i.data,note:i.note||''})),
+    room: (g.roomImgs ||[]).map(i=>({name:i.name,data:i.data,note:i.note||''})),
   };
   renderImgGrid('quote'); renderImgGrid('ref'); renderImgGrid('room');
 }
@@ -2967,9 +2973,9 @@ function collectGoldTextFields(){
     specialReason,
     career:getRadio('g_career_group'), paid:getRadio('g_paid_group'), order:getRadio('g_order_group'), delivery:getRadio('g_delivery_group'),
     balance:getRadio('g_balance_group'), balance_amount:document.getElementById('g_balance_amount').value.trim(),
-    quoteImgs:goldImgs.quote.map(i=>({name:i.name,data:i.data})),
-    refImgs:goldImgs.ref.map(i=>({name:i.name,data:i.data})),
-    roomImgs:goldImgs.room.map(i=>({name:i.name,data:i.data})),
+    quoteImgs:goldImgs.quote.map(i=>({name:i.name,data:i.data,note:i.note||''})),
+    refImgs:goldImgs.ref.map(i=>({name:i.name,data:i.data,note:i.note||''})),
+    roomImgs:goldImgs.room.map(i=>({name:i.name,data:i.data,note:i.note||''})),
   };
 }
 
@@ -3701,6 +3707,7 @@ function applyLockState(){
     saveBtn.style.display='none'; deleteBtn.style.display='none';
     document.querySelectorAll('.attachment-remove,.img-remove').forEach(b=>b.classList.add('hidden'));
     document.querySelectorAll('.img-upload-zone').forEach(z=>z.classList.add('locked-zone'));
+    document.querySelectorAll('.img-note').forEach(n=>n.disabled=true);
     document.querySelectorAll('.radio-btn').forEach(b=>b.style.pointerEvents='none');
     document.getElementById('specialOpts').style.pointerEvents='none';
     document.getElementById('specialOpts').style.opacity='0.4';
@@ -3721,6 +3728,7 @@ function applyLockState(){
     if (editingId) deleteBtn.style.display='';
     document.querySelectorAll('.attachment-remove,.img-remove').forEach(b=>b.classList.remove('hidden'));
     document.querySelectorAll('.img-upload-zone').forEach(z=>z.classList.remove('locked-zone'));
+    document.querySelectorAll('.img-note').forEach(n=>n.disabled=false);
     document.querySelectorAll('.radio-btn').forEach(b=>b.style.pointerEvents='');
     document.getElementById('specialOpts').style.pointerEvents='';
     document.getElementById('specialOpts').style.opacity='';
@@ -3784,7 +3792,7 @@ async function handleImgFiles(key, files){
     } catch(e){
       console.error('이미지 압축 실패:', e);
       const reader=new FileReader();
-      reader.onload=ev=>{ goldImgs[key].push({name:file.name,data:ev.target.result}); renderImgGrid(key); };
+      reader.onload=ev=>{ goldImgs[key].push({name:file.name,data:ev.target.result,note:''}); renderImgGrid(key); };
       reader.readAsDataURL(file);
     }
   }
@@ -3795,12 +3803,34 @@ function renderImgGrid(key){
   grid.innerHTML='';
   goldImgs[key].forEach((img,i)=>{
     const item=document.createElement('div'); item.className='img-item';
+
+    /* 썸네일 래퍼 */
+    const wrap=document.createElement('div'); wrap.className='img-thumb-wrap';
     const el=document.createElement('img'); el.src=img.data;
     el.addEventListener('click',e=>{e.stopPropagation();openLightbox(img.data);});
     const rm=document.createElement('button');
     rm.className='img-remove'+(isLocked?' hidden':''); rm.innerHTML='✕';
     rm.addEventListener('click',e=>{e.stopPropagation();goldImgs[key].splice(i,1);renderImgGrid(key);});
-    item.appendChild(el); item.appendChild(rm); grid.appendChild(item);
+    wrap.appendChild(el); wrap.appendChild(rm);
+
+    /* 파일명 */
+    const fname=document.createElement('div'); fname.className='img-filename';
+    fname.textContent=img.name||''; fname.title=img.name||'';
+
+    /* 주석 입력 */
+    const note=document.createElement('textarea'); note.className='img-note';
+    note.placeholder='주석 입력'; note.value=img.note||'';
+    note.rows=1; note.disabled=isLocked;
+    note.addEventListener('input',()=>{
+      goldImgs[key][i].note=note.value;
+      note.style.height='auto';
+      note.style.height=note.scrollHeight+'px';
+    });
+    /* 초기 높이 맞추기 */
+    setTimeout(()=>{ note.style.height='auto'; note.style.height=note.scrollHeight+'px'; },0);
+
+    item.appendChild(wrap); item.appendChild(fname); item.appendChild(note);
+    grid.appendChild(item);
   });
 }
 
