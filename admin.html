@@ -1549,7 +1549,7 @@ function renderList() {
         <div class="row-title">
           <div class="color-bar cb-${c}"></div>
           <div>
-            <div class="title-text">${ev.title||'(제목 없음)'}</div>
+            <div class="title-text"><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);margin-right:5px;opacity:0.7;">${ev._id}</span>${ev.title||'(제목 없음)'}</div>
             ${ev.desc ? `<div class="title-sub">${ev.desc.slice(0,40)}${ev.desc.length>40?'…':''}</div>` : ''}
           </div>
         </div>
@@ -2451,7 +2451,7 @@ function renderCrm() {
     row.className='generic-row gr-clients'+(isSel?' selected':'');
     row.innerHTML=`
       <div class="row-check"><div class="check-circle">${isSel?'✓':''}</div></div>
-      <div><div class="gr-name">${c.name||'(이름 없음)'}</div>${c.nick?`<div class="gr-sub">@${c.nick}</div>`:''}</div>
+      <div><div class="gr-name"><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);margin-right:5px;opacity:0.7;">${c._id}</span>${c.nick||c.name||'(이름 없음)'}</div>${c.nick&&c.name?`<div class="gr-sub">${c.name}</div>`:''}</div>
       <div class="gr-cell">${c.phone||'—'}</div>
       <div class="gr-cell">${c.platform||'—'}</div>
       <div><span class="row-badge" style="background:var(--surface2);color:var(--text-muted);border:1px solid var(--border);">${TYPE_M[c.type]||c.type||'—'}</span></div>
@@ -2554,7 +2554,7 @@ function renderWiki() {
     const tags=(a.tags||[]).slice(0,3).map(t=>`<span style="font-size:10px;padding:2px 7px;border-radius:4px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);">${t}</span>`).join('');
     row.innerHTML=`
       <div class="row-check"><div class="check-circle">${isSel?'✓':''}</div></div>
-      <div><div class="gr-name">${a.title||'(제목 없음)'}</div>${a.desc?`<div class="gr-sub">${String(a.desc).slice(0,40)}…</div>`:''}</div>
+      <div><div class="gr-name"><span style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);margin-right:5px;opacity:0.7;">${a._id}</span>${a.title||'(제목 없음)'}</div>${a.desc?`<div class="gr-sub">${String(a.desc).slice(0,40)}…</div>`:''}</div>
       <div class="gr-cell">${a.authorName||a.authorId||'—'}</div>
       <div class="gr-cell" style="font-family:var(--font-mono);font-size:11px;">${updDate}</div>
       <div style="display:flex;gap:4px;flex-wrap:wrap;">${tags||'—'}</div>
