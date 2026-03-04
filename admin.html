@@ -1865,21 +1865,48 @@ async function runBackup(dbArg) {
   /* CRM */
   let crmData = [];
   if (sects.includes('crm')) {
+    const runBtn = document.getElementById('backupRunBtn');
     try {
-      const snap = await getDocs(collection(db,'crm_clients'));
-      const clients = snap.docs.map(d=>({_id:d.id,...stripTimestamps(d.data())}));
-      /* 서브컬렉션 */
-      for (const cl of clients) {
-        const subs = {};
-        for (const sub of ['consultations','visit_requests','visit_reports','remote_reports','sales_records']) {
-          const ss = await getDocs(collection(db,`crm_clients/${cl._id}/${sub}`));
-          if (!ss.empty) subs[sub] = ss.docs.map(d=>({_id:d.id,...stripTimestamps(d.data())}));
-        }
-        if (Object.keys(subs).length) cl._subcollections = subs;
+      runBtn.disabled = true;
+      runBtn.textContent = '⏳ CRM 로딩 중…';
+
+      /* 고객 목록: 이미 메모리에 있으면 재사용, 없으면 조회 */
+      let clients;
+      if (_crmAll.length > 0) {
+        clients = _crmAll.map(c => ({...stripTimestamps(c)}));
+      } else {
+        const snap = await getDocs(collection(db,'crm_clients'));
+        clients = snap.docs.map(d=>({_id:d.id,...stripTimestamps(d.data())}));
       }
-      crmData = selOnly && _crmSelectedIds.size > 0
+
+      /* 선택 필터 */
+      const targetClients = selOnly && _crmSelectedIds.size > 0
         ? clients.filter(c => _crmSelectedIds.has(c._id)) : clients;
-    } catch(e) { showToast('CRM 백업 오류: '+e.message,'error'); console.error('CRM backup error:',e); return; }
+
+      /* 서브컬렉션: 고객별 병렬 처리 */
+      const SUB_COLS = ['consultations','visit_requests','visit_reports','remote_reports','sales_records'];
+      await Promise.all(targetClients.map(async cl => {
+        const subs = {};
+        await Promise.all(SUB_COLS.map(async sub => {
+          try {
+            const ss = await getDocs(collection(db,`crm_clients/${cl._id}/${sub}`));
+            if (!ss.empty) subs[sub] = ss.docs.map(d=>({_id:d.id,...stripTimestamps(d.data())}));
+          } catch(_) { /* 서브컬렉션 개별 에러는 무시하고 계속 */ }
+        }));
+        if (Object.keys(subs).length) cl._subcollections = subs;
+      }));
+
+      crmData = targetClients;
+    } catch(e) {
+      showToast('CRM 백업 오류: '+e.message, 'error');
+      console.error('CRM backup error:', e);
+      runBtn.disabled = false;
+      runBtn.textContent = '📤 백업 실행';
+      return;
+    } finally {
+      runBtn.disabled = false;
+      runBtn.textContent = '📤 백업 실행';
+    }
   }
 
   /* 위키 */
