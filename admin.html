@@ -575,7 +575,7 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
   background:#fff; border-radius:50%; transition:transform 0.2s; pointer-events:none;
 }
 .backup-toggle input:checked ~ .backup-toggle-track .backup-toggle-thumb { transform:translateX(18px); }
-.backup-section-select { display:none; }
+.backup-section-select { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
 .backup-sect-btn {
   padding:7px 14px; border-radius:7px; border:1px solid var(--border);
   background:var(--surface2); color:var(--text-muted); font-size:12px;
@@ -1410,17 +1410,17 @@ function initApp() {
   document.getElementById('backupCancelBtn').addEventListener('click',  () => document.getElementById('backupModalOverlay').classList.remove('open'));
   document.getElementById('backupModalOverlay').addEventListener('click', e => { if(e.target===document.getElementById('backupModalOverlay')) document.getElementById('backupModalOverlay').classList.remove('open'); });
   document.querySelectorAll('.backup-sect-btn').forEach(btn => {
-    btn.addEventListener('click', () => { btn.classList.toggle('on'); updateBackupEstimate(db); });
+    btn.addEventListener('click', () => { btn.classList.toggle('on'); updateBackupEstimate(_backupDb); });
   });
-  document.getElementById('backupSelOnly').addEventListener('change', () => updateBackupEstimate(db));
+  document.getElementById('backupSelOnly').addEventListener('change', () => updateBackupEstimate(_backupDb));
   document.getElementById('backupWithImages').addEventListener('change', () => {
     const hasImg = document.getElementById('backupWithImages').checked;
     document.getElementById('backupWarnText').textContent = hasImg
       ? '🖼 JSON + 이미지 파일을 ZIP으로 압축하여 저장합니다. 용량이 클 수 있습니다.'
       : '📦 JSON 파일로 백업됩니다.';
-    updateBackupEstimate(db);
+    updateBackupEstimate(_backupDb);
   });
-  document.getElementById('backupRunBtn').addEventListener('click', () => runBackup(db));
+  document.getElementById('backupRunBtn').addEventListener('click', () => runBackup(_backupDb || db));
 
   /* ─── CRM 섹션 초기화 ─── */
   initCrmSection(db);
@@ -1844,16 +1844,18 @@ async function openSingleImport(sect, db) {
   document.getElementById('importOverlay').classList.add('open');
 }
 
-async function runBackup(db) {
+async function runBackup(dbArg) {
+  const db = dbArg || _backupDb;
+  if (!db) { showToast('DB 연결이 없습니다. 페이지를 새로고침하세요.', 'error'); return; }
   const sects   = [...document.querySelectorAll('.backup-sect-btn.on')].map(b=>b.dataset.sect);
   const selOnly = document.getElementById('backupSelOnly').checked;
   const withImg = document.getElementById('backupWithImages').checked;
-  if (sects.length === 0) { showToast('백업 대상을 선택하세요', 'error'); return; }
+  if (sects.length === 0) { showToast('백업 대상을 하나 이상 선택하세요', 'error'); return; }
 
   const now     = new Date();
   const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
 
-  document.getElementById('backupModalOverlay').classList.remove('open');
+  /* 모달은 다운로드 완료 후 닫기 - 에러 시 모달 유지 */
 
   /* 캘린더 */
   let calData = [];
@@ -1881,7 +1883,7 @@ async function runBackup(db) {
       }
       crmData = selOnly && _crmSelectedIds.size > 0
         ? clients.filter(c => _crmSelectedIds.has(c._id)) : clients;
-    } catch(e) { showToast('CRM 백업 오류: '+e.message,'error'); }
+    } catch(e) { showToast('CRM 백업 오류: '+e.message,'error'); console.error('CRM backup error:',e); return; }
   }
 
   /* 위키 */
@@ -1892,7 +1894,7 @@ async function runBackup(db) {
       const articles = snap.docs.map(d=>({_id:d.id,...stripTimestamps(d.data())}));
       wikiData = selOnly && _wikiSelectedIds.size > 0
         ? articles.filter(a => _wikiSelectedIds.has(a._id)) : articles;
-    } catch(e) { showToast('위키 백업 오류: '+e.message,'error'); }
+    } catch(e) { showToast('위키 백업 오류: '+e.message,'error'); console.error('Wiki backup error:',e); return; }
   }
 
   const backupObj = {};
@@ -1906,6 +1908,10 @@ async function runBackup(db) {
     showToast('백업할 데이터가 없습니다. 선택 항목 또는 데이터를 확인하세요.', 'error');
     return;
   }
+
+  /* 여기까지 성공 → 모달 닫기 */
+  document.getElementById('backupModalOverlay').classList.remove('open');
+  showToast('백업 파일 생성 중…', 'info');
 
   if (!withImg) {
     /* 단순 JSON */
