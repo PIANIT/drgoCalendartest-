@@ -1408,6 +1408,9 @@
           <div class="special-opt-btn" data-opt="group">  <span class="opt-icon">👥</span>2인필수 작업</div>
           <div class="special-opt-btn" data-opt="ladder"> <span class="opt-icon">▤</span>사다리 필요</div>
         </div>
+        <div id="specialReasonWrap" style="display:none;margin-top:6px;">
+          <input class="field-input" id="specialReason" placeholder="특수옵션 사유 (선택)" style="font-size:13px;" />
+        </div>
       </div>
 
       <div class="divider"></div>
@@ -1514,6 +1517,19 @@
           </div>
         </div>
         <div class="field-group">
+          <label class="field-label">유입 경로</label>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+            <div class="radio-group" id="g_source_group" style="flex-wrap:wrap;gap:5px;">
+              <div class="radio-btn" data-val="광고">📢 광고</div>
+              <div class="radio-btn" data-val="검색">🔍 검색</div>
+              <div class="radio-btn" data-val="소개">🤝 소개</div>
+            </div>
+            <div class="conditional-field" id="g_source_ref_wrap" style="margin-top:0;flex:1;min-width:130px;">
+              <input class="field-input" id="g_source_ref" placeholder="소개해 준 분 이름" style="font-size:13px;" />
+            </div>
+          </div>
+        </div>
+        <div class="field-group">
           <label class="field-label">방송 주제</label>
           <div class="radio-group" id="g_topic_group">
             <div class="radio-btn" data-val="소통">소통</div>
@@ -1549,8 +1565,19 @@
         <div class="divider"></div>
         <div class="section-heading">의뢰 내용</div>
         <div class="field-group">
-          <label class="field-label" for="g_req_topic">의뢰 주제</label>
-          <input class="field-input" id="g_req_topic" placeholder="의뢰 주제를 입력하세요" />
+          <label class="field-label">의뢰 주제</label>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+            <div class="radio-group" id="g_req_topic_group" style="flex-wrap:wrap;gap:5px;">
+              <div class="radio-btn" data-val="처음세팅">처음세팅</div>
+              <div class="radio-btn" data-val="추가세팅">추가세팅</div>
+              <div class="radio-btn" data-val="이사세팅">이사세팅</div>
+              <div class="radio-btn" data-val="렌탈">렌탈</div>
+              <div class="radio-btn" data-val="기타">기타</div>
+            </div>
+            <div class="conditional-field" id="g_req_topic_etc_wrap" style="margin-top:0;flex:1;min-width:130px;">
+              <input class="field-input" id="g_req_topic_etc" placeholder="직접 입력" style="font-size:13px;" />
+            </div>
+          </div>
         </div>
         <div class="field-group">
           <label class="field-label" for="g_req_detail">의뢰 세부항목</label>
@@ -2616,6 +2643,49 @@ document.getElementById('g_order_group').addEventListener('click', e => {
 })();
 
 
+/* 유입 경로 - 단수 선택 + 소개 시 이름 칸 토글 */
+(function(){
+  const g = document.getElementById('g_source_group');
+  if (!g) return;
+  const refWrap = document.getElementById('g_source_ref_wrap');
+  g.querySelectorAll('.radio-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (isLocked) return;
+      const wasActive = btn.classList.contains('active');
+      g.querySelectorAll('.radio-btn').forEach(b => b.classList.remove('active'));
+      if (!wasActive) btn.classList.add('active');
+      const isRef = !!g.querySelector('.radio-btn.active[data-val="소개"]');
+      if (refWrap) refWrap.classList.toggle('visible', isRef);
+      if (!isRef) { const e=document.getElementById('g_source_ref'); if(e) e.value=''; }
+    });
+  });
+})();
+
+/* 특수옵션 사유 칸 토글 */
+document.getElementById('specialOpts').addEventListener('click', () => {
+  const wrap = document.getElementById('specialReasonWrap');
+  if (!wrap) return;
+  const hasActive = !!document.querySelector('#specialOpts .special-opt-btn.active');
+  wrap.style.display = hasActive ? '' : 'none';
+  if (!hasActive) { const r=document.getElementById('specialReason'); if(r) r.value=''; }
+}, true);
+
+/* 의뢰 주제 버튼 - 복수선택 + 기타 직접입력 */
+(function(){
+  const g = document.getElementById('g_req_topic_group');
+  if (!g) return;
+  const wrap = document.getElementById('g_req_topic_etc_wrap');
+  g.querySelectorAll('.radio-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (isLocked) return;
+      btn.classList.toggle('active');
+      const hasEtc = !!g.querySelector('.radio-btn.active[data-val="기타"]');
+      if (wrap) wrap.classList.toggle('visible', hasEtc);
+      if (!hasEtc) { const e=document.getElementById('g_req_topic_etc'); if(e) e.value=''; }
+    });
+  });
+})();
+
 /* ──────────────────────────────────────────
    원격/방송룸(teal) 폼 로직
 ──────────────────────────────────────────── */
@@ -2710,6 +2780,17 @@ function resetGoldFields(){
   setRadio('g_order_group','X'); setRadio('g_balance_group','X'); setRadio('g_delivery_group','X');
   const dw=document.getElementById('g_delivery_wrap'); if(dw) dw.style.display='none';
   const bb=document.getElementById('balanceBanner'); if(bb) bb.style.display='none';
+  /* 유입경로 초기화 */
+  document.getElementById('g_source_group')?.querySelectorAll('.radio-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('g_source_ref_wrap')?.classList.remove('visible');
+  const srEl=document.getElementById('g_source_ref'); if(srEl) srEl.value='';
+  /* 의뢰주제 초기화 */
+  document.getElementById('g_req_topic_group')?.querySelectorAll('.radio-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('g_req_topic_etc_wrap')?.classList.remove('visible');
+  const rteEl=document.getElementById('g_req_topic_etc'); if(rteEl) rteEl.value='';
+  /* 특수옵션 사유 초기화 */
+  const spRWrap=document.getElementById('specialReasonWrap'); if(spRWrap) spRWrap.style.display='none';
+  const spR=document.getElementById('specialReason'); if(spR) spR.value='';
   goldImgs={quote:[],ref:[],room:[]};
   renderImgGrid('quote'); renderImgGrid('ref'); renderImgGrid('room');
 }
@@ -2717,7 +2798,7 @@ function resetGoldFields(){
 function loadGoldFields(ev){
   const g=ev.gold||{};
   const MAP={g_name:'name',g_phone:'phone',
-    g_equipment:'equipment',g_req_topic:'req_topic',g_req_detail:'req_detail',
+    g_equipment:'equipment',g_req_detail:'req_detail',
     g_special:'special',g_balance_amount:'balance_amount',
     g_estimate_amount:'estimate_amount'};
   Object.entries(MAP).forEach(([id,key])=>{ const el=document.getElementById(id); if(el) el.value=g[key]||''; });
@@ -2791,6 +2872,44 @@ function loadGoldFields(ev){
   const esEl=document.getElementById('g_estimate_status');
   if(esEl){ esEl.textContent=g.estimate_amount?'✅ 저장된 금액':''; esEl.style.color='#7ac87a'; }
   if(typeof updateBalanceBanner==='function') updateBalanceBanner();
+  /* 유입경로 복원 */
+  document.getElementById('g_source_group')?.querySelectorAll('.radio-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('g_source_ref_wrap')?.classList.remove('visible');
+  const srEl2=document.getElementById('g_source_ref'); if(srEl2) srEl2.value='';
+  const savedSource = g.source||'';
+  if (savedSource.startsWith('소개:')) {
+    const refName = savedSource.slice(3);
+    setRadio('g_source_group','소개');
+    if(refName){ const srEl3=document.getElementById('g_source_ref'); if(srEl3) srEl3.value=refName; }
+    document.getElementById('g_source_ref_wrap')?.classList.add('visible');
+  } else if (savedSource) {
+    setRadio('g_source_group', savedSource);
+  }
+  /* 의뢰주제 버튼 복원 (복수선택) */
+  const REQ_TOPIC_BTNS=['처음세팅','추가세팅','이사세팅','렌탈','기타'];
+  const savedReqTopicRaw = g.req_topic||'';
+  const savedReqTopics = savedReqTopicRaw ? savedReqTopicRaw.split(',').map(s=>s.trim()) : [];
+  document.getElementById('g_req_topic_group')?.querySelectorAll('.radio-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('g_req_topic_etc_wrap')?.classList.remove('visible');
+  const rteEl2=document.getElementById('g_req_topic_etc'); if(rteEl2) rteEl2.value='';
+  let hasEtcReqTopic=false;
+  savedReqTopics.forEach(v=>{
+    if(REQ_TOPIC_BTNS.includes(v)){
+      const btn=document.querySelector('#g_req_topic_group .radio-btn[data-val="'+v+'"]');
+      if(btn) btn.classList.add('active');
+    } else if(v){
+      const btn=document.querySelector('#g_req_topic_group .radio-btn[data-val="기타"]');
+      if(btn) btn.classList.add('active');
+      const rteEl3=document.getElementById('g_req_topic_etc'); if(rteEl3) rteEl3.value=v;
+      hasEtcReqTopic=true;
+    }
+  });
+  if(savedReqTopics.some(v=>v==='기타')||hasEtcReqTopic)
+    document.getElementById('g_req_topic_etc_wrap')?.classList.add('visible');
+  /* 특수옵션 사유 복원 */
+  const spR2=document.getElementById('specialReason'); if(spR2) spR2.value=g.specialReason||'';
+  const spRWrap2=document.getElementById('specialReasonWrap');
+  if(spRWrap2) spRWrap2.style.display=(specialOpts.size>0)&&(g.specialReason)?'':'none';
   goldImgs={
     quote:(g.quoteImgs||[]).map(i=>({name:i.name,data:i.data})),
     ref:  (g.refImgs  ||[]).map(i=>({name:i.name,data:i.data})),
@@ -2823,12 +2942,27 @@ function collectGoldTextFields(){
   const budget = budgetSel === '직접입력'
     ? (document.getElementById('g_budget_etc').value.trim() || '직접입력')
     : (budgetSel || '');
+  /* 유입경로 수집 */
+  const sourceVal = getRadio('g_source_group');
+  const source = sourceVal === '소개'
+    ? '소개:' + (document.getElementById('g_source_ref')?.value.trim()||'')
+    : (sourceVal||'');
+  /* 의뢰주제 버튼 수집 (복수선택) */
+  const reqTopicGroup = document.getElementById('g_req_topic_group');
+  const reqTopicSelected = reqTopicGroup
+    ? [...reqTopicGroup.querySelectorAll('.radio-btn.active')].map(b=>b.dataset.val) : [];
+  const reqTopicEtcVal = document.getElementById('g_req_topic_etc')?.value.trim()||'';
+  const req_topic = reqTopicSelected.length
+    ? reqTopicSelected.map(v => v==='기타' ? (reqTopicEtcVal||'기타') : v).join(', ') : '';
+  /* 특수옵션 사유 */
+  const specialReason = document.getElementById('specialReason')?.value.trim()||'';
   return {
     name:document.getElementById('g_name').value.trim(), phone:document.getElementById('g_phone').value.trim(),
-    platform, topic, budget,
-    equipment:document.getElementById('g_equipment').value.trim(), req_topic:document.getElementById('g_req_topic').value.trim(),
+    platform, topic, budget, source,
+    equipment:document.getElementById('g_equipment').value.trim(), req_topic,
     estimate_amount:document.getElementById('g_estimate_amount')?.value.trim()||'',
     req_detail:document.getElementById('g_req_detail').value.trim(), special:document.getElementById('g_special').value.trim(),
+    specialReason,
     career:getRadio('g_career_group'), paid:getRadio('g_paid_group'), order:getRadio('g_order_group'), delivery:getRadio('g_delivery_group'),
     balance:getRadio('g_balance_group'), balance_amount:document.getElementById('g_balance_amount').value.trim(),
     quoteImgs:goldImgs.quote.map(i=>({name:i.name,data:i.data})),
@@ -3043,7 +3177,8 @@ const GOLD_FIELD_LABELS = {
   name:'의뢰자 이름', phone:'전화번호', platform:'플랫폼', budget:'예산 성향',
   career:'경력 여부', topic:'방송 주제',
   equipment:'장비 목록', req_topic:'의뢰 주제', req_detail:'의뢰 세부항목',
-  special:'특이사항', paid:'결제 여부', order:'주문 여부',
+  special:'특이사항', specialReason:'특수옵션 사유', source:'유입 경로',
+  paid:'결제 여부', order:'주문 여부',
   delivery:'수령 방법', balance:'잔금 여부', balance_amount:'잔금 금액',
   estimate_amount:'견적 총액',
 };
@@ -3371,8 +3506,13 @@ function _showLockedCompact(){
   const parts=[];
   if (schedOpt) parts.push(SCHED_ICONS[schedOpt]||schedOpt);
   parts.push('📌'+(TYPE_LABELS[currentColor]||currentColor));
+  /* 특수옵션 + 사유 */
+  const spReason2 = document.getElementById('specialReason')?.value.trim()||'';
   const spActive=[...specialOpts].map(k=>SP_LABELS[k]||k).filter(Boolean);
-  if (spActive.length) parts.push(...spActive);
+  if (spActive.length) {
+    const spChip = spActive.join(' · ') + (spReason2 ? ` (${spReason2})` : '');
+    parts.push(spChip);
+  }
 
   /* 일정옵션 + 사유 */
   if (schedEventOpts.size > 0) {
@@ -3431,73 +3571,103 @@ function _showLockedGoldCompact(){
   const goldTpl = document.getElementById('goldTemplate');
   if (!goldTpl || goldTpl.style.display==='none') return;
 
-  /* 버튼 라디오 그룹들 숨기기 */
+  /* 버튼 라디오 그룹 field-group 전체 숨기기 */
   const radioGroupIds = ['g_platform_group','g_career_group','g_topic_group','g_budget_group',
+    'g_source_group','g_req_topic_group',
     'g_paid_group','g_order_group','g_balance_group','g_delivery_group'];
   radioGroupIds.forEach(id => {
-    const g = document.getElementById(id);
-    if (g) { g.dataset._lcHidden='1'; g.style.display='none'; }
-    /* label도 같이 숨기기 */
-    const fg = g?.closest('.field-group');
+    const g = document.getElementById(id); if (!g) return;
+    const fg = g.closest('.field-group');
     if (fg) { fg.dataset._lcHidden='1'; fg.style.display='none'; }
+    else { g.dataset._lcHidden='1'; g.style.display='none'; }
   });
-  /* conditional-field(직접입력 칸)도 숨기기 */
-  ['g_platform_etc_wrap','g_topic_etc_wrap','g_budget_etc_wrap','g_balance_amount_wrap'].forEach(id=>{
+  /* conditional 직접입력 칸도 숨기기 */
+  ['g_platform_etc_wrap','g_topic_etc_wrap','g_budget_etc_wrap','g_balance_amount_wrap',
+   'g_source_ref_wrap','g_req_topic_etc_wrap'].forEach(id=>{
     const el=document.getElementById(id); if(el){el.dataset._lcHidden='1';el.style.display='none';}
   });
+  /* 특수옵션 사유 wrap 숨기기 */
+  const spRW=document.getElementById('specialReasonWrap');
+  if(spRW){spRW.dataset._lcHidden='1';spRW.style.display='none';}
 
-  /* 활성화된 값 수집 */
-  function getActiveVals(gid) {
-    const g = document.getElementById(gid); if(!g) return '';
-    return [...g.querySelectorAll('.radio-btn.active')].map(b=>b.dataset.val).join(', ');
+  /* 값 수집 헬퍼 */
+  function getActiveVals(gid){
+    const g=document.getElementById(gid); if(!g) return '';
+    return [...g.querySelectorAll('.radio-btn.active')].map(b=>b.dataset.val).filter(Boolean).join(', ');
   }
-  function getActiveVal(gid) {
-    const g = document.getElementById(gid); if(!g) return '';
-    const a = g.querySelector('.radio-btn.active'); return a ? a.dataset.val : '';
+  function getActiveVal(gid){
+    const g=document.getElementById(gid); if(!g) return '';
+    const a=g.querySelector('.radio-btn.active'); return a?a.dataset.val:'';
   }
 
   const rows = [];
-  const platform = getActiveVals('g_platform_group') ||
-    (document.querySelector('#g_platform_group .radio-btn.active[data-val="기타"]')
-      ? document.getElementById('g_platform_etc')?.value.trim() : '');
+
+  /* 유입경로 */
+  const sourceVal = getActiveVal('g_source_group');
+  if (sourceVal) {
+    const refName = document.getElementById('g_source_ref')?.value.trim()||'';
+    rows.push(['유입', sourceVal==='소개'&&refName ? `소개 (${refName})` : sourceVal]);
+  }
+
+  /* 플랫폼 */
+  const platVals = getActiveVals('g_platform_group');
+  const platEtc  = document.querySelector('#g_platform_group .radio-btn.active[data-val="기타"]')
+    ? document.getElementById('g_platform_etc')?.value.trim() : '';
+  const platform = platVals
+    ? platVals.split(', ').map(v=>v==='기타'?(platEtc||'기타'):v).join(', ') : '';
   if (platform) rows.push(['플랫폼', platform]);
 
+  /* 경력 */
   const career = getActiveVal('g_career_group');
   if (career) rows.push(['경력', career]);
 
-  const topic = getActiveVals('g_topic_group') ||
-    (document.querySelector('#g_topic_group .radio-btn.active[data-val="기타"]')
-      ? document.getElementById('g_topic_etc')?.value.trim() : '');
+  /* 방송주제 */
+  const topicVals = getActiveVals('g_topic_group');
+  const topicEtc  = document.querySelector('#g_topic_group .radio-btn.active[data-val="기타"]')
+    ? document.getElementById('g_topic_etc')?.value.trim() : '';
+  const topic = topicVals
+    ? topicVals.split(', ').map(v=>v==='기타'?(topicEtc||'기타'):v).join(', ') : '';
   if (topic) rows.push(['방송주제', topic]);
 
+  /* 예산 */
   const budget = getActiveVal('g_budget_group');
   const budgetVal = budget==='직접입력'
-    ? (document.getElementById('g_budget_etc')?.value.trim()||'직접입력')
-    : budget;
+    ? (document.getElementById('g_budget_etc')?.value.trim()||'직접입력') : budget;
   if (budgetVal) rows.push(['예산', budgetVal]);
 
-  const paid    = getActiveVal('g_paid_group');    if (paid)     rows.push(['결제', paid]);
-  const order   = getActiveVal('g_order_group');   if (order)    rows.push(['주문', order]);
-  const balance = getActiveVal('g_balance_group'); if (balance)  rows.push(['잔금', balance]);
-  const delivery= getActiveVal('g_delivery_group'); if(delivery) rows.push(['수령', delivery]);
+  /* 의뢰주제 */
+  const reqTopicVals = getActiveVals('g_req_topic_group');
+  const reqTopicEtc  = document.querySelector('#g_req_topic_group .radio-btn.active[data-val="기타"]')
+    ? document.getElementById('g_req_topic_etc')?.value.trim() : '';
+  const reqTopic = reqTopicVals
+    ? reqTopicVals.split(', ').map(v=>v==='기타'?(reqTopicEtc||'기타'):v).join(', ') : '';
+  if (reqTopic) rows.push(['의뢰주제', reqTopic]);
+
+  /* 특수옵션 사유 */
+  const spReason = document.getElementById('specialReason')?.value.trim()||'';
+  if (spReason && specialOpts.size>0) rows.push(['특수옵션사유', spReason]);
+
+  /* 결제/주문/잔금/수령 */
+  const paid    = getActiveVal('g_paid_group');    if(paid)     rows.push(['결제', paid]);
+  const order   = getActiveVal('g_order_group');   if(order)    rows.push(['주문', order]);
+  const balance = getActiveVal('g_balance_group'); if(balance)  rows.push(['잔금', balance]);
+  const delivery= getActiveVal('g_delivery_group');if(delivery) rows.push(['수령', delivery]);
 
   if (!rows.length) return;
 
-  /* 컴팩트 칩 컨테이너 생성 */
+  /* 칩 컨테이너 */
   let cGold = document.getElementById('_compactGold');
   if (!cGold){
-    cGold = document.createElement('div'); cGold.id = '_compactGold';
-    cGold.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px;padding:4px 0 6px;';
+    cGold = document.createElement('div'); cGold.id='_compactGold';
+    cGold.style.cssText='display:flex;flex-wrap:wrap;gap:5px;padding:4px 0 6px;';
   }
-  cGold.innerHTML = '';
-  rows.forEach(([label, val]) => {
-    const chip = document.createElement('span');
-    chip.style.cssText = 'background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:2px 9px;font-size:11px;color:var(--text-muted);white-space:nowrap;';
-    chip.innerHTML = `<span style="opacity:0.6;margin-right:3px;">${label}</span>${val}`;
+  cGold.innerHTML='';
+  rows.forEach(([label,val])=>{
+    const chip=document.createElement('span');
+    chip.style.cssText='background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:2px 9px;font-size:11px;color:var(--text-muted);white-space:nowrap;';
+    chip.innerHTML=`<span style="opacity:0.6;margin-right:3px;">${label}</span>${val}`;
     cGold.appendChild(chip);
   });
-
-  /* goldTemplate 맨 앞에 삽입 */
   goldTpl.insertBefore(cGold, goldTpl.firstChild);
 }
 
@@ -3811,7 +3981,8 @@ function _takeSnapshot() {
   const ids = ['modalTitle','modalLocation','modalName','modalAddress','modalDesc','t_remote_name','t_remote_platform','t_remote_content','t_studio_name','t_studio_platform','t_studio_content','t_desc',
     'startDate','endDate','startTime','endTime',
     'g_name','g_phone','g_platform_etc','g_budget_etc','g_topic_etc','g_equipment',
-    'g_req_topic','g_req_detail','g_special','g_balance_amount',
+    'g_req_topic_etc','g_req_detail','g_special','g_balance_amount',
+    'g_source_ref','specialReason',
     'g_estimate_amount','goldStartDate','schedAfterReason'];
   const snap = {};
   ids.forEach(id => {
@@ -3830,6 +4001,8 @@ function _takeSnapshot() {
   snap._platform = JSON.stringify([...document.querySelectorAll('#g_platform_group .radio-btn.active')].map(b=>b.dataset.val).sort());
   snap._topic_multi = JSON.stringify([...document.querySelectorAll('#g_topic_group .radio-btn.active')].map(b=>b.dataset.val).sort());
   snap._budget = getRadio('g_budget_group');
+  snap._source = getRadio('g_source_group');
+  snap._req_topic_multi = JSON.stringify([...document.querySelectorAll('#g_req_topic_group .radio-btn.active')].map(b=>b.dataset.val).sort());
   snap._career = getRadio('g_career_group');
   snap._paid = getRadio('g_paid_group');
   snap._order = getRadio('g_order_group');
@@ -3843,7 +4016,8 @@ function _isDirty() {
   const ids = ['modalTitle','modalLocation','modalName','modalAddress','modalDesc','t_remote_name','t_remote_platform','t_remote_content','t_studio_name','t_studio_platform','t_studio_content','t_desc',
     'startDate','endDate','startTime','endTime',
     'g_name','g_phone','g_platform_etc','g_budget_etc','g_topic_etc','g_equipment',
-    'g_req_topic','g_req_detail','g_special','g_balance_amount',
+    'g_req_topic_etc','g_req_detail','g_special','g_balance_amount',
+    'g_source_ref','specialReason',
     'g_estimate_amount','goldStartDate','schedAfterReason'];
   const snap = {};
   ids.forEach(id => {
@@ -3861,6 +4035,8 @@ function _isDirty() {
   snap._platform = JSON.stringify([...document.querySelectorAll('#g_platform_group .radio-btn.active')].map(b=>b.dataset.val).sort());
   snap._topic_multi = JSON.stringify([...document.querySelectorAll('#g_topic_group .radio-btn.active')].map(b=>b.dataset.val).sort());
   snap._budget = getRadio('g_budget_group');
+  snap._source = getRadio('g_source_group');
+  snap._req_topic_multi = JSON.stringify([...document.querySelectorAll('#g_req_topic_group .radio-btn.active')].map(b=>b.dataset.val).sort());
   snap._career = getRadio('g_career_group');
   snap._paid = getRadio('g_paid_group');
   snap._order = getRadio('g_order_group');
