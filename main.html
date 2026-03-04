@@ -195,7 +195,7 @@ body {
 }
 .welcome-logo { font-family:var(--font-mono); font-size:36px; letter-spacing:.2em; color:var(--accent); opacity:.6; }
 .welcome-sub  { font-size:13px; letter-spacing:.08em; }
-.welcome-hint { display:flex; gap:10px; margin-top:8px; }
+.welcome-hint { display:flex; gap:10px; margin-top:8px; flex-wrap:wrap; justify-content:center; max-width:520px; }
 .welcome-chip {
   padding:7px 16px; border:1px solid var(--border); border-radius:8px;
   font-size:12px; color:var(--text-muted); cursor:pointer;
@@ -307,6 +307,26 @@ body {
     <span class="mi-icon">📖</span>
     <div><div class="mi-label">위키</div><div class="mi-desc">사내 매뉴얼</div></div>
   </div>
+  <div class="add-menu-divider"></div>
+  <div class="add-menu-item" data-page="inven">
+    <span class="mi-icon">📦</span>
+    <div><div class="mi-label">재고관리</div><div class="mi-desc">사내 물류 재고 확인</div></div>
+  </div>
+  <div class="add-menu-divider"></div>
+  <div class="add-menu-item" data-page="rent">
+    <span class="mi-icon">🎬</span>
+    <div><div class="mi-label">방송룸/렌탈</div><div class="mi-desc">임대·렌탈 현황 관리</div></div>
+  </div>
+  <div class="add-menu-divider"></div>
+  <div class="add-menu-item" data-page="viewer">
+    <span class="mi-icon">👁</span>
+    <div><div class="mi-label">일정뷰어</div><div class="mi-desc">읽기 전용 일정 확인</div></div>
+  </div>
+  <div class="add-menu-divider"></div>
+  <div class="add-menu-item" data-page="guest">
+    <span class="mi-icon">🌐</span>
+    <div><div class="mi-label">캘린더(게스트)</div><div class="mi-desc">게스트 모드 캘린더</div></div>
+  </div>
 </div>
 
 <!-- ── FRAME WRAP ── -->
@@ -318,6 +338,8 @@ body {
       <div class="welcome-chip" data-page="calendar">📅 캘린더 열기</div>
       <div class="welcome-chip" data-page="crm">👥 CRM 열기</div>
       <div class="welcome-chip" data-page="wiki">📖 위키 열기</div>
+      <div class="welcome-chip" data-page="inven">📦 재고관리</div>
+      <div class="welcome-chip" data-page="rent">🎬 방송룸/렌탈</div>
     </div>
   </div>
 </div>
@@ -525,9 +547,13 @@ function initWorkspace(displayName) {
      TAB MANAGER
   ────────────────────────────── */
   const PAGE_META = {
-    calendar: { label:'캘린더', icon:'📅', src:'index.html' },
-    crm:      { label:'CRM',    icon:'👥', src:'crm.html'   },
-    wiki:     { label:'위키',   icon:'📖', src:'wiki.html'  },
+    calendar: { label:'캘린더',        icon:'📅', src:'index.html' },
+    crm:      { label:'CRM',           icon:'👥', src:'crm.html'   },
+    wiki:     { label:'위키',          icon:'📖', src:'wiki.html'  },
+    inven:    { label:'재고관리',       icon:'📦', src:'inven.html' },
+    rent:     { label:'방송룸/렌탈',   icon:'🎬', src:'rent.html'  },
+    viewer:   { label:'일정뷰어',      icon:'👁', src:'view.html'  },
+    guest:    { label:'캘린더(게스트)', icon:'🌐', src:'guest.html' },
   };
 
   let tabs      = [];   /* [{ id, page, label, icon }] */

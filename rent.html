@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>방송룸·렌탈 현황 — DRGO</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --font-main:"Malgun Gothic","맑은 고딕",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  --font-mono:'DM Mono',"Malgun Gothic","맑은 고딕",monospace;
+  --bg:#111111; --surface:#1c1c1c; --surface2:#272727;
+  --border:#3a3a3a; --accent:#d4bc96; --accent2:#90bcd4;
+  --text:#f0ebe2; --text-muted:#a09890;
+  --red:#d48888; --green:#88d488; --yellow:#d4c488; --blue:#88aad4; --purple:#c488d4;
+}
+html.light {
+  --bg:#f5f3f0; --surface:#ffffff; --surface2:#f0ede8;
+  --border:#dedede; --accent:#9c7d48; --accent2:#3a7a9a;
+  --text:#1a1a1a; --text-muted:#666666; --red:#a84444; --green:#3a8a3a;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-main);min-height:100vh;display:flex;flex-direction:column;transition:background .2s,color .2s;}
+
+/* ── HEADER ── */
+.page-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:100;flex-shrink:0;flex-wrap:wrap;gap:10px;}
+.page-title{display:flex;align-items:center;gap:10px;font-family:var(--font-mono);font-size:14px;font-weight:500;letter-spacing:.12em;color:var(--accent);}
+.header-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.btn{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;font-size:12px;font-family:var(--font-main);cursor:pointer;transition:all .17s;font-weight:500;white-space:nowrap;border:none;}
+.btn-primary{background:var(--accent);color:#1a1207;}
+.btn-primary:hover{background:#dcc8a4;transform:translateY(-1px);}
+.btn-ghost{background:none;border:1px solid var(--border);color:var(--text-muted);}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
+.btn-accent2{background:none;border:1px solid var(--accent2);color:var(--accent2);}
+.btn-accent2:hover{background:rgba(144,188,212,.1);}
+.tab-group{display:flex;gap:4px;background:var(--surface2);border-radius:9px;padding:3px;}
+.tab-pill{padding:5px 14px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;color:var(--text-muted);transition:all .15s;border:none;background:none;}
+.tab-pill.active{background:var(--surface);color:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.3);}
+
+/* ── STATS ── */
+.stats-bar{display:flex;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);overflow-x:auto;}
+.stats-bar::-webkit-scrollbar{display:none;}
+.stat-card{flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 18px;min-width:130px;}
+.stat-label{font-size:10px;font-family:var(--font-mono);letter-spacing:.1em;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;}
+.stat-value{font-size:22px;font-weight:700;color:var(--text);font-family:var(--font-mono);}
+.stat-sub{font-size:11px;color:var(--text-muted);margin-top:2px;}
+.stat-card.green .stat-value{color:var(--green);}
+.stat-card.yellow .stat-value{color:var(--yellow);}
+.stat-card.red .stat-value{color:var(--red);}
+.stat-card.blue .stat-value{color:var(--blue);}
+
+/* ── CONTENT ── */
+.content{flex:1;padding:20px;overflow:auto;}
+.section-hidden{display:none;}
+
+/* ── ROOM GRID ── */
+.room-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+.room-card{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;overflow:hidden;transition:box-shadow .18s,border-color .18s;}
+.room-card:hover{box-shadow:0 8px 28px rgba(0,0,0,.35);}
+.room-card.available{border-color:rgba(136,212,136,.3);}
+.room-card.occupied{border-color:rgba(212,136,136,.3);}
+.room-card.reserved{border-color:rgba(212,196,136,.3);}
+.room-card.maintenance{border-color:rgba(136,170,212,.3);}
+.room-header{padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
+.room-name{font-size:15px;font-weight:700;color:var(--text);}
+.room-badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:5px;font-size:11px;font-weight:600;gap:4px;}
+.room-badge.available{background:rgba(136,212,136,.15);color:var(--green);}
+.room-badge.occupied{background:rgba(212,136,136,.15);color:var(--red);}
+.room-badge.reserved{background:rgba(212,196,136,.15);color:var(--yellow);}
+.room-badge.maintenance{background:rgba(136,170,212,.15);color:var(--blue);}
+.room-body{padding:14px 16px;}
+.room-info-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.room-info-label{font-size:11px;color:var(--text-muted);}
+.room-info-value{font-size:13px;color:var(--text);font-weight:500;}
+.room-tenant{font-size:14px;font-weight:600;color:var(--accent);margin-bottom:4px;}
+.room-period{font-size:11px;color:var(--text-muted);}
+.room-footer{padding:10px 16px;border-top:1px solid var(--border);display:flex;gap:6px;}
+.room-foot-btn{flex:1;padding:6px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;transition:all .14s;text-align:center;font-family:var(--font-main);}
+.room-foot-btn.edit{background:none;border:1px solid var(--border);color:var(--text-muted);}
+.room-foot-btn.edit:hover{border-color:var(--accent);color:var(--accent);}
+.room-foot-btn.reserve{background:none;border:1px solid var(--accent2);color:var(--accent2);}
+.room-foot-btn.reserve:hover{background:rgba(144,188,212,.1);}
+
+/* ── RENTAL TABLE ── */
+.table-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.search-wrap{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0 12px;height:34px;flex:1;min-width:180px;max-width:300px;}
+.search-wrap input{background:none;border:none;outline:none;color:var(--text);font-family:var(--font-main);font-size:13px;flex:1;}
+.search-wrap input::placeholder{color:var(--text-muted);}
+.filter-select{background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:0 12px;height:34px;font-family:var(--font-main);font-size:12px;cursor:pointer;outline:none;}
+.filter-select:focus{border-color:var(--accent);}
+.rental-table{width:100%;border-collapse:separate;border-spacing:0;min-width:760px;}
+.rental-table th{padding:10px 14px;font-size:10px;font-family:var(--font-mono);letter-spacing:.1em;color:var(--text-muted);text-transform:uppercase;text-align:left;border-bottom:2px solid var(--border);background:var(--bg);white-space:nowrap;}
+.rental-table td{padding:11px 14px;font-size:13px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle;}
+.rental-table tr:hover td{background:rgba(212,188,150,.04);}
+.rental-table-wrap{overflow-x:auto;}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;letter-spacing:.04em;}
+.badge-active{background:rgba(136,212,136,.15);color:var(--green);}
+.badge-overdue{background:rgba(212,136,136,.15);color:var(--red);}
+.badge-upcoming{background:rgba(212,196,136,.15);color:var(--yellow);}
+.badge-returned{background:rgba(160,152,144,.15);color:var(--text-muted);}
+.badge-pending{background:rgba(136,170,212,.15);color:var(--blue);}
+.item-name{font-weight:500;}
+.item-model{font-size:11px;color:var(--text-muted);margin-top:1px;}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:500px;box-shadow:0 24px 64px rgba(0,0,0,.55);overflow:hidden;animation:modalIn .2s ease;}
+@keyframes modalIn{from{transform:scale(.96);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-header{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-size:15px;font-weight:700;color:var(--text);}
+.modal-close{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:18px;line-height:1;transition:color .13s;}
+.modal-close:hover{color:var(--text);}
+.modal-body{padding:20px 24px;display:flex;flex-direction:column;gap:14px;max-height:65vh;overflow-y:auto;}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;}
+.field-label{font-size:10px;font-family:var(--font-mono);letter-spacing:.1em;color:var(--text-muted);text-transform:uppercase;margin-bottom:5px;}
+.field-input,.field-select,.field-textarea{width:100%;padding:9px 12px;font-size:13px;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-main);outline:none;transition:border-color .18s;}
+.field-input:focus,.field-select:focus,.field-textarea:focus{border-color:var(--accent);}
+.field-textarea{resize:vertical;min-height:60px;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.field-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+
+/* TOAST */
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(10px);z-index:9999;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:10px 18px;font-size:13px;color:var(--text);box-shadow:0 8px 28px rgba(0,0,0,.4);opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* EMPTY */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;color:var(--text-muted);gap:12px;}
+.empty-icon{font-size:40px;opacity:.5;}
+.empty-text{font-size:14px;}
+
+/* ROW ACTIONS */
+.row-actions{display:flex;gap:4px;}
+.row-btn{background:none;border:1px solid var(--border);color:var(--text-muted);border-radius:5px;width:26px;height:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .13s;}
+.row-btn:hover{border-color:var(--accent);color:var(--accent);}
+.row-btn.del:hover{border-color:var(--red);color:var(--red);}
+.row-btn.return-btn:hover{border-color:var(--green);color:var(--green);}
+
+/* OVERDUE WARNING */
+.overdue-bar{background:rgba(212,136,136,.08);border:1px solid rgba(212,136,136,.2);border-radius:8px;padding:10px 16px;margin-bottom:16px;font-size:13px;color:var(--red);display:none;}
+.overdue-bar.show{display:block;}
+
+@media(max-width:600px){
+  .room-grid{grid-template-columns:1fr;}
+  .content{padding:14px;}
+  .stats-bar{padding:12px 14px;gap:8px;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="page-header">
+  <div class="page-title">
+    <span>🎬</span>
+    방송룸 · 렌탈 현황
+  </div>
+  <div class="header-actions">
+    <div class="tab-group">
+      <button class="tab-pill active" id="tabRoom" onclick="switchTab('room')">🏠 방송룸</button>
+      <button class="tab-pill" id="tabRental" onclick="switchTab('rental')">💻 렌탈</button>
+    </div>
+    <button class="btn btn-ghost" id="addRoomBtn" onclick="openRoomModal()">＋ 방 추가</button>
+    <button class="btn btn-primary" id="addRentalBtn" onclick="openRentalModal()">＋ 렌탈 등록</button>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-bar" id="statsBar">
+  <!-- 탭에 따라 JS로 교체 -->
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- ── 방송룸 섹션 ── -->
+  <div id="sectionRoom">
+    <div class="room-grid" id="roomGrid"></div>
+    <div class="empty-state" id="roomEmpty" style="display:none;">
+      <div class="empty-icon">🏠</div>
+      <div class="empty-text">등록된 방송룸이 없습니다</div>
+    </div>
+  </div>
+
+  <!-- ── 렌탈 섹션 ── -->
+  <div id="sectionRental" class="section-hidden">
+    <div id="overdueBar" class="overdue-bar"></div>
+    <div class="table-toolbar">
+      <div class="search-wrap">
+        <span style="color:var(--text-muted);font-size:14px;">🔍</span>
+        <input type="text" id="rentalSearch" placeholder="임차인, 품목명 검색…">
+      </div>
+      <select class="filter-select" id="rentalFilter">
+        <option value="">전체 상태</option>
+        <option value="active">대여 중</option>
+        <option value="overdue">연체</option>
+        <option value="upcoming">반납 예정</option>
+        <option value="returned">반납 완료</option>
+        <option value="pending">대기</option>
+      </select>
+      <select class="filter-select" id="rentalTypeFilter">
+        <option value="">전체 유형</option>
+        <option value="computer">컴퓨터</option>
+        <option value="monitor">모니터</option>
+        <option value="camera">카메라</option>
+        <option value="etc">기타</option>
+      </select>
+    </div>
+    <div class="rental-table-wrap">
+      <table class="rental-table">
+        <thead>
+          <tr>
+            <th>품목</th>
+            <th>임차인</th>
+            <th>연락처</th>
+            <th>대여일</th>
+            <th>반납 예정일</th>
+            <th>상태</th>
+            <th>보증금</th>
+            <th>관리</th>
+          </tr>
+        </thead>
+        <tbody id="rentalBody"></tbody>
+      </table>
+      <div class="empty-state" id="rentalEmpty" style="display:none;">
+        <div class="empty-icon">💻</div>
+        <div class="empty-text">렌탈 내역이 없습니다</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<!-- ── ROOM MODAL ── -->
+<div class="modal-overlay" id="roomModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="roomModalTitle">방송룸 추가</div>
+      <button class="modal-close" onclick="closeRoomModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="rmId">
+      <div class="field-row">
+        <div>
+          <div class="field-label">방 이름 *</div>
+          <input class="field-input" id="rmName" placeholder="예: 방송룸 A">
+        </div>
+        <div>
+          <div class="field-label">호실</div>
+          <input class="field-input" id="rmRoom" placeholder="예: 201호">
+        </div>
+      </div>
+      <div class="field-row">
+        <div>
+          <div class="field-label">면적</div>
+          <input class="field-input" id="rmSize" placeholder="예: 15㎡">
+        </div>
+        <div>
+          <div class="field-label">월 임대료</div>
+          <input class="field-input" id="rmPrice" type="number" placeholder="0" min="0">
+        </div>
+      </div>
+      <div>
+        <div class="field-label">현재 상태</div>
+        <select class="field-select" id="rmStatus">
+          <option value="available">공실 (이용 가능)</option>
+          <option value="occupied">임대 중</option>
+          <option value="reserved">예약됨</option>
+          <option value="maintenance">점검 중</option>
+        </select>
+      </div>
+      <div id="rmTenantWrap">
+        <div class="field-label">임차인</div>
+        <input class="field-input" id="rmTenant" placeholder="임차인 이름 또는 상호">
+      </div>
+      <div class="field-row" id="rmPeriodWrap">
+        <div>
+          <div class="field-label">임대 시작일</div>
+          <input class="field-input" type="date" id="rmStart">
+        </div>
+        <div>
+          <div class="field-label">계약 종료일</div>
+          <input class="field-input" type="date" id="rmEnd">
+        </div>
+      </div>
+      <div>
+        <div class="field-label">특이사항 / 메모</div>
+        <textarea class="field-textarea" id="rmNote" placeholder="방 설명, 포함 장비, 계약 조건 등…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeRoomModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveRoom()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── RENTAL MODAL ── -->
+<div class="modal-overlay" id="rentalModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="rentalModalTitle">렌탈 등록</div>
+      <button class="modal-close" onclick="closeRentalModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="rlId">
+      <div class="field-row">
+        <div>
+          <div class="field-label">품목명 *</div>
+          <input class="field-input" id="rlItem" placeholder="예: 노트북 Dell XPS">
+        </div>
+        <div>
+          <div class="field-label">유형</div>
+          <select class="field-select" id="rlType">
+            <option value="computer">컴퓨터</option>
+            <option value="monitor">모니터</option>
+            <option value="camera">카메라</option>
+            <option value="etc">기타</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <div class="field-label">시리얼 / 모델</div>
+        <input class="field-input" id="rlModel" placeholder="모델명 또는 시리얼 넘버">
+      </div>
+      <div class="field-row">
+        <div>
+          <div class="field-label">임차인 *</div>
+          <input class="field-input" id="rlTenant" placeholder="이름">
+        </div>
+        <div>
+          <div class="field-label">연락처</div>
+          <input class="field-input" id="rlContact" placeholder="010-0000-0000" type="tel">
+        </div>
+      </div>
+      <div class="field-row">
+        <div>
+          <div class="field-label">대여일 *</div>
+          <input class="field-input" type="date" id="rlStart">
+        </div>
+        <div>
+          <div class="field-label">반납 예정일 *</div>
+          <input class="field-input" type="date" id="rlEnd">
+        </div>
+      </div>
+      <div class="field-row">
+        <div>
+          <div class="field-label">대여 요금 (원)</div>
+          <input class="field-input" type="number" id="rlFee" placeholder="0" min="0">
+        </div>
+        <div>
+          <div class="field-label">보증금 (원)</div>
+          <input class="field-input" type="number" id="rlDeposit" placeholder="0" min="0">
+        </div>
+      </div>
+      <div>
+        <div class="field-label">상태</div>
+        <select class="field-select" id="rlStatus">
+          <option value="pending">대기</option>
+          <option value="active">대여 중</option>
+          <option value="returned">반납 완료</option>
+        </select>
+      </div>
+      <div>
+        <div class="field-label">메모</div>
+        <textarea class="field-textarea" id="rlNote" placeholder="특이사항, 상태 메모 등…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeRentalModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveRental()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── RETURN MODAL ── -->
+<div class="modal-overlay" id="returnModal">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-header">
+      <div class="modal-title">반납 처리</div>
+      <button class="modal-close" onclick="closeReturnModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="retId">
+      <div>
+        <div class="field-label">품목</div>
+        <div id="retItemName" style="font-size:14px;font-weight:600;color:var(--accent);padding:4px 0;"></div>
+      </div>
+      <div>
+        <div class="field-label">실제 반납일</div>
+        <input class="field-input" type="date" id="retDate">
+      </div>
+      <div>
+        <div class="field-label">반납 메모</div>
+        <input class="field-input" id="retNote" placeholder="파손 여부, 특이사항 등…">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeReturnModal()">취소</button>
+      <button class="btn btn-primary" onclick="confirmReturn()">반납 완료</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const ROOMS_KEY   = 'drgo_rooms';
+const RENTALS_KEY = 'drgo_rentals';
+
+let rooms   = JSON.parse(localStorage.getItem(ROOMS_KEY)   || '[]');
+let rentals = JSON.parse(localStorage.getItem(RENTALS_KEY) || '[]');
+let curTab  = 'room';
+let editRoomId = null, editRentalId = null, returnRentalId = null;
+
+function saveRooms()   { localStorage.setItem(ROOMS_KEY,   JSON.stringify(rooms)); }
+function saveRentals() { localStorage.setItem(RENTALS_KEY, JSON.stringify(rentals)); }
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function fmtMoney(n) { return n ? Number(n).toLocaleString('ko-KR')+'원' : '—'; }
+function fmtDate(str) {
+  if (!str) return '—';
+  const d = new Date(str);
+  return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+}
+function today() { return new Date().toISOString().split('T')[0]; }
+function dDay(dateStr) {
+  if (!dateStr) return null;
+  const diff = Math.floor((new Date(dateStr)-new Date(today()))/(1000*60*60*24));
+  return diff;
+}
+
+/* ── STATUS HELPERS ── */
+function calcRentalStatus(r) {
+  if (r.status === 'returned') return 'returned';
+  if (!r.endDate) return r.status || 'active';
+  const d = dDay(r.endDate);
+  if (d < 0) return 'overdue';
+  if (d <= 3) return 'upcoming';
+  return r.status || 'active';
+}
+const RL_STATUS_LABEL = { active:'대여 중', overdue:'연체', upcoming:'반납 예정', returned:'반납 완료', pending:'대기' };
+const RL_STATUS_BADGE = { active:'badge-active', overdue:'badge-overdue', upcoming:'badge-upcoming', returned:'badge-returned', pending:'badge-pending' };
+const ROOM_STATUS_LABEL = { available:'공실', occupied:'임대 중', reserved:'예약됨', maintenance:'점검 중' };
+const TYPE_ICON = { computer:'💻', monitor:'🖥', camera:'📷', etc:'📦' };
+
+/* ─────────── TAB SWITCH ─────────── */
+function switchTab(tab) {
+  curTab = tab;
+  document.getElementById('tabRoom').classList.toggle('active', tab==='room');
+  document.getElementById('tabRental').classList.toggle('active', tab==='rental');
+  document.getElementById('sectionRoom').classList.toggle('section-hidden', tab!=='room');
+  document.getElementById('sectionRental').classList.toggle('section-hidden', tab!=='rental');
+  document.getElementById('addRoomBtn').style.display    = tab==='room'   ? '' : 'none';
+  document.getElementById('addRentalBtn').style.display  = tab==='rental' ? '' : 'none';
+  renderStats();
+  if (tab==='room') renderRooms();
+  else renderRentals();
+}
+
+/* ─────────── STATS ─────────── */
+function renderStats() {
+  const bar = document.getElementById('statsBar');
+  if (curTab === 'room') {
+    const total  = rooms.length;
+    const occ    = rooms.filter(r=>r.status==='occupied').length;
+    const avail  = rooms.filter(r=>r.status==='available').length;
+    const res    = rooms.filter(r=>r.status==='reserved').length;
+    bar.innerHTML = `
+      <div class="stat-card"><div class="stat-label">전체 방</div><div class="stat-value">${total}</div><div class="stat-sub">등록된 방송룸</div></div>
+      <div class="stat-card red"><div class="stat-label">임대 중</div><div class="stat-value">${occ}</div><div class="stat-sub">현재 사용 중</div></div>
+      <div class="stat-card green"><div class="stat-label">공실</div><div class="stat-value">${avail}</div><div class="stat-sub">이용 가능</div></div>
+      <div class="stat-card yellow"><div class="stat-label">예약됨</div><div class="stat-value">${res}</div><div class="stat-sub">예약 대기</div></div>
+    `;
+  } else {
+    const total   = rentals.length;
+    const active  = rentals.filter(r=>calcRentalStatus(r)==='active').length;
+    const overdue = rentals.filter(r=>calcRentalStatus(r)==='overdue').length;
+    const upcoming= rentals.filter(r=>calcRentalStatus(r)==='upcoming').length;
+    bar.innerHTML = `
+      <div class="stat-card"><div class="stat-label">전체 렌탈</div><div class="stat-value">${total}</div><div class="stat-sub">등록 건수</div></div>
+      <div class="stat-card blue"><div class="stat-label">대여 중</div><div class="stat-value">${active}</div><div class="stat-sub">진행 중</div></div>
+      <div class="stat-card red"><div class="stat-label">연체</div><div class="stat-value">${overdue}</div><div class="stat-sub">반납 기한 초과</div></div>
+      <div class="stat-card yellow"><div class="stat-label">반납 임박</div><div class="stat-value">${upcoming}</div><div class="stat-sub">3일 이내 반납</div></div>
+    `;
+  }
+}
+
+/* ─────────── ROOMS ─────────── */
+function renderRooms() {
+  const grid  = document.getElementById('roomGrid');
+  const empty = document.getElementById('roomEmpty');
+  if (rooms.length === 0) { grid.innerHTML=''; empty.style.display=''; return; }
+  empty.style.display = 'none';
+  grid.innerHTML = rooms.map(r => {
+    const st = r.status || 'available';
+    const endD = r.endDate ? dDay(r.endDate) : null;
+    let periodHtml = '';
+    if (r.startDate || r.endDate) {
+      const warn = endD !== null && endD <= 30 && endD >= 0 ? ` style="color:var(--yellow)"` : '';
+      periodHtml = `<div class="room-period"${warn}>${fmtDate(r.startDate)} ~ ${fmtDate(r.endDate)}${endD!==null&&r.status==='occupied'?` (D${endD>=0?'-'+endD:'+'+Math.abs(endD)})`:''}`;
+      periodHtml += '</div>';
+    }
+    return `
+    <div class="room-card ${st}">
+      <div class="room-header">
+        <div>
+          <div class="room-name">${r.name}</div>
+          ${r.roomNum ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${r.roomNum}</div>` : ''}
+        </div>
+        <span class="room-badge ${st}">${st==='available'?'✅':st==='occupied'?'🔴':st==='reserved'?'🟡':'🔧'} ${ROOM_STATUS_LABEL[st]}</span>
+      </div>
+      <div class="room-body">
+        ${r.tenant ? `<div class="room-tenant">👤 ${r.tenant}</div>${periodHtml}` : `<div style="font-size:12px;color:var(--text-muted)">임차인 없음</div>`}
+        <div style="margin-top:10px;display:flex;flex-direction:column;gap:5px;">
+          ${r.size  ? `<div class="room-info-row"><span class="room-info-label">면적</span><span class="room-info-value">${r.size}</span></div>` : ''}
+          ${r.price ? `<div class="room-info-row"><span class="room-info-label">월 임대료</span><span class="room-info-value">${fmtMoney(r.price)}</span></div>` : ''}
+          ${r.note  ? `<div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.5;">${r.note}</div>` : ''}
+        </div>
+      </div>
+      <div class="room-footer">
+        <button class="room-foot-btn edit" onclick="openRoomEdit('${r.id}')">✏️ 수정</button>
+        <button class="room-foot-btn reserve" onclick="quickStatus('${r.id}')">🔄 상태 변경</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function quickStatus(id) {
+  const r = rooms.find(r=>r.id===id);
+  if (!r) return;
+  const cycle = ['available','occupied','reserved','maintenance'];
+  const next = cycle[(cycle.indexOf(r.status||'available')+1)%cycle.length];
+  r.status = next;
+  saveRooms();
+  renderRooms();
+  renderStats();
+  showToast(`상태 변경: ${ROOM_STATUS_LABEL[next]}`);
+}
+
+/* ROOM MODAL */
+function openRoomModal() {
+  editRoomId = null;
+  document.getElementById('roomModalTitle').textContent = '방송룸 추가';
+  ['rmName','rmRoom','rmSize','rmTenant','rmNote'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('rmPrice').value = '0';
+  document.getElementById('rmStart').value = today();
+  document.getElementById('rmEnd').value   = '';
+  document.getElementById('rmStatus').value = 'available';
+  document.getElementById('roomModal').classList.add('open');
+}
+function openRoomEdit(id) {
+  editRoomId = id;
+  const r = rooms.find(r=>r.id===id);
+  if (!r) return;
+  document.getElementById('roomModalTitle').textContent = '방송룸 수정';
+  document.getElementById('rmName').value   = r.name    ||'';
+  document.getElementById('rmRoom').value   = r.roomNum ||'';
+  document.getElementById('rmSize').value   = r.size    ||'';
+  document.getElementById('rmPrice').value  = r.price   ||0;
+  document.getElementById('rmStatus').value = r.status  ||'available';
+  document.getElementById('rmTenant').value = r.tenant  ||'';
+  document.getElementById('rmStart').value  = r.startDate||'';
+  document.getElementById('rmEnd').value    = r.endDate  ||'';
+  document.getElementById('rmNote').value   = r.note     ||'';
+  document.getElementById('roomModal').classList.add('open');
+}
+function closeRoomModal() { document.getElementById('roomModal').classList.remove('open'); }
+function saveRoom() {
+  const name = document.getElementById('rmName').value.trim();
+  if (!name) { showToast('방 이름을 입력하세요'); return; }
+  const data = {
+    name, status: document.getElementById('rmStatus').value,
+    roomNum:   document.getElementById('rmRoom').value.trim(),
+    size:      document.getElementById('rmSize').value.trim(),
+    price:     parseInt(document.getElementById('rmPrice').value)||0,
+    tenant:    document.getElementById('rmTenant').value.trim(),
+    startDate: document.getElementById('rmStart').value,
+    endDate:   document.getElementById('rmEnd').value,
+    note:      document.getElementById('rmNote').value.trim(),
+    updatedAt: Date.now()
+  };
+  if (editRoomId) {
+    const idx = rooms.findIndex(r=>r.id===editRoomId);
+    if (idx!==-1) rooms[idx] = {...rooms[idx], ...data};
+    showToast('수정되었습니다');
+  } else {
+    rooms.push({ id:genId(), createdAt:Date.now(), ...data });
+    showToast('방송룸이 추가되었습니다');
+  }
+  saveRooms();
+  closeRoomModal();
+  renderRooms();
+  renderStats();
+}
+document.getElementById('roomModal').addEventListener('click', e=>{if(e.target===document.getElementById('roomModal'))closeRoomModal();});
+
+/* ─────────── RENTALS ─────────── */
+function getRentalFiltered() {
+  const q  = document.getElementById('rentalSearch').value.trim().toLowerCase();
+  const st = document.getElementById('rentalFilter').value;
+  const tp = document.getElementById('rentalTypeFilter').value;
+  return rentals.filter(r => {
+    if (q && !`${r.item}${r.tenant}${r.model||''}`.toLowerCase().includes(q)) return false;
+    if (st && calcRentalStatus(r) !== st) return false;
+    if (tp && r.type !== tp) return false;
+    return true;
+  }).sort((a,b)=>b.createdAt-a.createdAt);
+}
+
+function renderRentals() {
+  const filtered = getRentalFiltered();
+  const tbody = document.getElementById('rentalBody');
+  const empty = document.getElementById('rentalEmpty');
+
+  // overdue bar
+  const od = rentals.filter(r=>calcRentalStatus(r)==='overdue');
+  const bar = document.getElementById('overdueBar');
+  if (od.length > 0) {
+    bar.className = 'overdue-bar show';
+    bar.innerHTML = `⚠️ 연체 중인 렌탈 ${od.length}건: ${od.map(r=>`<strong>${r.tenant}</strong>(${r.item})`).join(', ')}`;
+  } else { bar.className='overdue-bar'; }
+
+  if (filtered.length === 0) { tbody.innerHTML=''; empty.style.display=''; return; }
+  empty.style.display = 'none';
+
+  tbody.innerHTML = filtered.map(r => {
+    const st   = calcRentalStatus(r);
+    const dstr = r.endDate && st !== 'returned' ? (() => {
+      const d = dDay(r.endDate);
+      if (d < 0) return `<span style="color:var(--red)"> (${Math.abs(d)}일 초과)</span>`;
+      if (d <= 3) return `<span style="color:var(--yellow)"> (D-${d})</span>`;
+      return '';
+    })() : '';
+    return `
+    <tr data-id="${r.id}">
+      <td>
+        <div class="item-name">${TYPE_ICON[r.type]||'📦'} ${r.item}</div>
+        ${r.model?`<div class="item-model">${r.model}</div>`:''}
+      </td>
+      <td>${r.tenant}</td>
+      <td style="font-size:12px;color:var(--text-muted);">${r.contact||'—'}</td>
+      <td style="font-size:12px;color:var(--text-muted);">${fmtDate(r.startDate)}</td>
+      <td style="font-size:12px;">${fmtDate(r.endDate)}${dstr}</td>
+      <td><span class="badge ${RL_STATUS_BADGE[st]}">${RL_STATUS_LABEL[st]}</span></td>
+      <td style="font-size:12px;color:var(--text-muted);">${fmtMoney(r.deposit)}</td>
+      <td>
+        <div class="row-actions">
+          ${st!=='returned'?`<button class="row-btn return-btn" data-id="${r.id}" title="반납 처리">✅</button>`:''}
+          <button class="row-btn edit-rl-btn" data-id="${r.id}" title="수정">✏️</button>
+          <button class="row-btn del del-rl-btn" data-id="${r.id}" title="삭제">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  tbody.querySelectorAll('.edit-rl-btn').forEach(b=>b.addEventListener('click',()=>openRentalEdit(b.dataset.id)));
+  tbody.querySelectorAll('.del-rl-btn').forEach(b=>b.addEventListener('click',()=>deleteRental(b.dataset.id)));
+  tbody.querySelectorAll('.return-btn').forEach(b=>b.addEventListener('click',()=>openReturnModal(b.dataset.id)));
+}
+
+/* RENTAL MODAL */
+function openRentalModal() {
+  editRentalId = null;
+  document.getElementById('rentalModalTitle').textContent = '렌탈 등록';
+  ['rlItem','rlModel','rlTenant','rlContact','rlNote'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('rlFee').value     = '0';
+  document.getElementById('rlDeposit').value = '0';
+  document.getElementById('rlType').value    = 'computer';
+  document.getElementById('rlStatus').value  = 'active';
+  document.getElementById('rlStart').value   = today();
+  document.getElementById('rlEnd').value     = '';
+  document.getElementById('rentalModal').classList.add('open');
+}
+function openRentalEdit(id) {
+  editRentalId = id;
+  const r = rentals.find(r=>r.id===id);
+  if (!r) return;
+  document.getElementById('rentalModalTitle').textContent = '렌탈 수정';
+  document.getElementById('rlItem').value    = r.item    ||'';
+  document.getElementById('rlModel').value   = r.model   ||'';
+  document.getElementById('rlType').value    = r.type    ||'computer';
+  document.getElementById('rlTenant').value  = r.tenant  ||'';
+  document.getElementById('rlContact').value = r.contact ||'';
+  document.getElementById('rlStart').value   = r.startDate||'';
+  document.getElementById('rlEnd').value     = r.endDate  ||'';
+  document.getElementById('rlFee').value     = r.fee      ||0;
+  document.getElementById('rlDeposit').value = r.deposit  ||0;
+  document.getElementById('rlStatus').value  = r.status   ||'active';
+  document.getElementById('rlNote').value    = r.note     ||'';
+  document.getElementById('rentalModal').classList.add('open');
+}
+function closeRentalModal() { document.getElementById('rentalModal').classList.remove('open'); }
+function saveRental() {
+  const item   = document.getElementById('rlItem').value.trim();
+  const tenant = document.getElementById('rlTenant').value.trim();
+  if (!item)   { showToast('품목명을 입력하세요'); return; }
+  if (!tenant) { showToast('임차인을 입력하세요'); return; }
+  const data = {
+    item, tenant,
+    model:     document.getElementById('rlModel').value.trim(),
+    type:      document.getElementById('rlType').value,
+    contact:   document.getElementById('rlContact').value.trim(),
+    startDate: document.getElementById('rlStart').value,
+    endDate:   document.getElementById('rlEnd').value,
+    fee:       parseInt(document.getElementById('rlFee').value)||0,
+    deposit:   parseInt(document.getElementById('rlDeposit').value)||0,
+    status:    document.getElementById('rlStatus').value,
+    note:      document.getElementById('rlNote').value.trim(),
+    updatedAt: Date.now()
+  };
+  if (editRentalId) {
+    const idx = rentals.findIndex(r=>r.id===editRentalId);
+    if (idx!==-1) rentals[idx] = {...rentals[idx], ...data};
+    showToast('수정되었습니다');
+  } else {
+    rentals.push({ id:genId(), createdAt:Date.now(), ...data });
+    showToast('렌탈이 등록되었습니다');
+  }
+  saveRentals();
+  closeRentalModal();
+  renderRentals();
+  renderStats();
+}
+document.getElementById('rentalModal').addEventListener('click',e=>{if(e.target===document.getElementById('rentalModal'))closeRentalModal();});
+
+/* RETURN MODAL */
+function openReturnModal(id) {
+  returnRentalId = id;
+  const r = rentals.find(r=>r.id===id);
+  document.getElementById('retItemName').textContent = r ? `${r.item} — ${r.tenant}` : '';
+  document.getElementById('retDate').value = today();
+  document.getElementById('retNote').value = '';
+  document.getElementById('returnModal').classList.add('open');
+}
+function closeReturnModal() { document.getElementById('returnModal').classList.remove('open'); }
+function confirmReturn() {
+  const r = rentals.find(r=>r.id===returnRentalId);
+  if (!r) return;
+  r.status    = 'returned';
+  r.returnedAt= document.getElementById('retDate').value;
+  r.returnNote= document.getElementById('retNote').value.trim();
+  r.updatedAt = Date.now();
+  saveRentals();
+  closeReturnModal();
+  renderRentals();
+  renderStats();
+  showToast('반납 처리 완료');
+}
+document.getElementById('returnModal').addEventListener('click',e=>{if(e.target===document.getElementById('returnModal'))closeReturnModal();});
+
+/* DELETE RENTAL */
+function deleteRental(id) {
+  const r = rentals.find(r=>r.id===id);
+  if (!r) return;
+  if (!confirm(`"${r.item} — ${r.tenant}" 렌탈 내역을 삭제하시겠습니까?`)) return;
+  rentals = rentals.filter(r=>r.id!==id);
+  saveRentals();
+  renderRentals();
+  renderStats();
+  showToast('삭제되었습니다');
+}
+
+/* FILTER */
+document.getElementById('rentalSearch').addEventListener('input', renderRentals);
+document.getElementById('rentalFilter').addEventListener('change', renderRentals);
+document.getElementById('rentalTypeFilter').addEventListener('change', renderRentals);
+
+/* TOAST */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+/* ─────────── SAMPLE DATA ─────────── */
+if (rooms.length === 0) {
+  rooms = [
+    { id:genId(), name:'방송룸 A', roomNum:'201호', size:'12㎡', price:500000, status:'occupied', tenant:'김마케팅', startDate:'2025-01-01', endDate:'2025-12-31', note:'유튜브 스트리밍 전용. 녹음부스 포함', createdAt:Date.now(), updatedAt:Date.now() },
+    { id:genId(), name:'방송룸 B', roomNum:'202호', size:'15㎡', price:650000, status:'available', tenant:'', startDate:'', endDate:'', note:'4K 카메라 셋업 완비. 크로마키 배경 포함', createdAt:Date.now(), updatedAt:Date.now() },
+    { id:genId(), name:'방송룸 C', roomNum:'203호', size:'10㎡', price:400000, status:'reserved', tenant:'이크리에이터', startDate:'2026-03-10', endDate:'2026-09-09', note:'팟캐스트 녹음 전용', createdAt:Date.now(), updatedAt:Date.now() },
+    { id:genId(), name:'프리미엄룸', roomNum:'301호', size:'25㎡', price:1200000, status:'maintenance', tenant:'', startDate:'', endDate:'', note:'리뉴얼 공사 중 (3월 중 완료 예정)', createdAt:Date.now(), updatedAt:Date.now() },
+  ];
+  saveRooms();
+}
+if (rentals.length === 0) {
+  const today_ = today();
+  rentals = [
+    { id:genId(), item:'노트북 LG Gram 17"', model:'17Z90R-G.AA75K', type:'computer', tenant:'박영상', contact:'010-1234-5678', startDate:'2026-02-01', endDate:'2026-04-30', fee:80000, deposit:300000, status:'active', note:'배터리 충전기 포함', createdAt:Date.now(), updatedAt:Date.now() },
+    { id:genId(), item:'모니터 LG 27인치', model:'27UK850-W', type:'monitor', tenant:'최편집', contact:'010-9876-5432', startDate:'2026-01-15', endDate:'2026-02-28', fee:40000, deposit:150000, status:'active', note:'', createdAt:Date.now(), updatedAt:Date.now() },
+    { id:genId(), item:'소니 A7IV 카메라', model:'ILCE-7M4K', type:'camera', tenant:'정촬영', contact:'010-5555-1234', startDate:'2026-02-10', endDate:'2026-03-03', fee:120000, deposit:500000, status:'active', note:'렌즈킷 포함', createdAt:Date.now(), updatedAt:Date.now() },
+    { id:genId(), item:'컴퓨터 데스크톱 (조립)', model:'Ryzen 5 / RTX 4060', type:'computer', tenant:'한유튜버', contact:'010-7777-8888', startDate:'2025-12-01', endDate:'2026-01-31', fee:60000, deposit:200000, status:'active', note:'모니터 별도', createdAt:Date.now(), updatedAt:Date.now() },
+    { id:genId(), item:'마이크 Rode NT1', model:'NT1 Kit', type:'etc', tenant:'유팟캐스터', contact:'010-3333-4444', startDate:'2026-01-20', endDate:'2026-03-20', fee:30000, deposit:100000, status:'returned', returnedAt:'2026-02-28', returnNote:'정상 반납', note:'', createdAt:Date.now(), updatedAt:Date.now() },
+  ];
+  saveRentals();
+}
+
+/* ─────────── INIT ─────────── */
+switchTab('room');
+</script>
+</body>
+</html>
