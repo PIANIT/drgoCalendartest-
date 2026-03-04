@@ -3345,38 +3345,49 @@ function _showLockedCompact(){
   /* ── 2. notifGroup 숨기기 ── */
   const ng=document.getElementById('notifGroup'); if(ng) ng.style.display='none';
 
-  /* ── 2-1. textarea 내용 전체 표시 (overflow 해제 + scrollHeight 적용) ── */
+  /* ── 2-1. textarea 내용 전체 표시 ── */
   document.querySelectorAll('.field-textarea').forEach(ta=>{
-    ta.style.overflow='visible';
-    ta.style.height='auto';
-    ta.style.height=(ta.scrollHeight+4)+'px';
-    ta.style.resize='none';
+    ta.style.overflow='visible'; ta.style.height='auto';
+    ta.style.height=(ta.scrollHeight+4)+'px'; ta.style.resize='none';
   });
 
   /* ── 3. 일정관련옵션 field-group 숨기기 ── */
   const schedFg = document.getElementById('scheduleOpts')?.closest('.field-group');
   if (schedFg) schedFg.style.display='none';
 
-  /* ── 4. 의뢰유형 field-group 숨기기 ── */
-  /* colorRow는 modal-header로 이동 - field-group 없으므로 처리 불필요 */
-  const colorFg = null; /* colorRow는 modal-header 내에 있어 field-group 없음 */
-
-  /* ── 5. 특수옵션 field-group 숨기기 ── */
+  /* ── 4. 특수옵션 field-group 숨기기 ── */
   const spFg = document.getElementById('specialOpts')?.closest('.field-group');
   if (spFg) spFg.style.display='none';
 
-  /* ── 6. 세 항목을 한 줄 컴팩트 요약으로 합치기 ── */
-  const SCHED_ICONS={suggest:'💬제안',hope:'🙏희망',target:'🎯목표'};
-  const SP_LABELS={car:'🚗차량',brief:'💼제품',return:'←당김',group:'👥2인',urgent:'🚨긴급',ladder:'▤사다리'};
+  /* ── 5. 일정옵션 field-group 숨기기 ── */
+  const seFg = document.getElementById('schedEventOpts')?.closest('.field-group');
+  if (seFg) seFg.style.display='none';
+
+  /* ── 6. 컴팩트 요약 칩 생성 ── */
+  const SCHED_ICONS  = { suggest:'💬제안', hope:'🙏희망', target:'🎯목표' };
+  const SP_LABELS    = { car:'🚗차량', brief:'💼제품', return:'←당김', group:'👥2인', urgent:'🚨긴급(구)', ladder:'▤사다리' };
+  const SE_LABELS    = { fast:'←빠른일정', urgent:'🚨긴급', after:'→N일이후' };
 
   const parts=[];
-  /* 일정관련옵션 */
   if (schedOpt) parts.push(SCHED_ICONS[schedOpt]||schedOpt);
-  /* 의뢰유형 (항상 표시) */
   parts.push('📌'+(TYPE_LABELS[currentColor]||currentColor));
-  /* 특수옵션 */
-  const spActive=[...specialOpts].map(k=>SP_LABELS[k]||k);
+  const spActive=[...specialOpts].map(k=>SP_LABELS[k]||k).filter(Boolean);
   if (spActive.length) parts.push(...spActive);
+
+  /* 일정옵션 + 사유 */
+  if (schedEventOpts.size > 0) {
+    schedEventOpts.forEach(k => {
+      let label = '';
+      if (k==='after') {
+        label = schedAfterDays > 0 ? `→${schedAfterDays}일 이후 희망` : '→□일 이후 희망';
+      } else {
+        label = SE_LABELS[k]||k;
+      }
+      const reason = document.getElementById('schedAfterReason')?.value.trim()||'';
+      if (reason) label += ` (${reason})`;
+      parts.push(label);
+    });
+  }
 
   let cMeta = document.getElementById('_compactMeta');
   if (!cMeta){ cMeta=document.createElement('div'); cMeta.id='_compactMeta';
@@ -3388,27 +3399,116 @@ function _showLockedCompact(){
     sp.textContent=p;
     cMeta.appendChild(sp);
   });
-  /* 삽입 위치: schedFg 또는 colorFg 중 앞쪽 기준 */
-  const insertAnchor = schedFg || spFg;
+  const insertAnchor = schedFg || spFg || seFg;
   if (insertAnchor) insertAnchor.parentNode.insertBefore(cMeta, insertAnchor);
+
+  /* ── 7. 의뢰자 정보 버튼 → 텍스트 컴팩트 표시 ── */
+  _showLockedGoldCompact();
 }
 
 function _hideLockedCompact(){
   const dtSec = document.querySelector('.datetime-section');
   if (dtSec) dtSec.style.display='';
-  ['_compactDt','_compactMeta'].forEach(id=>{
+  ['_compactDt','_compactMeta','_compactGold'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.remove();
   });
   const ng=document.getElementById('notifGroup'); if(ng) ng.style.display='';
-  const colorFg=document.getElementById('colorRow')?.closest('.field-group'); if(colorFg) colorFg.style.display='';
-  /* textarea 원래대로 복원 */
   document.querySelectorAll('.field-textarea').forEach(ta=>{
     ta.style.overflow=''; ta.style.height='';
   });
-  /* 색상별 섹션 복원은 setColor가 처리 */
+  /* 일정옵션 field-group 복원 */
+  const seFg = document.getElementById('schedEventOpts')?.closest('.field-group');
+  if (seFg) seFg.style.display='';
+  /* 의뢰자 정보 버튼 복원 */
+  _hideLockedGoldCompact();
   setColor(currentColor);
 }
 
+
+/* ── 의뢰자 정보 잠금 컴팩트 뷰 ── */
+function _showLockedGoldCompact(){
+  if (currentColor !== 'gold') return;
+  const goldTpl = document.getElementById('goldTemplate');
+  if (!goldTpl || goldTpl.style.display==='none') return;
+
+  /* 버튼 라디오 그룹들 숨기기 */
+  const radioGroupIds = ['g_platform_group','g_career_group','g_topic_group','g_budget_group',
+    'g_paid_group','g_order_group','g_balance_group','g_delivery_group'];
+  radioGroupIds.forEach(id => {
+    const g = document.getElementById(id);
+    if (g) { g.dataset._lcHidden='1'; g.style.display='none'; }
+    /* label도 같이 숨기기 */
+    const fg = g?.closest('.field-group');
+    if (fg) { fg.dataset._lcHidden='1'; fg.style.display='none'; }
+  });
+  /* conditional-field(직접입력 칸)도 숨기기 */
+  ['g_platform_etc_wrap','g_topic_etc_wrap','g_budget_etc_wrap','g_balance_amount_wrap'].forEach(id=>{
+    const el=document.getElementById(id); if(el){el.dataset._lcHidden='1';el.style.display='none';}
+  });
+
+  /* 활성화된 값 수집 */
+  function getActiveVals(gid) {
+    const g = document.getElementById(gid); if(!g) return '';
+    return [...g.querySelectorAll('.radio-btn.active')].map(b=>b.dataset.val).join(', ');
+  }
+  function getActiveVal(gid) {
+    const g = document.getElementById(gid); if(!g) return '';
+    const a = g.querySelector('.radio-btn.active'); return a ? a.dataset.val : '';
+  }
+
+  const rows = [];
+  const platform = getActiveVals('g_platform_group') ||
+    (document.querySelector('#g_platform_group .radio-btn.active[data-val="기타"]')
+      ? document.getElementById('g_platform_etc')?.value.trim() : '');
+  if (platform) rows.push(['플랫폼', platform]);
+
+  const career = getActiveVal('g_career_group');
+  if (career) rows.push(['경력', career]);
+
+  const topic = getActiveVals('g_topic_group') ||
+    (document.querySelector('#g_topic_group .radio-btn.active[data-val="기타"]')
+      ? document.getElementById('g_topic_etc')?.value.trim() : '');
+  if (topic) rows.push(['방송주제', topic]);
+
+  const budget = getActiveVal('g_budget_group');
+  const budgetVal = budget==='직접입력'
+    ? (document.getElementById('g_budget_etc')?.value.trim()||'직접입력')
+    : budget;
+  if (budgetVal) rows.push(['예산', budgetVal]);
+
+  const paid    = getActiveVal('g_paid_group');    if (paid)     rows.push(['결제', paid]);
+  const order   = getActiveVal('g_order_group');   if (order)    rows.push(['주문', order]);
+  const balance = getActiveVal('g_balance_group'); if (balance)  rows.push(['잔금', balance]);
+  const delivery= getActiveVal('g_delivery_group'); if(delivery) rows.push(['수령', delivery]);
+
+  if (!rows.length) return;
+
+  /* 컴팩트 칩 컨테이너 생성 */
+  let cGold = document.getElementById('_compactGold');
+  if (!cGold){
+    cGold = document.createElement('div'); cGold.id = '_compactGold';
+    cGold.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px;padding:4px 0 6px;';
+  }
+  cGold.innerHTML = '';
+  rows.forEach(([label, val]) => {
+    const chip = document.createElement('span');
+    chip.style.cssText = 'background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:2px 9px;font-size:11px;color:var(--text-muted);white-space:nowrap;';
+    chip.innerHTML = `<span style="opacity:0.6;margin-right:3px;">${label}</span>${val}`;
+    cGold.appendChild(chip);
+  });
+
+  /* goldTemplate 맨 앞에 삽입 */
+  goldTpl.insertBefore(cGold, goldTpl.firstChild);
+}
+
+function _hideLockedGoldCompact(){
+  /* 숨겼던 라디오 그룹 복원 */
+  document.querySelectorAll('[data-lchidden="1"], [data-_lcHidden="1"]').forEach(el=>{
+    el.style.display=''; delete el.dataset._lcHidden;
+  });
+  /* _compactGold 제거 */
+  const cg = document.getElementById('_compactGold'); if(cg) cg.remove();
+}
 function applyLockState(){
   const modal=document.getElementById('modal');
   const lockBtn=document.getElementById('lockBtn');
@@ -3432,6 +3532,8 @@ function applyLockState(){
     document.querySelectorAll('.radio-btn').forEach(b=>b.style.pointerEvents='none');
     document.getElementById('specialOpts').style.pointerEvents='none';
     document.getElementById('specialOpts').style.opacity='0.4';
+    document.getElementById('schedEventOpts').style.pointerEvents='none';
+    document.getElementById('schedEventOpts').style.opacity='0.4';
     /* 컴팩트 뷰 */
     _showLockedCompact();
   } else {
@@ -3450,6 +3552,8 @@ function applyLockState(){
     document.querySelectorAll('.radio-btn').forEach(b=>b.style.pointerEvents='');
     document.getElementById('specialOpts').style.pointerEvents='';
     document.getElementById('specialOpts').style.opacity='';
+    document.getElementById('schedEventOpts').style.pointerEvents='';
+    document.getElementById('schedEventOpts').style.opacity='';
     /* 컴팩트 뷰 해제 */
     _hideLockedCompact();
   }
