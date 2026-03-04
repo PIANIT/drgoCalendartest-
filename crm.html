@@ -695,6 +695,14 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
           <div><label class="form-label">연락처</label><div class="field-readonly" id="vrCalPhone">—</div></div>
         </div>
         <div class="form-row">
+          <div><label class="form-label">플랫폼</label><div class="field-readonly" id="vrCalPlatform" style="display:none;">—</div></div>
+          <div><label class="form-label">방송주제</label><div class="field-readonly" id="vrCalTopic" style="display:none;">—</div></div>
+        </div>
+        <div class="form-row">
+          <div><label class="form-label">예산 성향</label><div class="field-readonly" id="vrCalBudget" style="display:none;">—</div></div>
+          <div><label class="form-label">일정 옵션</label><div class="field-readonly" id="vrCalSchedEvent" style="display:none;">—</div></div>
+        </div>
+        <div class="form-row">
           <div><label class="form-label">견적 총액</label><div class="field-readonly" id="vrCalEstimate">—</div></div>
           <div><label class="form-label">잔금</label><div class="field-readonly" id="vrCalBalance">—</div></div>
         </div>
@@ -1719,6 +1727,11 @@ function initApp(){
       document.getElementById('vrLinkedBadge').style.display='';
       document.getElementById('vrCalName').textContent=item.calName||'—';
       document.getElementById('vrCalPhone').textContent=item.calPhone||'—';
+      ['Platform','Topic','Budget','SchedEvent'].forEach(k=>{
+        const el=document.getElementById('vrCal'+k);
+        const val=item['cal'+k]||'';
+        if(el){el.textContent=val||'—';el.style.display=val?'':'none';}
+      });
       document.getElementById('vrCalEstimate').textContent=item.calEstimate?fmtAmount(item.calEstimate):'—';
       document.getElementById('vrCalBalance').textContent=item.calBalance?fmtAmount(item.calBalance):'없음';
       renderVrImages({quote:item.calQuoteImgs||[], ref:item.calRefImgs||[], room:item.calRoomImgs||[]});
@@ -1799,6 +1812,22 @@ function initApp(){
     document.getElementById('vrCalPhone').textContent=phone||'—';
     document.getElementById('vrCalEstimate').textContent=est&&est!=='0'?fmtAmount(est):'—';
     document.getElementById('vrCalBalance').textContent=bal&&bal!=='0'?fmtAmount(bal):'없음';
+    /* 신규 필드: 플랫폼/방송주제/예산/일정옵션 */
+    const platform=ev.gold?.platform||'';
+    const platEl=document.getElementById('vrCalPlatform');
+    if(platEl){ platEl.textContent=platform||'—'; platEl.closest('.form-row')?.style && (platEl.style.display=platform?'':'none'); if(platform) platEl.style.display=''; }
+    const topic=ev.gold?.topic||'';
+    const topicEl=document.getElementById('vrCalTopic');
+    if(topicEl){ topicEl.textContent=topic||'—'; topicEl.style.display=topic?'':'none'; }
+    const budget=ev.gold?.budget||'';
+    const budgetEl=document.getElementById('vrCalBudget');
+    if(budgetEl){ budgetEl.textContent=budget||'—'; budgetEl.style.display=budget?'':'none'; }
+    const seOpts=(ev.schedEventOpts||[]).map(k=>{
+      if(k==='after') return ev.schedAfterDays?`→${ev.schedAfterDays}일 이후${ev.schedAfterReason?' ('+ev.schedAfterReason+')':''}`:null;
+      const L={fast:'←빠른일정',urgent:'🚨긴급'}; return L[k]||k;
+    }).filter(Boolean).join(', ');
+    const seEl=document.getElementById('vrCalSchedEvent');
+    if(seEl){ seEl.textContent=seOpts||'—'; seEl.style.display=seOpts?'':'none'; }
     /* 장비목록 자동입력 */
     const equipment=ev.gold?.equipment||'';
     if(equipment) document.getElementById('vrEquipment').value=equipment;
@@ -1822,6 +1851,9 @@ function initApp(){
     document.getElementById('vrLinkedBadge').style.display='none';
     document.getElementById('vrCalInfo').style.display='none';
     document.getElementById('vrImgCount').textContent='';
+    ['vrCalPlatform','vrCalTopic','vrCalBudget','vrCalSchedEvent'].forEach(id=>{
+      const el=document.getElementById(id); if(el){el.textContent='—';el.style.display='none';}
+    });
     ['vrQuoteImages','vrRefImages','vrRoomImages'].forEach(id=>{
       const el=document.getElementById(id); if(el){el.innerHTML=''; el.style.display=id==='vrQuoteImages'?'':'none';}
     });
@@ -1846,6 +1878,10 @@ function initApp(){
       data.calEventId=vrLinkedEvent._id; data.calTitle=vrLinkedEvent.title||'';
       data.calName=document.getElementById('vrCalName').textContent;
       data.calPhone=document.getElementById('vrCalPhone').textContent;
+      data.calPlatform=document.getElementById('vrCalPlatform')?.textContent||'';
+      data.calTopic=document.getElementById('vrCalTopic')?.textContent||'';
+      data.calBudget=document.getElementById('vrCalBudget')?.textContent||'';
+      data.calSchedEvent=document.getElementById('vrCalSchedEvent')?.textContent||'';
       const et=document.getElementById('vrCalEstimate').textContent;
       data.calEstimate=et&&et!=='—'?et.replace(/[^0-9]/g,''):'';
       const bt=document.getElementById('vrCalBalance').textContent;

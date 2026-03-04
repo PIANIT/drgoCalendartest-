@@ -589,8 +589,9 @@ if (isAuth()) {
 
 /* ── CONSTANTS ── */
 const TYPE_LABELS    = { gold:'개인의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방' };
-const SPECIAL_LABELS = { car:'🚗차량', brief:'💼제품', 'return':'←당김', group:'👥2인', urgent:'🚨긴급', ladder:'🪜사다리' };
+const SPECIAL_LABELS = { car:'🚗차량', brief:'💼제품', 'return':'←당김', group:'👥2인', urgent:'🚨긴급(구)', ladder:'🪜사다리' };
 const SCHED_LABELS   = { suggest:'💬제안', hope:'🙏희망', target:'🎯목표' };
+const SCHED_EVENT_LABELS = { fast:'←빠른일정', urgent:'🚨긴급', after:'→N일이후' };
 
 /* ── STATE ── */
 let allEvents      = [];
@@ -757,8 +758,12 @@ function renderList() {
     const dateStr    = ev.startDate || '';
     const endStr     = ev.endDate && ev.endDate !== ev.startDate ? ` ~ ${ev.endDate}` : '';
     const flags      = [
-      ...(ev.specialOpts||[]).map(k => SPECIAL_LABELS[k]||''),
+      ...(ev.specialOpts||[]).map(k => SPECIAL_LABELS[k]||'').filter(Boolean),
       ...(ev.schedOpt ? [SCHED_LABELS[ev.schedOpt]||''] : []),
+      ...(ev.schedEventOpts||[]).map(k => {
+        if(k==='after') return ev.schedAfterDays ? `→${ev.schedAfterDays}일↑` : '';
+        return SCHED_EVENT_LABELS[k]||'';
+      }).filter(Boolean),
       ...(ev.locked   ? ['🔒'] : [])
     ];
     const personName = c === 'gold' ? (ev.gold?.name || ev.name || '') : (ev.name || '');
@@ -820,7 +825,20 @@ function openDetail(ev) {
     ['담당자',     ev.name||(ev.gold?.name)||'—'],
     ['장소',       ev.address||'—'],
     ['잠금',       ev.locked ? '🔒 잠금됨' : '없음'],
-    ['특수옵션',   (ev.specialOpts||[]).map(k=>SPECIAL_LABELS[k]||k).join(', ') || (ev.schedOpt ? SCHED_LABELS[ev.schedOpt] : '없음')],
+    ['특수옵션',   (()=>{
+      const sp=(ev.specialOpts||[]).map(k=>SPECIAL_LABELS[k]||k).filter(Boolean).join(', ');
+      const sc=ev.schedOpt?SCHED_LABELS[ev.schedOpt]:'';
+      return [sp,sc].filter(Boolean).join(', ')||'없음';
+    })()],
+    ['일정옵션',   (()=>{
+      const se=(ev.schedEventOpts||[]).map(k=>{
+        if(k==='after') return ev.schedAfterDays
+          ? `→${ev.schedAfterDays}일 이후 희망${ev.schedAfterReason?' ('+ev.schedAfterReason+')':''}`
+          : '';
+        return SCHED_EVENT_LABELS[k]||k;
+      }).filter(Boolean).join(', ');
+      return se||'없음';
+    })()],
   ]));
 
   if (ev.desc) body.appendChild(makeSection('상세 설명', [['내용', ev.desc]]));
@@ -833,6 +851,7 @@ function openDetail(ev) {
       ['전화번호', g.phone||'—'],
       ['플랫폼',   g.platform||'—'],
       ['방송주제', g.topic||'—'],
+      ['예산 성향', g.budget||'—'],
       ['경력',     g.career||'—'],
       ['결제',     g.paid||'—'],
       ['주문제품', g.order||'—'],

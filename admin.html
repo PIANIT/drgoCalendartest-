@@ -1079,7 +1079,7 @@ const TYPE_LABELS    = { gold:'방문의뢰', teal:'원격/방송룸', blue:'사
 const SPECIAL_LABELS = { car:'🚗차량', brief:'💼제품', return:'←일정당김', group:'👥2인', urgent:'🚨긴급(구)', ladder:'🪜사다리' }; /* return/urgent는 구버전 호환 */
 const SCHED_LABELS   = { suggest:'💬제안', hope:'🙏희망', target:'🎯목표' };
 /* 일정 옵션 (신규) */
-const SCHED_EVENT_LABELS = { fast:'←빠른일정', urgent:'🚨긴급', after:'→{n}일이후' };
+const SCHED_EVENT_LABELS = { fast:'←빠른일정', urgent:'🚨긴급', after:'→N일이후' };
 
 /* ══════════════════════════════
    STATE
@@ -1570,7 +1570,7 @@ function renderList() {
         ...(ev.specialOpts||[]).map(k => SPECIAL_LABELS[k]||'').filter(Boolean),
         ...(ev.schedOpt ? [SCHED_LABELS[ev.schedOpt]||''] : []),
         ...(ev.schedEventOpts||[]).map(k => {
-          if(k==='after') return `→${ev.schedAfterDays||'?'}일이후`;
+          if(k==='after') return `→${ev.schedAfterDays||'?'}일이후${ev.schedAfterReason?' ('+ev.schedAfterReason+')':''}`.trim();
           return SCHED_EVENT_LABELS[k]||'';
         }).filter(Boolean),
       ];
@@ -1670,7 +1670,9 @@ function openDetail(ev) {
     })()],
     ['일정옵션',  (()=>{
       const se=(ev.schedEventOpts||[]).map(k=>{
-        if(k==='after') return `→${ev.schedAfterDays||'?'}일 이후 희망${ev.schedAfterReason?' ('+ev.schedAfterReason+')':''}`;
+        if(k==='after') return ev.schedAfterDays
+          ? `→${ev.schedAfterDays}일 이후 희망${ev.schedAfterReason?' ('+ev.schedAfterReason+')':''}`
+          : '';
         return SCHED_EVENT_LABELS[k]||k;
       }).filter(Boolean).join(', ');
       return se||'없음';
