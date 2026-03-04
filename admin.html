@@ -1684,15 +1684,21 @@ function openDetail(ev) {
   if (c === 'gold' && ev.gold) {
     const g = ev.gold;
     body.appendChild(makeSection('의뢰자 정보', [
-      ['전화번호', g.phone||'—'], ['플랫폼',  g.platform||'—'],
+      ['전화번호', g.phone||'—'], ['유입 경로', g.source||'—'],
+      ['플랫폼',  g.platform||'—'],
       ['방송주제', g.topic||'—'], ['예산 성향', g.budget||'—'],
       ['경력',     g.career||'—'],['결제',     g.paid||'—'],
       ['주문제품', g.order||'—'], ['잔금',     g.balance||'—'],
       ['잔금금액', g.balance_amount||'—'],
     ]));
     if (g.equipment) body.appendChild(makeSection('장비 목록', [['장비', g.equipment]]));
-    if (g.req_topic||g.req_detail) body.appendChild(makeSection('의뢰 내용', [['주제',g.req_topic||'—'],['세부',g.req_detail||'—']]));
-    if (g.special)   body.appendChild(makeSection('특이사항', [['내용', g.special]]));
+    if (g.req_topic||g.req_detail) body.appendChild(makeSection('의뢰 내용', [
+      ['주제', g.req_topic||'—'],['세부', g.req_detail||'—'],
+    ]));
+    if (g.special||g.specialReason) body.appendChild(makeSection('특이사항', [
+      ['내용', g.special||'—'],
+      ...(g.specialReason ? [['특수옵션 사유', g.specialReason]] : []),
+    ]));
     const imgCount = (g.quoteImgs||[]).length + (g.refImgs||[]).length + (g.roomImgs||[]).length;
     if (imgCount > 0) body.appendChild(makeSection('첨부 이미지', [['이미지 수', `${imgCount}개`]]));
   }
@@ -2525,6 +2531,7 @@ function initCrmSection(db) {
       (c.name||'').toLowerCase().includes(q)||
       (c.phone||'').toLowerCase().includes(q)||
       (c.platform||'').toLowerCase().includes(q)||
+      (c.source||'').toLowerCase().includes(q)||
       (c.address||'').toLowerCase().includes(q)
     );
     _crmPage=1; renderCrm();

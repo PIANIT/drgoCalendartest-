@@ -761,7 +761,7 @@ function renderList() {
       ...(ev.specialOpts||[]).map(k => SPECIAL_LABELS[k]||'').filter(Boolean),
       ...(ev.schedOpt ? [SCHED_LABELS[ev.schedOpt]||''] : []),
       ...(ev.schedEventOpts||[]).map(k => {
-        if(k==='after') return ev.schedAfterDays ? `→${ev.schedAfterDays}일↑` : '';
+        if(k==='after') return ev.schedAfterDays ? `→${ev.schedAfterDays}일이후` : '';
         return SCHED_EVENT_LABELS[k]||'';
       }).filter(Boolean),
       ...(ev.locked   ? ['🔒'] : [])
@@ -849,6 +849,7 @@ function openDetail(ev) {
     body.appendChild(makeSection('의뢰자 정보', [
       ['의뢰자',   g.name||'—'],
       ['전화번호', g.phone||'—'],
+      ['유입 경로', g.source||'—'],
       ['플랫폼',   g.platform||'—'],
       ['방송주제', g.topic||'—'],
       ['예산 성향', g.budget||'—'],
@@ -859,7 +860,10 @@ function openDetail(ev) {
       ['잔금금액', g.balance_amount||'—'],
     ]));
     if (g.equipment)              body.appendChild(makeSection('장비 목록',  [['장비', g.equipment]]));
-    if (g.req_topic||g.req_detail) body.appendChild(makeSection('의뢰 내용', [['주제',g.req_topic||'—'],['세부',g.req_detail||'—']]));
+    if (g.req_topic||g.req_detail||g.specialReason) body.appendChild(makeSection('의뢰 내용', [
+      ...(g.req_topic||g.req_detail ? [['주제',g.req_topic||'—'],['세부',g.req_detail||'—']] : []),
+      ...(g.specialReason ? [['특수옵션 사유', g.specialReason]] : []),
+    ]));
     if (g.special)                 body.appendChild(makeSection('특이사항',  [['내용', g.special]]));
     const imgSec = makeImgSection('첨부 이미지', [
       { label:'견적서 이미지', images: g.quoteImgs||[] },

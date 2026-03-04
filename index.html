@@ -2078,7 +2078,7 @@ function getSpecialIconStr(ev) {
   const sp = (ev.specialOpts||[]).map(k => SPECIAL_ICONS[k]||'').join('');
   const se = (ev.schedEventOpts||[]).map(k => SCHED_EVENT_ICONS[k]||'').join('');
   const afterStr = (ev.schedEventOpts||[]).includes('after') && ev.schedAfterDays
-    ? `<span title="${ev.schedAfterDays}일 이후 희망${ev.schedAfterReason?' - '+ev.schedAfterReason:''}" style="font-size:10px;color:var(--text-muted);">${ev.schedAfterDays}일↑</span>` : '';
+    ? `<span title="${ev.schedAfterDays}일 이후 희망${ev.schedAfterReason?' - '+ev.schedAfterReason:''}" style="font-size:10px;color:var(--text-muted);">${ev.schedAfterDays}일이후</span>` : '';
   return (sp||se) ? sp+se+afterStr+' ' : '';
 }
 function getSchedSuffix(ev) {
@@ -2354,12 +2354,14 @@ function setColor(c){
   document.getElementById('tealTemplate').style.display  = isTeal?'flex':'none';
   document.getElementById('generalAttachSection').style.display = (isGold||isRed)?'none':'block';
 
-  /* 사내업무(blue), 휴가관련(red), 원격/방송룸(teal): 일정관련옵션 + 특수옵션 숨김 */
+  /* 사내업무(blue), 휴가관련(red), 원격/방송룸(teal): 일정관련옵션 + 특수옵션 + 일정옵션 숨김 */
   const hideSchedSpecial = isBlue || isRed || isTeal;
   const schedFg = document.getElementById('scheduleOpts')?.closest('.field-group');
   const spFg    = document.getElementById('specialOpts')?.closest('.field-group');
-  if (schedFg) schedFg.style.display = hideSchedSpecial ? 'none' : '';
-  if (spFg)    spFg.style.display    = hideSchedSpecial ? 'none' : '';
+  const seFgColor = document.getElementById('schedEventOpts')?.closest('.field-group');
+  if (schedFg)   schedFg.style.display   = hideSchedSpecial ? 'none' : '';
+  if (spFg)      spFg.style.display      = hideSchedSpecial ? 'none' : '';
+  if (seFgColor) seFgColor.style.display = hideSchedSpecial ? 'none' : '';
 
   /* 사내업무(blue), 휴가관련(red), 원격/방송룸(teal): 이름/담당자 행 숨김 */
   const nameFg = document.getElementById('modalName')?.closest('.field-group');
@@ -2402,6 +2404,13 @@ document.getElementById('specialOpts').addEventListener('click', e => {
   const opt = btn.dataset.opt;
   if (specialOpts.has(opt)) { specialOpts.delete(opt); btn.classList.remove('active'); }
   else                       { specialOpts.add(opt);    btn.classList.add('active'); }
+  /* 사유 칸: 활성 버튼이 하나라도 있으면 표시 */
+  const wrap = document.getElementById('specialReasonWrap');
+  if (wrap) {
+    const hasActive = specialOpts.size > 0;
+    wrap.style.display = hasActive ? '' : 'none';
+    if (!hasActive) { const r=document.getElementById('specialReason'); if(r) r.value=''; }
+  }
 });
 
 /* ── 일정 옵션 ── */
@@ -2661,14 +2670,7 @@ document.getElementById('g_order_group').addEventListener('click', e => {
   });
 })();
 
-/* 특수옵션 사유 칸 토글 */
-document.getElementById('specialOpts').addEventListener('click', () => {
-  const wrap = document.getElementById('specialReasonWrap');
-  if (!wrap) return;
-  const hasActive = !!document.querySelector('#specialOpts .special-opt-btn.active');
-  wrap.style.display = hasActive ? '' : 'none';
-  if (!hasActive) { const r=document.getElementById('specialReason'); if(r) r.value=''; }
-}, true);
+
 
 /* 의뢰 주제 버튼 - 복수선택 + 기타 직접입력 */
 (function(){

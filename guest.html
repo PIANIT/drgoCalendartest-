@@ -873,6 +873,7 @@ function renderMvEventCard(ev, container) {
     if(g.name) gParts.push(g.name);
     if(g.platform) gParts.push(g.platform);
     if(g.topic) gParts.push(g.topic);
+    if(g.source) gParts.push(g.source);
     if(gParts.length) extraHtml+=`<span class="mv-event-meta" style="font-size:11px;color:var(--text-muted);margin-top:2px;display:block;">${gParts.join(' · ')}</span>`;
     /* 일정 옵션 표시 */
     const seOpts=(ev.schedEventOpts||[]).map(k=>{
