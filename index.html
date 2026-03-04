@@ -1378,13 +1378,13 @@
 
       <div class="field-group" style="margin-top:10px;">
         <div class="field-label">일정 옵션</div>
-        <div class="special-opts" id="schedEventOpts">
-          <div class="special-opt-btn" data-seopt="fast">    <span class="opt-icon">←</span>빠른 일정 희망</div>
-          <div class="special-opt-btn" data-seopt="urgent">  <span class="opt-icon">🚨</span>긴급 일정</div>
-          <div class="special-opt-btn" data-seopt="after">   <span class="opt-icon">→</span><span id="schedAfterLabel">□</span>일 이후 희망</div>
-        </div>
-        <div id="schedAfterWrap" style="display:none;margin-top:8px;">
-          <input class="field-input" id="schedAfterReason" placeholder="사유를 입력하세요" style="font-size:13px;" />
+        <div style="display:flex;gap:8px;align-items:flex-start;">
+          <div class="special-opts" id="schedEventOpts" style="flex-shrink:0;">
+            <div class="special-opt-btn" data-seopt="fast">    <span class="opt-icon">←</span>빠른 일정 희망</div>
+            <div class="special-opt-btn" data-seopt="urgent">  <span class="opt-icon">🚨</span>긴급 일정</div>
+            <div class="special-opt-btn" data-seopt="after">   <span class="opt-icon">→</span><span id="schedAfterLabel">□</span>일 이후 희망</div>
+          </div>
+          <input class="field-input" id="schedAfterReason" placeholder="사유" style="font-size:13px;flex:1;min-width:0;" />
         </div>
       </div>
 
@@ -2381,9 +2381,21 @@ document.getElementById('specialOpts').addEventListener('click', e => {
 document.getElementById('schedEventOpts').addEventListener('click', e => {
   if (isLocked) return;
   /* '00' 숫자 클릭 → 모달 */
-  if (e.target.id === 'schedAfterLabel' || e.target.closest('.special-opt-btn[data-seopt="after"]')) {
+  const afterClickBtn = e.target.closest('.special-opt-btn[data-seopt="after"]');
+  const isAfterLabel = e.target.id === 'schedAfterLabel';
+  if (isAfterLabel || afterClickBtn) {
+    if (!isAfterLabel && afterClickBtn && afterClickBtn.classList.contains('active')) {
+      /* 이미 active → 클릭으로 deactivate */
+      afterClickBtn.classList.remove('active');
+      schedEventOpts.delete('after');
+      const lbl = document.getElementById('schedAfterLabel');
+      if (lbl) lbl.textContent = '□';
+      schedAfterDays = 0;
+      return;
+    }
+    /* 비활성 상태 or 숫자 클릭 → 모달 열기 */
     const inp = document.getElementById('afterDayInput');
-    if (inp) inp.value = (schedAfterDays && schedAfterDays !== '□') ? schedAfterDays : '';
+    if (inp) inp.value = (schedAfterDays > 0) ? schedAfterDays : '';
     document.getElementById('afterDayModalOverlay').classList.add('open');
     setTimeout(()=>{ const inp2=document.getElementById('afterDayInput'); if(inp2) inp2.focus(); }, 80);
     return;
@@ -2396,9 +2408,7 @@ document.getElementById('schedEventOpts').addEventListener('click', e => {
   } else {
     schedEventOpts.add(opt); btn.classList.add('active');
   }
-  /* 'after' 토글 시 사유 입력란 */
-  const afterWrap = document.getElementById('schedAfterWrap');
-  if (afterWrap) afterWrap.style.display = schedEventOpts.has('after') ? '' : 'none';
+
 });
 
 /* afterDay 모달 */
@@ -2428,6 +2438,12 @@ document.getElementById('schedEventOpts').addEventListener('click', e => {
     schedAfterDays = val;
     const lbl = document.getElementById('schedAfterLabel');
     if (lbl) lbl.textContent = schedAfterDays;
+    /* 확인 시 'after' 버튼 자동 선택 */
+    const afterBtn = document.querySelector('#schedEventOpts .special-opt-btn[data-seopt="after"]');
+    if (afterBtn) {
+      afterBtn.classList.add('active');
+      schedEventOpts.add('after');
+    }
     document.getElementById('afterDayModalOverlay').classList.remove('open');
   });
   document.getElementById('afterDayCancel').addEventListener('click', () => {
@@ -2472,8 +2488,6 @@ function setSpecialOpts(opts, sopt, seOpts, afterDays, afterReason) {
   });
   const afterLabel = document.getElementById('schedAfterLabel');
   if (afterLabel) afterLabel.textContent = (schedAfterDays && schedAfterDays > 0) ? schedAfterDays : '□';
-  const afterWrap = document.getElementById('schedAfterWrap');
-  if (afterWrap) afterWrap.style.display = schedEventOpts.has('after') ? '' : 'none';
   const afterReasonEl = document.getElementById('schedAfterReason');
   if (afterReasonEl) afterReasonEl.value = afterReason||'';
 }
@@ -2531,46 +2545,54 @@ document.getElementById('g_order_group').addEventListener('click', e => {
   if (btn.dataset.val !== 'O') setRadio('g_delivery_group', 'X');
 });
 
-/* 방송 주제 "기타" 선택 시 주관식 입력란 토글 */
+/* 방송 주제 - 복수 선택 + 기타 직접입력 */
 (function(){
   const g = document.getElementById('g_topic_group');
   if (!g) return;
   const wrap = document.getElementById('g_topic_etc_wrap');
-  function updateTopicEtc(){
-    const active = g.querySelector('.radio-btn.active');
-    const isEtc = active && active.dataset.val === '기타';
-    if (wrap) wrap.classList.toggle('visible', isEtc);
-    if (!isEtc) { const e=document.getElementById('g_topic_etc'); if(e) e.value=''; }
-  }
-  g.querySelectorAll('.radio-btn').forEach(btn => btn.addEventListener('click', updateTopicEtc));
+  g.querySelectorAll('.radio-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (isLocked) return;
+      btn.classList.toggle('active');
+      const hasEtc = !!g.querySelector('.radio-btn.active[data-val="기타"]');
+      if (wrap) wrap.classList.toggle('visible', hasEtc);
+      if (!hasEtc) { const e=document.getElementById('g_topic_etc'); if(e) e.value=''; }
+    });
+  });
 })();
 
-/* 플랫폼 버튼 - 기타 선택 시 직접입력 칸 토글 */
+/* 플랫폼 버튼 - 복수 선택 + 기타 직접입력 */
 (function(){
   const g = document.getElementById('g_platform_group');
   if (!g) return;
   const wrap = document.getElementById('g_platform_etc_wrap');
-  function updatePlatformEtc(){
-    const active = g.querySelector('.radio-btn.active');
-    const isEtc = active && active.dataset.val === '기타';
-    if (wrap) wrap.classList.toggle('visible', isEtc);
-    if (!isEtc) { const e=document.getElementById('g_platform_etc'); if(e) e.value=''; }
-  }
-  g.querySelectorAll('.radio-btn').forEach(btn => btn.addEventListener('click', updatePlatformEtc));
+  g.querySelectorAll('.radio-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (isLocked) return;
+      btn.classList.toggle('active');
+      const hasEtc = !!g.querySelector('.radio-btn.active[data-val="기타"]');
+      if (wrap) wrap.classList.toggle('visible', hasEtc);
+      if (!hasEtc) { const e=document.getElementById('g_platform_etc'); if(e) e.value=''; }
+    });
+  });
 })();
 
-/* 예산 성향 - 직접입력 선택 시 입력 칸 토글 */
+/* 예산 성향 - 단수 선택 + 직접입력 칸 토글 */
 (function(){
   const g = document.getElementById('g_budget_group');
   if (!g) return;
   const wrap = document.getElementById('g_budget_etc_wrap');
-  function updateBudgetEtc(){
-    const active = g.querySelector('.radio-btn.active');
-    const isDirect = active && active.dataset.val === '직접입력';
-    if (wrap) wrap.classList.toggle('visible', isDirect);
-    if (!isDirect) { const e=document.getElementById('g_budget_etc'); if(e) e.value=''; }
-  }
-  g.querySelectorAll('.radio-btn').forEach(btn => btn.addEventListener('click', updateBudgetEtc));
+  g.querySelectorAll('.radio-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (isLocked) return;
+      const wasActive = btn.classList.contains('active');
+      g.querySelectorAll('.radio-btn').forEach(b => b.classList.remove('active'));
+      if (!wasActive) btn.classList.add('active');
+      const isDirect = !!g.querySelector('.radio-btn.active[data-val="직접입력"]');
+      if (wrap) wrap.classList.toggle('visible', isDirect);
+      if (!isDirect) { const e=document.getElementById('g_budget_etc'); if(e) e.value=''; }
+    });
+  });
 })();
 
 
@@ -2657,6 +2679,7 @@ function resetGoldFields(){
   const esEl=document.getElementById('g_estimate_status'); if(esEl) esEl.textContent='';
   const etcEl=document.getElementById('g_topic_etc'); if(etcEl) etcEl.value='';
   document.getElementById('g_topic_group').querySelectorAll('.radio-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('g_topic_group')?.querySelectorAll('.radio-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('g_topic_etc_wrap').classList.remove('visible');
   /* 플랫폼/예산 초기화 */
   document.getElementById('g_platform_group')?.querySelectorAll('.radio-btn').forEach(b=>b.classList.remove('active'));
@@ -2678,33 +2701,49 @@ function loadGoldFields(ev){
     g_special:'special',g_balance_amount:'balance_amount',
     g_estimate_amount:'estimate_amount'};
   Object.entries(MAP).forEach(([id,key])=>{ const el=document.getElementById(id); if(el) el.value=g[key]||''; });
-  /* 방송 주제 복원: 소통/먹방/게임/야외/기타 중 하나면 버튼 선택, 아니면 기타+입력란 */
-  const TOPIC_VALS=['소통','먹방','게임','야외'];
-  const savedTopic = g.topic||'';
-  if (TOPIC_VALS.includes(savedTopic)) {
-    setRadio('g_topic_group', savedTopic);
-    document.getElementById('g_topic_etc_wrap').classList.remove('visible');
-  } else if (savedTopic) {
-    setRadio('g_topic_group','기타');
-    document.getElementById('g_topic_etc').value = savedTopic;
+  /* 방송 주제 복원 (복수선택) */
+  const TOPIC_BTNS=['소통','먹방','게임','야외','기타'];
+  const savedTopicRaw = g.topic||'';
+  const savedTopics = savedTopicRaw ? savedTopicRaw.split(',').map(s=>s.trim()) : [];
+  document.getElementById('g_topic_group').querySelectorAll('.radio-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('g_topic_etc_wrap').classList.remove('visible');
+  document.getElementById('g_topic_etc').value='';
+  let hasEtcTopic = false;
+  savedTopics.forEach(v => {
+    if (TOPIC_BTNS.includes(v)) {
+      const btn = document.querySelector('#g_topic_group .radio-btn[data-val="'+v+'"]');
+      if (btn) btn.classList.add('active');
+    } else if (v) {
+      const btn = document.querySelector('#g_topic_group .radio-btn[data-val="기타"]');
+      if (btn) btn.classList.add('active');
+      document.getElementById('g_topic_etc').value = v;
+      hasEtcTopic = true;
+    }
+  });
+  if (savedTopics.some(v=>v==='기타')||hasEtcTopic) {
     document.getElementById('g_topic_etc_wrap').classList.add('visible');
-  } else {
-    document.getElementById('g_topic_group').querySelectorAll('.radio-btn').forEach(b=>b.classList.remove('active'));
-    document.getElementById('g_topic_etc_wrap').classList.remove('visible');
   }
-  /* 플랫폼 복원 */
-  const PLAT_VALS = ['SOOP','치지직','유튜브','틱톡'];
-  const savedPlat = g.platform||'';
-  if (PLAT_VALS.includes(savedPlat)) {
-    setRadio('g_platform_group', savedPlat);
-    document.getElementById('g_platform_etc_wrap').classList.remove('visible');
-  } else if (savedPlat) {
-    setRadio('g_platform_group','기타');
-    document.getElementById('g_platform_etc').value = savedPlat;
+  /* 플랫폼 복원 (복수선택) */
+  const PLAT_BTNS = ['SOOP','치지직','유튜브','틱톡','기타'];
+  const savedPlatRaw = g.platform||'';
+  const savedPlats = savedPlatRaw ? savedPlatRaw.split(',').map(s=>s.trim()) : [];
+  document.getElementById('g_platform_group').querySelectorAll('.radio-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('g_platform_etc_wrap').classList.remove('visible');
+  document.getElementById('g_platform_etc').value='';
+  let hasEtcPlat = false;
+  savedPlats.forEach(v => {
+    if (PLAT_BTNS.includes(v)) {
+      const btn = document.querySelector('#g_platform_group .radio-btn[data-val="'+v+'"]');
+      if (btn) btn.classList.add('active');
+    } else if (v) {
+      const btn = document.querySelector('#g_platform_group .radio-btn[data-val="기타"]');
+      if (btn) btn.classList.add('active');
+      document.getElementById('g_platform_etc').value = v;
+      hasEtcPlat = true;
+    }
+  });
+  if (savedPlats.some(v=>v==='기타')||hasEtcPlat) {
     document.getElementById('g_platform_etc_wrap').classList.add('visible');
-  } else {
-    document.getElementById('g_platform_group').querySelectorAll('.radio-btn').forEach(b=>b.classList.remove('active'));
-    document.getElementById('g_platform_etc_wrap').classList.remove('visible');
   }
   /* 예산 성향 복원 */
   const BUDGET_VALS = ['풍족','부족','모름'];
@@ -2741,15 +2780,24 @@ function loadGoldFields(ev){
 }
 
 function collectGoldTextFields(){
-  const topicSel = getRadio('g_topic_group');
-  const topic = topicSel === '기타'
-    ? (document.getElementById('g_topic_etc').value.trim() || '기타')
-    : topicSel;
-  /* 플랫폼 수집 */
-  const platSel = getRadio('g_platform_group');
-  const platform = platSel === '기타'
-    ? (document.getElementById('g_platform_etc').value.trim() || '기타')
-    : (platSel || '');
+  /* 방송 주제 수집 (복수선택) */
+  const topicGroup = document.getElementById('g_topic_group');
+  const topicSelected = topicGroup
+    ? [...topicGroup.querySelectorAll('.radio-btn.active')].map(b=>b.dataset.val)
+    : [];
+  const topicEtcVal = document.getElementById('g_topic_etc')?.value.trim()||'';
+  const topic = topicSelected.length
+    ? topicSelected.map(v => v==='기타' ? (topicEtcVal||'기타') : v).join(', ')
+    : '';
+  /* 플랫폼 수집 (복수선택) */
+  const platGroup = document.getElementById('g_platform_group');
+  const platSelected = platGroup
+    ? [...platGroup.querySelectorAll('.radio-btn.active')].map(b=>b.dataset.val)
+    : [];
+  const platEtcVal = document.getElementById('g_platform_etc')?.value.trim()||'';
+  const platform = platSelected.length
+    ? platSelected.map(v => v==='기타' ? (platEtcVal||'기타') : v).join(', ')
+    : '';
   /* 예산 성향 수집 */
   const budgetSel = getRadio('g_budget_group');
   const budget = budgetSel === '직접입력'
@@ -2915,7 +2963,7 @@ async function saveEvent(){
       specialOpts:[...specialOpts], schedOpt:schedOpt,
       schedEventOpts:[...schedEventOpts],
       schedAfterDays: schedEventOpts.has('after') ? schedAfterDays : null,
-      schedAfterReason: schedEventOpts.has('after') ? (document.getElementById('schedAfterReason')?.value.trim()||'') : '',
+      schedAfterReason: document.getElementById('schedAfterReason')?.value.trim()||'',
       updatedAt:serverTimestamp(),
     };
     if (currentColor==='gold') evData.gold=collectGoldTextFields();
@@ -3409,7 +3457,7 @@ document.getElementById('lockBtn').addEventListener('click', async ()=>{
         specialOpts:[...specialOpts],
         schedEventOpts:[...schedEventOpts],
         schedAfterDays: schedEventOpts.has('after') ? schedAfterDays : null,
-        schedAfterReason: schedEventOpts.has('after') ? (document.getElementById('schedAfterReason')?.value.trim()||'') : '',
+        schedAfterReason: document.getElementById('schedAfterReason')?.value.trim()||'',
         updatedAt:serverTimestamp(),
       };
       if (currentColor==='gold') evData.gold=collectGoldTextFields();
@@ -3655,7 +3703,8 @@ function _takeSnapshot() {
   snap._schedAfterDays = schedAfterDays;
   snap._schedAfterReason = document.getElementById('schedAfterReason')?.value||'';
   snap._topic = getRadio('g_topic_group');
-  snap._platform = getRadio('g_platform_group');
+  snap._platform = JSON.stringify([...document.querySelectorAll('#g_platform_group .radio-btn.active')].map(b=>b.dataset.val).sort());
+  snap._topic_multi = JSON.stringify([...document.querySelectorAll('#g_topic_group .radio-btn.active')].map(b=>b.dataset.val).sort());
   snap._budget = getRadio('g_budget_group');
   snap._career = getRadio('g_career_group');
   snap._paid = getRadio('g_paid_group');
@@ -3685,7 +3734,8 @@ function _isDirty() {
   snap._schedAfterDays = schedAfterDays;
   snap._schedAfterReason = document.getElementById('schedAfterReason')?.value||'';
   snap._topic = getRadio('g_topic_group');
-  snap._platform = getRadio('g_platform_group');
+  snap._platform = JSON.stringify([...document.querySelectorAll('#g_platform_group .radio-btn.active')].map(b=>b.dataset.val).sort());
+  snap._topic_multi = JSON.stringify([...document.querySelectorAll('#g_topic_group .radio-btn.active')].map(b=>b.dataset.val).sort());
   snap._budget = getRadio('g_budget_group');
   snap._career = getRadio('g_career_group');
   snap._paid = getRadio('g_paid_group');
