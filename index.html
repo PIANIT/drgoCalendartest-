@@ -1378,13 +1378,13 @@
 
       <div class="field-group" style="margin-top:10px;">
         <div class="field-label">일정 옵션</div>
-        <div style="display:flex;gap:8px;align-items:flex-start;">
-          <div class="special-opts" id="schedEventOpts" style="flex-shrink:0;">
-            <div class="special-opt-btn" data-seopt="fast">    <span class="opt-icon">←</span>빠른 일정 희망</div>
-            <div class="special-opt-btn" data-seopt="urgent">  <span class="opt-icon">🚨</span>긴급 일정</div>
-            <div class="special-opt-btn" data-seopt="after">   <span class="opt-icon">→</span><span id="schedAfterLabel">□</span>일 이후 희망</div>
-          </div>
-          <input class="field-input" id="schedAfterReason" placeholder="사유" style="font-size:13px;flex:1;min-width:0;" />
+        <div class="special-opts" id="schedEventOpts">
+          <div class="special-opt-btn" data-seopt="fast">    <span class="opt-icon">←</span>빠른 일정 희망</div>
+          <div class="special-opt-btn" data-seopt="urgent">  <span class="opt-icon">🚨</span>긴급 일정</div>
+          <div class="special-opt-btn" data-seopt="after">   <span class="opt-icon">→</span><span id="schedAfterLabel">□</span>일 이후 희망</div>
+        </div>
+        <div id="schedReasonWrap" style="display:none;margin-top:6px;">
+          <input class="field-input" id="schedAfterReason" placeholder="사유 (선택)" style="font-size:13px;" />
         </div>
       </div>
 
@@ -1536,7 +1536,7 @@
               <div class="radio-btn" data-val="직접입력">직접입력</div>
             </div>
             <div class="conditional-field" id="g_budget_etc_wrap" style="margin-top:0;flex:1;min-width:120px;">
-              <input class="field-input" id="g_budget_etc" placeholder="예산 성향 직접 입력" style="font-size:13px;" />
+              <input class="field-input" id="g_budget_etc" placeholder="예산 직접 입력" style="font-size:13px;" />
             </div>
           </div>
         </div>
@@ -2380,36 +2380,55 @@ document.getElementById('specialOpts').addEventListener('click', e => {
 /* ── 일정 옵션 ── */
 document.getElementById('schedEventOpts').addEventListener('click', e => {
   if (isLocked) return;
-  /* '00' 숫자 클릭 → 모달 */
+
   const afterClickBtn = e.target.closest('.special-opt-btn[data-seopt="after"]');
-  const isAfterLabel = e.target.id === 'schedAfterLabel';
+  const isAfterLabel  = e.target.id === 'schedAfterLabel';
+
+  /* after 버튼 또는 숫자 클릭 */
   if (isAfterLabel || afterClickBtn) {
-    if (!isAfterLabel && afterClickBtn && afterClickBtn.classList.contains('active')) {
-      /* 이미 active → 클릭으로 deactivate */
-      afterClickBtn.classList.remove('active');
-      schedEventOpts.delete('after');
-      const lbl = document.getElementById('schedAfterLabel');
-      if (lbl) lbl.textContent = '□';
-      schedAfterDays = 0;
+    if (afterClickBtn && afterClickBtn.classList.contains('active') && !isAfterLabel) {
+      /* 이미 active → 재클릭으로 해제 */
+      _seDeactivateAll();
       return;
     }
-    /* 비활성 상태 or 숫자 클릭 → 모달 열기 */
+    /* 비활성 or 숫자 클릭 → 모달 열기 */
     const inp = document.getElementById('afterDayInput');
     if (inp) inp.value = (schedAfterDays > 0) ? schedAfterDays : '';
     document.getElementById('afterDayModalOverlay').classList.add('open');
-    setTimeout(()=>{ const inp2=document.getElementById('afterDayInput'); if(inp2) inp2.focus(); }, 80);
+    setTimeout(()=>{ document.getElementById('afterDayInput')?.focus(); }, 80);
     return;
   }
+
   const btn = e.target.closest('.special-opt-btn');
   if (!btn) return;
   const opt = btn.dataset.seopt;
-  if (schedEventOpts.has(opt)) {
-    schedEventOpts.delete(opt); btn.classList.remove('active');
-  } else {
-    schedEventOpts.add(opt); btn.classList.add('active');
-  }
+  const wasActive = btn.classList.contains('active');
 
+  /* 단수 선택: 전체 해제 후 클릭한 버튼만 활성 (토글) */
+  _seDeactivateAll();
+  if (!wasActive) {
+    btn.classList.add('active');
+    schedEventOpts.add(opt);
+  }
+  _seUpdateReasonWrap();
 });
+
+function _seDeactivateAll() {
+  document.querySelectorAll('#schedEventOpts .special-opt-btn').forEach(b => b.classList.remove('active'));
+  schedEventOpts.clear();
+  const lbl = document.getElementById('schedAfterLabel');
+  if (lbl && schedAfterDays <= 0) lbl.textContent = '□';
+  _seUpdateReasonWrap();
+}
+function _seUpdateReasonWrap() {
+  const hasAny = schedEventOpts.size > 0;
+  const wrap = document.getElementById('schedReasonWrap');
+  if (wrap) wrap.style.display = hasAny ? '' : 'none';
+  if (!hasAny) {
+    const r = document.getElementById('schedAfterReason');
+    if (r) r.value = '';
+  }
+}
 
 /* afterDay 모달 */
 (function(){
@@ -2438,12 +2457,11 @@ document.getElementById('schedEventOpts').addEventListener('click', e => {
     schedAfterDays = val;
     const lbl = document.getElementById('schedAfterLabel');
     if (lbl) lbl.textContent = schedAfterDays;
-    /* 확인 시 'after' 버튼 자동 선택 */
+    /* 다른 버튼 해제 후 after 버튼 자동 선택 */
+    _seDeactivateAll();
     const afterBtn = document.querySelector('#schedEventOpts .special-opt-btn[data-seopt="after"]');
-    if (afterBtn) {
-      afterBtn.classList.add('active');
-      schedEventOpts.add('after');
-    }
+    if (afterBtn) { afterBtn.classList.add('active'); schedEventOpts.add('after'); }
+    _seUpdateReasonWrap();
     document.getElementById('afterDayModalOverlay').classList.remove('open');
   });
   document.getElementById('afterDayCancel').addEventListener('click', () => {
@@ -2490,6 +2508,8 @@ function setSpecialOpts(opts, sopt, seOpts, afterDays, afterReason) {
   if (afterLabel) afterLabel.textContent = (schedAfterDays && schedAfterDays > 0) ? schedAfterDays : '□';
   const afterReasonEl = document.getElementById('schedAfterReason');
   if (afterReasonEl) afterReasonEl.value = afterReason||'';
+  /* 사유 칸 표시 상태 갱신 */
+  if (typeof _seUpdateReasonWrap === 'function') _seUpdateReasonWrap();
 }
 
 function initRadioGroup(groupId){
@@ -2516,7 +2536,7 @@ function setRadio(gid,val){
     updateBalanceBanner();
   }
 }
-['g_career_group','g_paid_group','g_order_group','g_balance_group','g_topic_group','g_delivery_group'].forEach(initRadioGroup);
+['g_career_group','g_paid_group','g_order_group','g_balance_group','g_delivery_group'].forEach(initRadioGroup);
 
 /* 잔금 배너 업데이트 */
 function updateBalanceBanner() {
@@ -2838,7 +2858,7 @@ function openNewModal(dk){
   });
   currentAttachments=[]; currentColor='gold'; isLocked=false;
   document.getElementById('notifSelect').value='';
-  setColor('gold'); setAllDay(false); setSpecialOpts([],null,[],0,'');
+  setColor('gold'); setAllDay(false); setSpecialOpts([],null,[],0,''); if(typeof _seDeactivateAll==='function') _seDeactivateAll();
   resetGoldFields(); renderAttachments();
   document.getElementById('deleteBtn').style.display='none';
   document.getElementById('logBtn').style.display='none';
