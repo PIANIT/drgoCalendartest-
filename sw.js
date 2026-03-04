@@ -1,22 +1,19 @@
 /* ═══════════════════════════════════════════
-   DRGO Calendar — Service Worker
+   DRGO Calendar — Service Worker v3
    Cache-first + Network fallback 전략
    Firebase Firestore는 온라인 필수 (캐시 제외)
 ═══════════════════════════════════════════ */
 
-const CACHE_NAME    = 'drgo-cal-v5';
-const RUNTIME_CACHE = 'drgo-cal-runtime-v5';
+const CACHE_NAME    = 'drgo-cal-v3';
+const RUNTIME_CACHE = 'drgo-cal-runtime-v3';
 
 /* 설치 시 즉시 캐시할 핵심 파일 */
 const PRECACHE_URLS = [
   './index.html',
-  './admin.html',
-  './crm.html',
-  './wiki.html',
-  './view.html',
-  './guest.html',
-  './main.html',
   './manifest.json',
+  './icons/icon-192x192.png',
+  './icons/icon-512x512.png',
+  './icons/apple-touch-icon.png',
 ];
 
 /* 캐시하지 않을 도메인 패턴 (Firebase, Google APIs) */
@@ -66,36 +63,25 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       caches.open(RUNTIME_CACHE).then(cache =>
         fetch(request)
-          .then(res => { cache.put(request, res.clone()); return res; })
+          .then(res => {
+            const resClone = res.clone();
+            cache.put(request, resClone);
+            return res;
+          })
           .catch(() => caches.match(request))
       )
     );
     return;
   }
 
-  /* HTML 문서 → Network-first (항상 최신 파일 우선, 캐시 문제 방지) */
-  if (request.destination === 'document' || url.pathname.endsWith('.html')) {
-    event.respondWith(
-      fetch(request)
-        .then(res => {
-          if (!res || res.status !== 200) return res;
-          caches.open(CACHE_NAME).then(cache => cache.put(request, res.clone()));
-          return res;
-        })
-        .catch(() => caches.match(request)
-          .then(cached => cached || caches.match('./index.html'))
-        )
-    );
-    return;
-  }
-
-  /* 그 외 정적 파일 → Cache-first */
+  /* 그 외 (로컬 파일) → Cache-first */
   event.respondWith(
     caches.match(request).then(cached => {
       if (cached) return cached;
       return fetch(request).then(res => {
         if (!res || res.status !== 200 || res.type === 'opaque') return res;
-        caches.open(RUNTIME_CACHE).then(cache => cache.put(request, res.clone()));
+        const resClone = res.clone();
+        caches.open(RUNTIME_CACHE).then(cache => cache.put(request, resClone));
         return res;
       });
     }).catch(() => {

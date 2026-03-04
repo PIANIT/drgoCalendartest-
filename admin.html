@@ -718,18 +718,18 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
     <div class="modal-header">
       <div class="modal-header-info">
         <div class="modal-badge">데이터 백업</div>
-        <div class="modal-event-title">백업 옵션 선택</div>
+        <div class="modal-event-title" id="backupModalTitle">백업 옵션 선택</div>
       </div>
       <button class="modal-close" id="backupModalClose">✕</button>
     </div>
     <div class="modal-body" style="padding:20px 24px;">
-      <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;">백업 대상</div>
-      <div class="backup-section-select" id="backupSectBtns">
+      <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;">백업 옵션</div>
+      <!-- 백업 대상은 각 탭에서 자동 결정 -->
+      <div class="backup-section-select" id="backupSectBtns" style="display:none;">
         <button class="backup-sect-btn on" data-sect="calendar">📅 캘린더</button>
         <button class="backup-sect-btn on" data-sect="crm">👥 CRM</button>
         <button class="backup-sect-btn on" data-sect="wiki">📖 위키</button>
       </div>
-      <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-muted);margin:14px 0 10px;">백업 옵션</div>
       <div class="backup-option-row">
         <div class="backup-option-label">선택 항목만 백업
           <span class="backup-option-sub">현재 선택된 행만 백업 (선택 없으면 전체)</span>
@@ -1409,9 +1409,7 @@ function initApp() {
   document.getElementById('backupModalClose').addEventListener('click', () => document.getElementById('backupModalOverlay').classList.remove('open'));
   document.getElementById('backupCancelBtn').addEventListener('click',  () => document.getElementById('backupModalOverlay').classList.remove('open'));
   document.getElementById('backupModalOverlay').addEventListener('click', e => { if(e.target===document.getElementById('backupModalOverlay')) document.getElementById('backupModalOverlay').classList.remove('open'); });
-  document.querySelectorAll('.backup-sect-btn').forEach(btn => {
-    btn.addEventListener('click', () => { btn.classList.toggle('on'); updateBackupEstimate(_backupDb); });
-  });
+  /* 섹션 버튼은 숨겨짐 - 탭별로 자동 결정 */
   document.getElementById('backupSelOnly').addEventListener('change', () => updateBackupEstimate(_backupDb));
   document.getElementById('backupWithImages').addEventListener('change', () => {
     const hasImg = document.getElementById('backupWithImages').checked;
@@ -1779,10 +1777,14 @@ function stripTimestamps(obj) {
 
 function openBackupModal(section) {
   _backupDb = arguments[1] || _backupDb;
-  /* 해당 섹션만 on, 나머지 off (UI는 숨겨짐) */
+  /* 해당 섹션만 on, 나머지 off */
   document.querySelectorAll('.backup-sect-btn').forEach(b => {
     b.classList.toggle('on', b.dataset.sect === section);
   });
+  /* 모달 타이틀 업데이트 */
+  const sectLabel = {calendar:'캘린더', crm:'CRM', wiki:'위키'}[section] || section;
+  const titleEl = document.getElementById('backupModalTitle');
+  if (titleEl) titleEl.textContent = `${sectLabel} 백업`;
   document.getElementById('backupModalOverlay').classList.add('open');
   updateBackupEstimate(_backupDb);
 }
@@ -1792,27 +1794,19 @@ function updateBackupEstimate(db) {
   const selOnly = document.getElementById('backupSelOnly').checked;
   const withImg = document.getElementById('backupWithImages').checked;
   const warn = [];
-  if (sects.length === 0) {
-    warn.push('⚠️ 백업 대상을 하나 이상 선택하세요.');
-  } else {
-    warn.push(`대상: ${sects.map(s=>({calendar:'캘린더',crm:'CRM',wiki:'위키'}[s]||s)).join(', ')}`);
+  const LABEL = {calendar:'캘린더', crm:'CRM', wiki:'위키'};
+  sects.forEach(s => {
     if (selOnly) {
-      const parts = [];
-      if (sects.includes('calendar') && selectedIds.size > 0)      parts.push(`캘린더 ${selectedIds.size}개`);
-      if (sects.includes('crm')      && _crmSelectedIds.size > 0)  parts.push(`CRM ${_crmSelectedIds.size}개`);
-      if (sects.includes('wiki')     && _wikiSelectedIds.size > 0) parts.push(`위키 ${_wikiSelectedIds.size}개`);
-      if (parts.length) warn.push(`선택 항목: ${parts.join(', ')}`);
-      else              warn.push('선택 없음 → 전체 백업');
+      const selSize = s==='calendar' ? selectedIds.size : s==='crm' ? _crmSelectedIds.size : _wikiSelectedIds.size;
+      const totalSize = s==='calendar' ? filteredEvents.length : s==='crm' ? _crmAll.length : _wikiAll.length;
+      warn.push(selSize > 0 ? `${LABEL[s]} ${selSize}개 선택` : `${LABEL[s]} 전체 ${totalSize}개`);
     } else {
-      const totals = [];
-      if (sects.includes('calendar')) totals.push(`캘린더 ${filteredEvents.length}개`);
-      if (sects.includes('crm'))      totals.push(`CRM ${_crmAll.length}개`);
-      if (sects.includes('wiki'))     totals.push(`위키 ${_wikiAll.length}개`);
-      if (totals.length) warn.push(`전체: ${totals.join(', ')}`);
+      const totalSize = s==='calendar' ? filteredEvents.length : s==='crm' ? _crmAll.length : _wikiAll.length;
+      warn.push(`${LABEL[s]} 전체 ${totalSize}개`);
     }
-  }
-  if (withImg) warn.push('🖼 이미지 포함 ZIP 백업');
-  document.getElementById('backupEstimate').textContent = warn.join(' · ');
+  });
+  if (withImg) warn.push('🖼 ZIP 백업');
+  document.getElementById('backupEstimate').textContent = warn.length ? warn.join(' · ') : '';
 }
 
 
@@ -1820,11 +1814,13 @@ function updateBackupEstimate(db) {
    탭별 단독 백업 / 복원
 ══════════════════════════════ */
 async function openSingleBackup(sect, db) {
-  // 해당 섹션만 선택된 상태로 백업 모달 오픈
   document.querySelectorAll('.backup-sect-btn').forEach(b => {
     b.classList.toggle('on', b.dataset.sect === sect);
   });
   _backupDb = db;
+  const sectLabel = {calendar:'캘린더', crm:'CRM', wiki:'위키'}[sect] || sect;
+  const titleEl = document.getElementById('backupModalTitle');
+  if (titleEl) titleEl.textContent = `${sectLabel} 백업`;
   document.getElementById('backupModalOverlay').classList.add('open');
   updateBackupEstimate(db);
 }
