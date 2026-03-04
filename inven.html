@@ -126,9 +126,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-main);min-hei
 .section-heading{font-size:10px;font-family:var(--font-mono);letter-spacing:.14em;color:var(--text-muted);text-transform:uppercase;}
 
 /* ── CATEGORY EDITOR ── */
-.cat-level{border:1px solid var(--border);border-radius:10px;overflow:hidden;}
-.cat-level-header{padding:10px 14px;background:var(--surface2);font-size:11px;font-family:var(--font-mono);letter-spacing:.1em;color:var(--text-muted);text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}
-.cat-level-body{padding:10px 12px;}
+.cat-level{border:1px solid var(--border);border-radius:10px;overflow:visible;display:flex;flex-direction:column;}
+.cat-level-header{padding:10px 14px;background:var(--surface2);font-size:11px;font-family:var(--font-mono);letter-spacing:.1em;color:var(--text-muted);text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;border-radius:10px 10px 0 0;flex-shrink:0;}
+.cat-level-body{padding:10px 12px;overflow-y:auto;overscroll-behavior:contain;border-radius:0 0 10px 10px;max-height:50vh;}
+.cat-level-body::-webkit-scrollbar{width:5px;}.cat-level-body::-webkit-scrollbar-track{background:transparent;}.cat-level-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}.cat-level-body::-webkit-scrollbar-thumb:hover{background:var(--accent);}
 .cat-tree{display:flex;flex-direction:column;gap:2px;}
 .cat-branch{display:flex;flex-direction:column;}
 .cat-branch-header{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:7px;background:var(--surface);cursor:pointer;user-select:none;margin-bottom:2px;}
@@ -161,6 +162,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-main);min-hei
 .cbtn.ico.del{color:var(--red);}
 .cbtn.ico:hover{border-color:var(--accent);color:var(--accent);}
 .cbtn.ico.del:hover{border-color:var(--red);background:rgba(212,136,136,.1);}
+.cbtn.ico.move{color:var(--text-muted);}.cbtn.ico.move:hover{border-color:var(--accent2);color:var(--accent2);}
 
 /* ── ADJUST TABS ── */
 .adj-tabs{display:flex;gap:4px;background:var(--surface2);border-radius:8px;padding:3px;}
@@ -372,17 +374,17 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-main);min-hei
       <div class="modal-title">🗂 카테고리 편집</div>
       <button class="modal-close" id="catModalClose">✕</button>
     </div>
-    <div class="modal-body">
+    <div class="modal-body" style="overflow:visible;padding-bottom:0;flex:1;display:flex;flex-direction:column;gap:10px;">
       <div style="font-size:12px;color:var(--text-muted);line-height:1.5;">
         대분류 → 중분류 → 소분류 3단계로 관리합니다.<br>
         각 항목을 클릭해 하위 목록을 펼치고, ✏ 버튼으로 이름 변경, × 버튼으로 삭제할 수 있습니다.
       </div>
-      <div class="cat-level">
+      <div class="cat-level" style="flex:1;min-height:0;display:flex;flex-direction:column;">
         <div class="cat-level-header">
           <span>카테고리 트리</span>
           <button class="btn btn-sm btn-ghost" id="catExpandAll">모두 펼치기</button>
         </div>
-        <div class="cat-level-body">
+        <div class="cat-level-body" style="flex:1;min-height:0;">
           <div class="cat-tree" id="catTree"></div>
           <div class="cat-add-row" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
             <input class="cat-add-input" id="newL1Input" placeholder="새 대분류 이름…">
@@ -838,7 +840,14 @@ function renderCatTree() {
     const btnDel =document.createElement('button'); btnDel.className='cbtn ico del'; btnDel.innerHTML='×'; btnDel.title='삭제';
     btnEdit.addEventListener('click',e=>{e.stopPropagation();renameCat(1,l1.id,null,null);});
     btnDel.addEventListener('click', e=>{e.stopPropagation();deleteCat(1,l1.id,null,null);});
-    actions.appendChild(btnEdit); actions.appendChild(btnDel);
+    const btnUp1=document.createElement('button'); btnUp1.className='cbtn ico move'; btnUp1.innerHTML='↑'; btnUp1.title='위로';
+    const btnDn1=document.createElement('button'); btnDn1.className='cbtn ico move'; btnDn1.innerHTML='↓'; btnDn1.title='아래로';
+    btnUp1.addEventListener('click',e=>{e.stopPropagation();moveCat(1,l1.id,null,null,-1);});
+    btnDn1.addEventListener('click',e=>{e.stopPropagation();moveCat(1,l1.id,null,null,+1);});
+    const l1idx=cats.indexOf(l1);
+    if(l1idx===0){btnUp1.disabled=true;btnUp1.style.opacity='.25';btnUp1.style.cursor='default';}
+    if(l1idx===cats.length-1){btnDn1.disabled=true;btnDn1.style.opacity='.25';btnDn1.style.cursor='default';}
+    actions.appendChild(btnUp1); actions.appendChild(btnDn1); actions.appendChild(btnEdit); actions.appendChild(btnDel);
     header.appendChild(toggle); header.appendChild(nameEl); header.appendChild(actions);
 
     // ── L2 sublist ──
@@ -862,7 +871,14 @@ function renderCatTree() {
       const bd2=document.createElement('button'); bd2.className='cbtn ico del'; bd2.innerHTML='×';
       be2.addEventListener('click',e=>{e.stopPropagation();renameCat(2,l1.id,l2.id,null);});
       bd2.addEventListener('click',e=>{e.stopPropagation();deleteCat(2,l1.id,l2.id,null);});
-      act2.appendChild(be2); act2.appendChild(bd2);
+      const bu2=document.createElement('button'); bu2.className='cbtn ico move'; bu2.innerHTML='↑'; bu2.title='위로';
+      const bd2d=document.createElement('button'); bd2d.className='cbtn ico move'; bd2d.innerHTML='↓'; bd2d.title='아래로';
+      bu2.addEventListener('click',e=>{e.stopPropagation();moveCat(2,l1.id,l2.id,null,-1);});
+      bd2d.addEventListener('click',e=>{e.stopPropagation();moveCat(2,l1.id,l2.id,null,+1);});
+      const l2arr=findL1(l1.id)?.children||[], l2idx=l2arr.indexOf(l2);
+      if(l2idx===0){bu2.disabled=true;bu2.style.opacity='.25';bu2.style.cursor='default';}
+      if(l2idx===l2arr.length-1){bd2d.disabled=true;bd2d.style.opacity='.25';bd2d.style.cursor='default';}
+      act2.appendChild(bu2); act2.appendChild(bd2d); act2.appendChild(be2); act2.appendChild(bd2);
       sub.appendChild(tog2); sub.appendChild(n2); sub.appendChild(act2);
 
       // ── L3 sublist ──
@@ -883,7 +899,14 @@ function renderCatTree() {
         const bd3=document.createElement('button'); bd3.className='cbtn ico del'; bd3.innerHTML='×';
         be3.addEventListener('click',e=>{e.stopPropagation();renameCat(3,l1.id,l2.id,l3.id);});
         bd3.addEventListener('click',e=>{e.stopPropagation();deleteCat(3,l1.id,l2.id,l3.id);});
-        act3.appendChild(be3); act3.appendChild(bd3);
+        const bu3=document.createElement('button'); bu3.className='cbtn ico move'; bu3.innerHTML='↑'; bu3.title='위로';
+        const bd3d=document.createElement('button'); bd3d.className='cbtn ico move'; bd3d.innerHTML='↓'; bd3d.title='아래로';
+        bu3.addEventListener('click',e=>{e.stopPropagation();moveCat(3,l1.id,l2.id,l3.id,-1);});
+        bd3d.addEventListener('click',e=>{e.stopPropagation();moveCat(3,l1.id,l2.id,l3.id,+1);});
+        const l3arr=findL2(l1.id,l2.id)?.children||[], l3idx=l3arr.indexOf(l3);
+        if(l3idx===0){bu3.disabled=true;bu3.style.opacity='.25';bu3.style.cursor='default';}
+        if(l3idx===l3arr.length-1){bd3d.disabled=true;bd3d.style.opacity='.25';bd3d.style.cursor='default';}
+        act3.appendChild(bu3); act3.appendChild(bd3d); act3.appendChild(be3); act3.appendChild(bd3);
         const prefix=document.createElement('span'); prefix.style.cssText='font-size:9px;color:var(--text-muted);padding-left:10px;'; prefix.textContent='└';
         s3.appendChild(prefix); s3.appendChild(n3); s3.appendChild(act3);
         sub3List.appendChild(s3);
@@ -917,6 +940,34 @@ function renderCatTree() {
     branch.appendChild(subList);
     tree.appendChild(branch);
   });
+}
+
+function moveCat(level, l1id, l2id, l3id, dir) {
+  // dir: -1 = up, +1 = down
+  let arr, idx;
+  if (level === 1) {
+    arr = cats;
+    idx = arr.findIndex(c=>c.id===l1id);
+  } else if (level === 2) {
+    const l1 = findL1(l1id);
+    if (!l1) return;
+    arr = l1.children;
+    idx = arr.findIndex(c=>c.id===l2id);
+  } else {
+    const l2 = findL2(l1id, l2id);
+    if (!l2) return;
+    arr = l2.children;
+    idx = arr.findIndex(c=>c.id===l3id);
+  }
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= arr.length) return;
+  // swap
+  [arr[idx], arr[newIdx]] = [arr[newIdx], arr[idx]];
+  // 순서 변경 시 펼침 상태 유지
+  const wasExpanded = allExpanded;
+  allExpanded = true;
+  saveCats(); renderCatTree(); refreshModalCats();
+  allExpanded = wasExpanded;
 }
 
 function renameCat(level,l1id,l2id,l3id) {
