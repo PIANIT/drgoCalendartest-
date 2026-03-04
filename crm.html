@@ -457,6 +457,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
         <div class="dtab" data-tab="consult">상담 내역 <span id="consultTabCount" style="font-size:11px;color:var(--text-muted);"></span></div>
         <div class="dtab" data-tab="visit_req">방문의뢰 <span id="visitReqTabCount" style="font-size:11px;color:var(--text-muted);"></span></div>
         <div class="dtab" data-tab="visit_rep">방문보고 <span id="visitRepTabCount" style="font-size:11px;color:var(--text-muted);"></span></div>
+        <div class="dtab" data-tab="remote_rep">원격의뢰/보고 <span id="remoteRepTabCount" style="font-size:11px;color:var(--text-muted);"></span></div>
         <div class="dtab" data-tab="sales">매출기록 <span id="salesTabCount" style="font-size:11px;color:var(--text-muted);"></span></div>
       </div>
 
@@ -490,6 +491,15 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
           <button class="new-consult-btn" id="newVisitRepBtn">+ 방문보고 등록</button>
         </div>
         <div class="generic-list" id="visitRepList"></div>
+      </div>
+
+      <!-- 원격의뢰/보고 -->
+      <div id="tabRemoteRep" class="generic-tab" style="display:none;">
+        <div class="generic-toolbar">
+          <div class="consult-count" id="remoteRepCountLabel"></div>
+          <button class="new-consult-btn" id="newRemoteRepBtn">+ 원격의뢰/보고 등록</button>
+        </div>
+        <div class="generic-list" id="remoteRepList"></div>
       </div>
 
       <!-- 매출기록 -->
@@ -760,6 +770,35 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
   </div>
 </div>
 
+<!-- ═══ 원격의뢰/보고 모달 ═══ -->
+<div class="modal-overlay" id="remoteRepModal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-title" id="remoteRepModalTitle">원격의뢰/보고 등록</div>
+      <button class="modal-close" id="remoteRepModalClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-section-head">📅 기본 정보</div>
+      <div class="form-row">
+        <div><label class="form-label">원격 시작일자 <span class="req">*</span></label><input class="form-input" type="date" id="rrStartDate"></div>
+        <div><label class="form-label">원격 종료일자</label><input class="form-input" type="date" id="rrEndDate"></div>
+      </div>
+      <div class="form-row">
+        <div><label class="form-label">작성자</label><input class="form-input" id="rrAuthor" placeholder="작성자"></div>
+      </div>
+      <div class="form-section-head">📝 내용</div>
+      <div class="form-group"><label class="form-label">제목 <span class="req">*</span></label><input class="form-input" id="rrTitle" placeholder="원격의뢰/보고 제목"></div>
+      <div class="form-group"><label class="form-label">진행 내용</label><textarea class="form-textarea" id="rrContent" placeholder="원격 진행 내용을 상세하게 입력하세요" style="min-height:110px;"></textarea></div>
+      <div class="form-group"><label class="form-label">특이사항</label><textarea class="form-textarea" id="rrNote" placeholder="특이사항, 후속 조치 필요사항 등"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-danger" id="remoteRepDeleteBtn" style="display:none;margin-right:auto;">삭제</button>
+      <button class="btn-cancel" id="remoteRepCancelBtn">취소</button>
+      <button class="btn-save" id="remoteRepSaveBtn">저장</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ 나가기 확인 팝업 ═══ -->
 <div class="crm-confirm-overlay" id="crmConfirmOverlay">
   <div class="crm-confirm-box">
@@ -979,15 +1018,16 @@ function initApp(){
   const vrCol =id=>collection(db,`crm_clients/${id}/visit_requests`);
   const repCol=id=>collection(db,`crm_clients/${id}/visit_reports`);
   const slCol =id=>collection(db,`crm_clients/${id}/sales_records`);
+  const rrCol =id=>collection(db,`crm_clients/${id}/remote_reports`);
   const eventsCol=collection(db,'events');
 
   let clients=[], filteredType='all', searchQuery='';
   let selectedClient=null, currentTab='info';
   let consultations=[], consultUnsub=null;
   let editingClientId=null, editingConsultId=null;
-  let visitReqs=[], visitReps=[], salesRecs=[];
-  let vrUnsub=null, repUnsub=null, slUnsub=null;
-  let editingVrId=null, editingRepId=null, editingSlId=null;
+  let visitReqs=[], visitReps=[], salesRecs=[], remoteReps=[];
+  let vrUnsub=null, repUnsub=null, slUnsub=null, rrUnsub=null;
+  let editingVrId=null, editingRepId=null, editingSlId=null, editingRrId=null;
 
   /* theme */
   const savedTheme=localStorage.getItem('cal_theme');
@@ -1095,6 +1135,7 @@ function initApp(){
     loadConsultations(id);
     loadVisitReqs(id);
     loadVisitReps(id);
+    loadRemoteReps(id);
     loadSales(id);
   }
 
@@ -1129,8 +1170,9 @@ function initApp(){
     document.getElementById('tabInfo').style.display    =tab==='info'     ?'block':'none';
     document.getElementById('tabConsult').style.display =tab==='consult'  ?'flex' :'none';
     document.getElementById('tabVisitReq').style.display=tab==='visit_req'?'flex' :'none';
-    document.getElementById('tabVisitRep').style.display=tab==='visit_rep'?'flex' :'none';
-    document.getElementById('tabSales').style.display   =tab==='sales'    ?'flex' :'none';
+    document.getElementById('tabVisitRep').style.display =tab==='visit_rep' ?'flex':'none';
+    document.getElementById('tabRemoteRep').style.display=tab==='remote_rep'?'flex':'none';
+    document.getElementById('tabSales').style.display   =tab==='sales'    ?'flex':'none';
     if(tab==='info'&&selectedClient) renderInfo(selectedClient);
   }
   document.querySelectorAll('.dtab').forEach(d=>d.addEventListener('click',()=>switchTab(d.dataset.tab)));
@@ -1368,6 +1410,7 @@ function initApp(){
     visitReqModal: ['vrTitle','vrDate','vrStatus','vrAssignee','vrType','vrAddress','vrEquipment','vrReqTopic','vrContent'],
     visitRepModal: ['repTitle','repDate','repAuthor','repResult','repContent','repNote'],
     salesModal:    ['slTitle','slDate','slType','slAmount','slBalance','slRefund','slPayStatus','slNote'],
+    remoteRepModal: ['rrTitle','rrStartDate','rrEndDate','rrAuthor','rrContent','rrNote'],
   };
 
   function _crmTakeSnapshot(modalId) {
@@ -1874,6 +1917,72 @@ function initApp(){
   document.getElementById('visitRepModalClose').addEventListener('click',()=>crmTryClose('visitRepModal',()=>document.getElementById('visitRepModal').classList.remove('open')));
   document.getElementById('visitRepCancelBtn').addEventListener('click',()=>crmTryClose('visitRepModal',()=>document.getElementById('visitRepModal').classList.remove('open')));
 
+
+  /* ═══════════════════════════════════════
+     원격의뢰/보고 탭
+  ═══════════════════════════════════════ */
+  function loadRemoteReps(clientId){
+    if(rrUnsub){ rrUnsub(); rrUnsub=null; }
+    rrUnsub=onSnapshot(query(rrCol(clientId),orderBy('createdAt','desc')),snap=>{
+      remoteReps=snap.docs.map(d=>({_id:d.id,...d.data()}));
+      document.getElementById('remoteRepTabCount').textContent=remoteReps.length?`(${remoteReps.length})`:'';
+      document.getElementById('remoteRepCountLabel').textContent=`총 ${remoteReps.length}건`;
+      renderRemoteRepList();
+    });
+  }
+  function renderRemoteRepList(){
+    const el=document.getElementById('remoteRepList');
+    if(!remoteReps.length){ el.innerHTML='<div class="generic-empty">등록된 원격의뢰/보고가 없습니다</div>'; return; }
+    el.innerHTML=remoteReps.map(r=>`<div class="item-card" data-id="${r._id}"><div class="item-card-header"><div><div class="item-card-title">${esc(r.title||'(제목 없음)')}</div><div class="item-card-meta">${r.author?`<span>작성: ${esc(r.author)}</span>`:''}</div></div><div class="item-date">${r.startDate||fmtDate(r.createdAt)}</div></div>${r.content?`<div class="item-card-body">${esc(r.content)}</div>`:''}</div>`).join('');
+    el.querySelectorAll('.item-card').forEach(c=>c.addEventListener('click',()=>openRemoteRepModal(remoteReps.find(r=>r._id===c.dataset.id))));
+  }
+  function openRemoteRepModal(item=null){
+    editingRrId=item?item._id:null;
+    document.getElementById('remoteRepModalTitle').textContent=item?'원격의뢰/보고 수정':'원격의뢰/보고 등록';
+    document.getElementById('remoteRepDeleteBtn').style.display=item?'':'none';
+    document.getElementById('rrStartDate').value=item?.startDate||new Date().toISOString().slice(0,10);
+    document.getElementById('rrEndDate').value=item?.endDate||'';
+    document.getElementById('rrAuthor').value=item?.author||getDisplayName();
+    document.getElementById('rrTitle').value=item?.title||'';
+    document.getElementById('rrContent').value=item?.content||'';
+    document.getElementById('rrNote').value=item?.note||'';
+    document.getElementById('remoteRepModal').classList.add('open');
+    setTimeout(()=>{ document.querySelectorAll('#remoteRepModal .form-textarea').forEach(autoResize); },30);
+    setTimeout(()=>{ _crmTakeSnapshot('remoteRepModal'); },60);
+    setTimeout(()=>document.getElementById('rrTitle').focus(),100);
+  }
+  document.getElementById('remoteRepDeleteBtn').addEventListener('click',async()=>{
+    if(!editingRrId||!selectedClient) return;
+    const ok=await showConfirm('원격의뢰/보고 삭제','이 원격의뢰/보고를 삭제하시겠습니까?','🗑️');
+    if(!ok) return;
+    await deleteDoc(doc(db,`crm_clients/${selectedClient._id}/remote_reports`,editingRrId));
+    document.getElementById('remoteRepModal').classList.remove('open'); showToast('삭제되었습니다');
+  });
+  document.getElementById('remoteRepSaveBtn').addEventListener('click',async()=>{
+    const title=document.getElementById('rrTitle').value.trim();
+    if(!title){ document.getElementById('rrTitle').classList.add('error'); setTimeout(()=>document.getElementById('rrTitle').classList.remove('error'),600); return; }
+    if(!selectedClient) return;
+    const btn=document.getElementById('remoteRepSaveBtn'); btn.disabled=true; btn.textContent='저장 중…';
+    const data={
+      title,
+      startDate: document.getElementById('rrStartDate').value,
+      endDate:   document.getElementById('rrEndDate').value,
+      author:    document.getElementById('rrAuthor').value.trim(),
+      content:   document.getElementById('rrContent').value.trim(),
+      note:      document.getElementById('rrNote').value.trim(),
+    };
+    try{
+      if(editingRrId){ await updateDoc(doc(db,`crm_clients/${selectedClient._id}/remote_reports`,editingRrId),data); showToast('수정되었습니다','success'); }
+      else { data.createdAt=serverTimestamp(); await addDoc(rrCol(selectedClient._id),data); showToast('원격의뢰/보고가 등록되었습니다','success'); }
+      _crmSnapshot=null;
+      document.getElementById('remoteRepModal').classList.remove('open');
+    } catch(e){ console.error(e); showToast('저장 실패','error'); }
+    btn.disabled=false; btn.textContent='저장';
+  });
+  document.getElementById('newRemoteRepBtn').addEventListener('click',()=>openRemoteRepModal());
+  document.getElementById('remoteRepModalClose').addEventListener('click',()=>crmTryClose('remoteRepModal',()=>document.getElementById('remoteRepModal').classList.remove('open')));
+  document.getElementById('remoteRepCancelBtn').addEventListener('click',()=>crmTryClose('remoteRepModal',()=>document.getElementById('remoteRepModal').classList.remove('open')));
+
   /* ═══════════════════════════════════════
      매출기록 탭
   ═══════════════════════════════════════ */
@@ -1982,7 +2091,7 @@ function initApp(){
 
   /* overlay 배경 클릭 - dirty check 적용 모달은 crmTryClose 경유 */
   const DIRTY_MODALS = new Set(['clientModal','consultModal','visitReqModal','visitRepModal','salesModal']);
-  ['clientModal','consultModal','consultDetailModal','visitReqModal','visitRepModal','salesModal'].forEach(id=>{
+  ['clientModal','consultModal','consultDetailModal','visitReqModal','visitRepModal','remoteRepModal','salesModal'].forEach(id=>{
     document.getElementById(id).addEventListener('click',e=>{
       if(e.target.id !== id) return;
       if(DIRTY_MODALS.has(id)){
