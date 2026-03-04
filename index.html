@@ -1959,17 +1959,46 @@ const loadingTimeout = setTimeout(() => {
   console.warn('Firebase 응답 없음 — 로딩 강제 해제');
 }, 10000);
 
-onSnapshot(eventsCol, snap => {
+/* ── 날짜 범위 구독 (현재 월 ±2개월) ── */
+let _eventsUnsub = null;
+let _subscribedRange = { from:'', to:'' }; // 이미 구독 중인 범위 추적
+
+function subscribeEvents(year, month) {
+  // 현재 월 -2 ~ +2개월 범위 계산
+  const d1 = new Date(year, month - 2, 1);
+  const d2 = new Date(year, month + 3, 0); // +2개월 말일
+  const from = d1.getFullYear()+'-'+String(d1.getMonth()+1).padStart(2,'0')+'-01';
+  const to   = d2.getFullYear()+'-'+String(d2.getMonth()+1).padStart(2,'0')+'-'+String(d2.getDate()).padStart(2,'0');
+
+  // 이미 같은 범위 구독 중이면 재구독 생략
+  if (_eventsUnsub && _subscribedRange.from === from && _subscribedRange.to === to) return;
+
+  // 기존 구독 해제
+  if (_eventsUnsub) { _eventsUnsub(); _eventsUnsub = null; }
+  _subscribedRange = { from, to };
+
+  setLoading(true);
   clearTimeout(loadingTimeout);
-  events = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
-  setLoading(false);
-  if (typeof renderAll === 'function') renderAll(); else render();
-}, err => {
-  clearTimeout(loadingTimeout);
-  console.error('Firestore 오류:', err);
-  setLoading(false);
-  alert('데이터베이스 연결에 실패했습니다.\n네트워크 상태를 확인해주세요.');
-});
+
+  const q = query(eventsCol,
+    where('startDate', '>=', from),
+    where('startDate', '<=', to),
+    orderBy('startDate', 'asc')
+  );
+  _eventsUnsub = onSnapshot(q, snap => {
+    clearTimeout(loadingTimeout);
+    events = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+    setLoading(false);
+    if (typeof renderAll === 'function') renderAll(); else render();
+  }, err => {
+    clearTimeout(loadingTimeout);
+    console.error('Firestore 오류:', err);
+    setLoading(false);
+    alert('데이터베이스 연결에 실패했습니다.\n네트워크 상태를 확인해주세요.');
+  });
+}
+// 초기 구독 (currentYear/currentMonth는 init()에서 설정됨)
+subscribeEvents(today.getFullYear(), today.getMonth());
 
 function getSpecialIconStr(ev) {
   if (!ev.specialOpts || ev.specialOpts.length === 0) return '';
@@ -4319,9 +4348,9 @@ function renderPcDay() {
 /* ══ 년 단위 이동 ══ */
 document.getElementById('prevYearBtn').addEventListener('click',()=>{
   if(isMobile()){
-    currentYear--; renderAll();
+    currentYear--; subscribeEvents(currentYear,currentMonth); renderAll();
   } else if(pcView==='month'){
-    currentYear--; render();
+    currentYear--; subscribeEvents(currentYear,currentMonth); render();
   } else if(pcView==='week'){
     /* pcWeekStart를 52주(364일) 전으로 */
     if(pcWeekStart) pcWeekStart=addDaysPc(pcWeekStart,-364);
@@ -4336,9 +4365,9 @@ document.getElementById('prevYearBtn').addEventListener('click',()=>{
 });
 document.getElementById('nextYearBtn').addEventListener('click',()=>{
   if(isMobile()){
-    currentYear++; renderAll();
+    currentYear++; subscribeEvents(currentYear,currentMonth); renderAll();
   } else if(pcView==='month'){
-    currentYear++; render();
+    currentYear++; subscribeEvents(currentYear,currentMonth); render();
   } else if(pcView==='week'){
     if(pcWeekStart) pcWeekStart=addDaysPc(pcWeekStart,364);
     currentYear++;
@@ -4428,6 +4457,7 @@ document.getElementById('prevBtn').addEventListener('click',()=>{
     if (mvMode==='month') {
       mvMonthMonth--; if(mvMonthMonth<0){mvMonthMonth=11;mvMonthYear--;}
       mvSelDate=`${mvMonthYear}-${String(mvMonthMonth+1).padStart(2,'0')}-01`;
+      subscribeEvents(mvMonthYear,mvMonthMonth);
       renderMvMonth();
     } else if (mvMode==='week') {
       mvWeekStart=addDays(mvWeekStart,-7); mvSelDate=mvWeekStart; renderMvWeek();
@@ -4436,7 +4466,7 @@ document.getElementById('prevBtn').addEventListener('click',()=>{
     }
     return;
   }
-  if (pcView==='month'){currentMonth--;if(currentMonth<0){currentMonth=11;currentYear--;}render();}
+  if (pcView==='month'){currentMonth--;if(currentMonth<0){currentMonth=11;currentYear--;}subscribeEvents(currentYear,currentMonth);render();}
   else if (pcView==='week'){pcWeekStart=addDaysPc(pcWeekStart,-7);renderPcWeek();}
   else{pcDayDate=addDaysPc(pcDayDate,-1);renderPcDay();}
 });
@@ -4445,6 +4475,7 @@ document.getElementById('nextBtn').addEventListener('click',()=>{
     if (mvMode==='month') {
       mvMonthMonth++; if(mvMonthMonth>11){mvMonthMonth=0;mvMonthYear++;}
       mvSelDate=`${mvMonthYear}-${String(mvMonthMonth+1).padStart(2,'0')}-01`;
+      subscribeEvents(mvMonthYear,mvMonthMonth);
       renderMvMonth();
     } else if (mvMode==='week') {
       mvWeekStart=addDays(mvWeekStart,7); mvSelDate=mvWeekStart; renderMvWeek();
@@ -4453,7 +4484,7 @@ document.getElementById('nextBtn').addEventListener('click',()=>{
     }
     return;
   }
-  if (pcView==='month'){currentMonth++;if(currentMonth>11){currentMonth=0;currentYear++;}render();}
+  if (pcView==='month'){currentMonth++;if(currentMonth>11){currentMonth=0;currentYear++;}subscribeEvents(currentYear,currentMonth);render();}
   else if (pcView==='week'){pcWeekStart=addDaysPc(pcWeekStart,7);renderPcWeek();}
   else{pcDayDate=addDaysPc(pcDayDate,1);renderPcDay();}
 });

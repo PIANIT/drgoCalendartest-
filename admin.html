@@ -821,6 +821,7 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
   <div class="toolbar-right">
     <button class="action-btn" id="calLogCreateBtn">🆕 신규 등록</button>
     <button class="action-btn" id="calLogDeleteBtn">🗑 삭제 내역</button>
+    <button class="action-btn" id="calRefreshBtn">🔄 새로고침</button>
     <button class="action-btn" id="exportBtn">📤 백업</button>
     <button class="action-btn" id="importBtn">📥 복원</button>
     <button class="action-btn danger" id="bulkDeleteBtn" style="display:none;">🗑 선택 삭제</button>
@@ -861,6 +862,7 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
       <input class="search-input" id="crmSearch" placeholder="이름, 전화번호, 플랫폼 검색…">
     </div>
     <div class="toolbar-right" style="margin-left:auto;">
+      <button class="action-btn" id="crmRefreshBtn">🔄 새로고침</button>
       <button class="action-btn" id="crmLogCreateBtn">🆕 신규 등록</button>
       <button class="action-btn" id="crmLogDeleteBtn">🗑 삭제 내역</button>
       <button class="action-btn" id="crmExportBtn">📤 백업</button>
@@ -894,6 +896,7 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
       <input class="search-input" id="wikiSearch" placeholder="제목, 작성자, 태그 검색…">
     </div>
     <div class="toolbar-right" style="margin-left:auto;">
+      <button class="action-btn" id="wikiRefreshBtn">🔄 새로고침</button>
       <button class="action-btn" id="wikiLogCreateBtn">🆕 신규 등록</button>
       <button class="action-btn" id="wikiLogDeleteBtn">🗑 삭제 내역</button>
       <button class="action-btn" id="wikiExportBtn">📤 백업</button>
@@ -1192,14 +1195,19 @@ function initApp() {
     document.getElementById('themeBtn').textContent = isL ? '☀️' : '🌙';
   });
 
-  /* -- Firestore 실시간 리스너 -- */
-  onSnapshot(col, snap => {
-    allEvents = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
-    applyFilters();
-    updateStats();
-  }, err => {
-    showToast('Firestore 연결 실패: ' + err.message, 'error');
-  });
+  /* -- Firestore 1회 읽기 (실시간 구독 제거) -- */
+  let _calEventsUnsub = null;
+  async function loadCalEvents() {
+    try {
+      const snap = await getDocs(query(col, orderBy('startDate','desc')));
+      allEvents = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+      applyFilters();
+      updateStats();
+    } catch(err) {
+      showToast('Firestore 연결 실패: ' + err.message, 'error');
+    }
+  }
+  loadCalEvents();
 
   /* -- 새로고침 -- */
   document.getElementById('refreshBtn').addEventListener('click', () => {
@@ -1275,6 +1283,7 @@ function initApp() {
   /* -- 백업 모달 -- */
   _backupDb = db;
   _db = db;
+  document.getElementById('calRefreshBtn').addEventListener('click', () => loadCalEvents());
   document.getElementById('exportBtn').addEventListener('click', () => openBackupModal('calendar'));
 
   /* -- 복원 -- */
@@ -1323,11 +1332,13 @@ function initApp() {
     if (selectedIds.size === 0) return;
     showConfirm('🗑 선택 삭제', `선택한 ${selectedIds.size}개 일정을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`, async () => {
       let ok = 0;
+      const deletedIds = new Set(selectedIds);
       for (const id of selectedIds) {
         try { await deleteDoc(doc(db, 'events', id)); ok++; } catch {}
       }
+      allEvents = allEvents.filter(e=>!deletedIds.has(e._id));
       selectedIds.clear();
-      updateBulkBtn();
+      applyFilters(); updateStats(); updateBulkBtn();
       showToast(`${ok}개 일정 삭제됨`, 'success');
     });
   });
@@ -1443,6 +1454,8 @@ function initApp() {
         /* 삭제 로그 기록 */
         await recordLog(db, 'events', id, 'delete', { title:ev.title||'(제목 없음)', color:ev.color, startDate:ev.startDate });
         await deleteDoc(doc(db, 'events', id));
+        allEvents = allEvents.filter(e=>e._id!==id);
+        applyFilters(); updateStats();
         document.getElementById('detailOverlay').classList.remove('open');
         showToast('일정이 삭제되었습니다', 'success');
       } catch(err) {
@@ -2451,12 +2464,20 @@ document.getElementById('wikiDetailClose').addEventListener('click',    ()=>docu
 document.getElementById('wikiDetailCloseBtn').addEventListener('click',()=>document.getElementById('wikiDetailOverlay').classList.remove('open'));
 
 function initCrmSection(db) {
-  /* 실시간 리스너 */
-  onSnapshot(collection(db,'crm_clients'), snap => {
-    _crmAll = snap.docs.map(d=>({_id:d.id,...d.data()}));
-    renderCrm();
-    document.getElementById('cnt-crm').textContent = _crmAll.length;
-  }, err=>showToast('CRM 로드 실패: '+err.message,'error'));
+  /* 1회 읽기 (실시간 구독 제거 - 읽기 절약) */
+  async function loadCrmAll() {
+    try {
+      const snap = await getDocs(query(collection(db,'crm_clients'), orderBy('createdAt','desc')));
+      _crmAll = snap.docs.map(d=>({_id:d.id,...d.data()}));
+      _crmFiltered = [];
+      renderCrm();
+      document.getElementById('cnt-crm').textContent = _crmAll.length;
+    } catch(e) { showToast('CRM 로드 실패: '+e.message,'error'); }
+  }
+  loadCrmAll();
+  /* 새로고침 버튼 */
+  const crmRefBtn = document.getElementById('crmRefreshBtn');
+  if(crmRefBtn) crmRefBtn.addEventListener('click', ()=>loadCrmAll());
 
   document.getElementById('crmSearch').addEventListener('input', e => {
     const q=e.target.value.toLowerCase();
@@ -2484,7 +2505,11 @@ function initCrmSection(db) {
       for(const id of _crmSelectedIds){
         try{ await recordLog(db,'crm_clients',id,'delete',{name:(_crmAll.find(c=>c._id===id)||{}).name||'?'}); await deleteDoc(doc(db,'crm_clients',id)); }catch{}
       }
-      _crmSelectedIds.clear(); showToast('삭제 완료','success');
+      _crmAll = _crmAll.filter(c=>!_crmSelectedIds.has(c._id));
+      _crmSelectedIds.clear();
+      renderCrm();
+      document.getElementById('cnt-crm').textContent = _crmAll.length;
+      showToast('삭제 완료','success');
     });
   });
 }
@@ -2556,11 +2581,18 @@ function renderCrm() {
 const WIKI_PAGE=25;
 
 function initWikiSection(db) {
-  onSnapshot(collection(db,'wiki_articles'), snap => {
-    _wikiAll = snap.docs.map(d=>({_id:d.id,...d.data()}));
-    renderWiki();
-    document.getElementById('cnt-wiki').textContent=_wikiAll.length;
-  }, err=>showToast('위키 로드 실패: '+err.message,'error'));
+  async function loadWikiAll() {
+    try {
+      const snap = await getDocs(collection(db,'wiki_articles'));
+      _wikiAll = snap.docs.map(d=>({_id:d.id,...d.data()}));
+      _wikiFiltered = [];
+      renderWiki();
+      document.getElementById('cnt-wiki').textContent = _wikiAll.length;
+    } catch(e) { showToast('위키 로드 실패: '+e.message,'error'); }
+  }
+  loadWikiAll();
+  const wikiRefBtn = document.getElementById('wikiRefreshBtn');
+  if(wikiRefBtn) wikiRefBtn.addEventListener('click', ()=>loadWikiAll());
 
   document.getElementById('wikiSearch').addEventListener('input',e=>{
     const q=e.target.value.toLowerCase();
@@ -2587,7 +2619,11 @@ function initWikiSection(db) {
       for(const id of _wikiSelectedIds){
         try{ await recordLog(db,'wiki_articles',id,'delete',{title:(_wikiAll.find(a=>a._id===id)||{}).title||'?'}); await deleteDoc(doc(db,'wiki_articles',id)); }catch{}
       }
-      _wikiSelectedIds.clear(); showToast('삭제 완료','success');
+      _wikiAll = _wikiAll.filter(a=>!_wikiSelectedIds.has(a._id));
+      _wikiSelectedIds.clear();
+      renderWiki();
+      document.getElementById('cnt-wiki').textContent = _wikiAll.length;
+      showToast('삭제 완료','success');
     });
   });
 }

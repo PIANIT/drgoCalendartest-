@@ -780,8 +780,8 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
     <div class="modal-body">
       <div class="form-section-head">📅 기본 정보</div>
       <div class="form-row">
-        <div><label class="form-label">원격 시작일자 <span class="req">*</span></label><input class="form-input" type="date" id="rrStartDate"></div>
-        <div><label class="form-label">원격 종료일자</label><input class="form-input" type="date" id="rrEndDate"></div>
+        <div><label class="form-label">원격 시작 (날짜·시간) <span class="req">*</span></label><input class="form-input" type="datetime-local" id="rrStartDate" style="cursor:pointer;"></div>
+        <div><label class="form-label">원격 종료 (날짜·시간)</label><input class="form-input" type="datetime-local" id="rrEndDate" style="cursor:pointer;"></div>
       </div>
       <div class="form-row">
         <div><label class="form-label">작성자</label><input class="form-input" id="rrAuthor" placeholder="작성자"></div>
@@ -790,6 +790,19 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
       <div class="form-group"><label class="form-label">제목 <span class="req">*</span></label><input class="form-input" id="rrTitle" placeholder="원격의뢰/보고 제목"></div>
       <div class="form-group"><label class="form-label">진행 내용</label><textarea class="form-textarea" id="rrContent" placeholder="원격 진행 내용을 상세하게 입력하세요" style="min-height:110px;"></textarea></div>
       <div class="form-group"><label class="form-label">특이사항</label><textarea class="form-textarea" id="rrNote" placeholder="특이사항, 후속 조치 필요사항 등"></textarea></div>
+      <div class="form-section-head">🖼 첨부 이미지</div>
+      <div class="form-group">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+          <button type="button" class="vr-img-tab active" id="rrImgTab_work" data-rrtab="work">작업 이미지</button>
+          <button type="button" class="vr-img-tab" id="rrImgTab_etc" data-rrtab="etc">기타</button>
+        </div>
+        <div class="quote-images-wrap" id="rrWorkImages"></div>
+        <div class="quote-images-wrap" id="rrEtcImages" style="display:none;"></div>
+        <label style="display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:5px 14px;background:var(--surface2);border:1px dashed var(--border);border-radius:8px;cursor:pointer;font-size:12px;color:var(--text-muted);transition:border-color .2s;">
+          <span>＋ 이미지 추가</span>
+          <input type="file" id="rrImgFileInput" accept="image/*" multiple style="display:none;">
+        </label>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn-danger" id="remoteRepDeleteBtn" style="display:none;margin-right:auto;">삭제</button>
@@ -1026,7 +1039,25 @@ function initApp(){
   let consultations=[], consultUnsub=null;
   let editingClientId=null, editingConsultId=null;
   let visitReqs=[], visitReps=[], salesRecs=[], remoteReps=[];
-  let vrUnsub=null, repUnsub=null, slUnsub=null, rrUnsub=null;
+  let vrUnsub=null, repUnsub=null, slUnsub=null, rrUnsub=null; // 하위 호환용(미사용)
+  /* 서브컬렉션 캐시: { clientId: { sub: [...docs] } } */
+  const _subCache = {};
+  function _subCacheKey(clientId, sub){ return clientId+'__'+sub; }
+  function _subCacheGet(clientId, sub){ return _subCache[_subCacheKey(clientId,sub)]||null; }
+  function _subCacheSet(clientId, sub, data){ _subCache[_subCacheKey(clientId,sub)]=data; }
+  function _subCacheClear(clientId, sub){ delete _subCache[_subCacheKey(clientId,sub)]; }
+
+  /* getDocs 1회 읽기 헬퍼 - 캐시 우선, 강제 새로고침 가능 */
+  async function fetchSub(clientId, col, sub, forceRefresh=false){
+    if(!forceRefresh){
+      const cached=_subCacheGet(clientId,sub);
+      if(cached!==null) return cached;
+    }
+    const snap=await getDocs(query(col(clientId),orderBy('createdAt','desc')));
+    const data=snap.docs.map(d=>({_id:d.id,...d.data()}));
+    _subCacheSet(clientId,sub,data);
+    return data;
+  }
   let editingVrId=null, editingRepId=null, editingSlId=null, editingRrId=null;
 
   /* theme */
@@ -1178,15 +1209,12 @@ function initApp(){
   document.querySelectorAll('.dtab').forEach(d=>d.addEventListener('click',()=>switchTab(d.dataset.tab)));
 
   /* ── LOAD CONSULTATIONS ── */
-  function loadConsultations(clientId){
+  async function loadConsultations(clientId){
     if(consultUnsub){ consultUnsub(); consultUnsub=null; }
-    const q=query(cCol(clientId),orderBy('createdAt','desc'));
-    consultUnsub=onSnapshot(q,snap=>{
-      consultations=snap.docs.map(d=>({_id:d.id,...d.data()}));
-      document.getElementById('consultTabCount').textContent=consultations.length?`(${consultations.length})`:'';
-      document.getElementById('consultCountLabel').textContent=`총 ${consultations.length}건의 상담`;
-      renderConsultList();
-    });
+    consultations = await fetchSub(clientId, cCol, 'consultations');
+    document.getElementById('consultTabCount').textContent=consultations.length?`(${consultations.length})`:'';
+    document.getElementById('consultCountLabel').textContent=`총 ${consultations.length}건의 상담`;
+    renderConsultList();
   }
 
   function renderConsultList(){
@@ -1286,6 +1314,7 @@ function initApp(){
       if(removeIdx>=0) entries.splice(removeIdx,1);
       await updateDoc(cdoc,{entries});
       consultations=consultations.map(c=>c._id===editingConsultId?{...c,entries}:c);
+      _subCacheSet(selectedClient._id,'consultations',consultations); // 캐시 동기화
       renderTimeline(entries);
       showToast('삭제되었습니다');
       return;
@@ -1322,6 +1351,7 @@ function initApp(){
         if(editIdx>=0){ entries[editIdx]={...entries[editIdx],text:newText}; }
         await updateDoc(cdoc,{entries});
         consultations=consultations.map(c=>c._id===editingConsultId?{...c,entries}:c);
+        _subCacheSet(selectedClient._id,'consultations',consultations);
         renderTimeline(entries);
         showToast('수정되었습니다','success');
       });
@@ -1350,6 +1380,7 @@ function initApp(){
       const snap=await getDoc(cdoc);
       const updated={_id:snap.id,...snap.data()};
       consultations=consultations.map(c=>c._id===editingConsultId?updated:c);
+      _subCacheSet(selectedClient._id,'consultations',consultations);
       renderTimeline(updated.entries||[]);
       showToast('상담 내용이 등록되었습니다','success');
     } catch(e){ console.error(e); showToast('저장에 실패했습니다','error'); }
@@ -1583,7 +1614,9 @@ function initApp(){
     try{
       const ref=await addDoc(cCol(selectedClient._id),data);
       showToast('상담이 등록되었습니다','success');
+      _subCacheClear(selectedClient._id,'consultations');
       _crmSnapshot = null; closeConsultModal(true);
+      loadConsultations(selectedClient._id);
       switchTab('consult');
       setTimeout(()=>{ const nc=consultations.find(c=>c._id===ref.id); if(nc) openConsultDetail(nc._id); },700);
     } catch(e){ console.error(e); showToast('저장에 실패했습니다','error'); }
@@ -1641,14 +1674,11 @@ function initApp(){
   /* ═══════════════════════════════════════
      방문의뢰 탭
   ═══════════════════════════════════════ */
-  function loadVisitReqs(clientId){
-    if(vrUnsub){ vrUnsub(); vrUnsub=null; }
-    vrUnsub=onSnapshot(query(vrCol(clientId),orderBy('createdAt','desc')),snap=>{
-      visitReqs=snap.docs.map(d=>({_id:d.id,...d.data()}));
-      document.getElementById('visitReqTabCount').textContent=visitReqs.length?`(${visitReqs.length})`:'';
-      document.getElementById('visitReqCountLabel').textContent=`총 ${visitReqs.length}건`;
-      renderVisitReqList();
-    });
+  async function loadVisitReqs(clientId){
+    visitReqs = await fetchSub(clientId, vrCol, 'visit_requests');
+    document.getElementById('visitReqTabCount').textContent=visitReqs.length?`(${visitReqs.length})`:'';
+    document.getElementById('visitReqCountLabel').textContent=`총 ${visitReqs.length}건`;
+    renderVisitReqList();
   }
   const STATUS_LABEL={pending:'예정',done:'완료',cancel:'취소'};
   const STATUS_CLASS={pending:'status-pending',done:'status-done',cancel:'status-cancel'};
@@ -1802,7 +1832,9 @@ function initApp(){
     const ok=await showConfirm('방문의뢰 삭제','이 방문의뢰를 삭제하시겠습니까?','🗑️');
     if(!ok) return;
     await deleteDoc(doc(db,`crm_clients/${selectedClient._id}/visit_requests`,editingVrId));
+    _subCacheClear(selectedClient._id,'visit_requests');
     document.getElementById('visitReqModal').classList.remove('open'); showToast('삭제되었습니다');
+    loadVisitReqs(selectedClient._id);
   });
   document.getElementById('visitReqSaveBtn').addEventListener('click',async()=>{
     const title=document.getElementById('vrTitle').value.trim();
@@ -1826,8 +1858,10 @@ function initApp(){
     try{
       if(editingVrId){ await updateDoc(doc(db,`crm_clients/${selectedClient._id}/visit_requests`,editingVrId),data); showToast('수정되었습니다','success'); }
       else { data.createdAt=serverTimestamp(); await addDoc(vrCol(selectedClient._id),data); showToast('방문의뢰가 등록되었습니다','success'); }
+      _subCacheClear(selectedClient._id,'visit_requests');
       _crmSnapshot = null;
       document.getElementById('visitReqModal').classList.remove('open');
+      loadVisitReqs(selectedClient._id);
     } catch(e){ console.error(e); showToast('저장 실패','error'); }
     btn.disabled=false; btn.textContent='저장';
   });
@@ -1838,14 +1872,11 @@ function initApp(){
   /* ═══════════════════════════════════════
      방문보고 탭
   ═══════════════════════════════════════ */
-  function loadVisitReps(clientId){
-    if(repUnsub){ repUnsub(); repUnsub=null; }
-    repUnsub=onSnapshot(query(repCol(clientId),orderBy('createdAt','desc')),snap=>{
-      visitReps=snap.docs.map(d=>({_id:d.id,...d.data()}));
-      document.getElementById('visitRepTabCount').textContent=visitReps.length?`(${visitReps.length})`:'';
-      document.getElementById('visitRepCountLabel').textContent=`총 ${visitReps.length}건`;
-      renderVisitRepList();
-    });
+  async function loadVisitReps(clientId){
+    visitReps = await fetchSub(clientId, repCol, 'visit_reports');
+    document.getElementById('visitRepTabCount').textContent=visitReps.length?`(${visitReps.length})`:'';
+    document.getElementById('visitRepCountLabel').textContent=`총 ${visitReps.length}건`;
+    renderVisitRepList();
   }
   function renderVisitRepList(){
     const el=document.getElementById('visitRepList');
@@ -1896,7 +1927,9 @@ function initApp(){
     const ok=await showConfirm('방문보고 삭제','이 방문보고를 삭제하시겠습니까?','🗑️');
     if(!ok) return;
     await deleteDoc(doc(db,`crm_clients/${selectedClient._id}/visit_reports`,editingRepId));
+    _subCacheClear(selectedClient._id,'visit_reports');
     document.getElementById('visitRepModal').classList.remove('open'); showToast('삭제되었습니다');
+    loadVisitReps(selectedClient._id);
   });
   document.getElementById('visitRepSaveBtn').addEventListener('click',async()=>{
     const title=document.getElementById('repTitle').value.trim();
@@ -1908,8 +1941,10 @@ function initApp(){
     try{
       if(editingRepId){ await updateDoc(doc(db,`crm_clients/${selectedClient._id}/visit_reports`,editingRepId),data); showToast('수정되었습니다','success'); }
       else { data.createdAt=serverTimestamp(); await addDoc(repCol(selectedClient._id),data); showToast('방문보고가 등록되었습니다','success'); }
+      _subCacheClear(selectedClient._id,'visit_reports');
       _crmSnapshot = null;
       document.getElementById('visitRepModal').classList.remove('open');
+      loadVisitReps(selectedClient._id);
     } catch(e){ console.error(e); showToast('저장 실패','error'); }
     btn.disabled=false; btn.textContent='저장';
   });
@@ -1921,31 +1956,59 @@ function initApp(){
   /* ═══════════════════════════════════════
      원격의뢰/보고 탭
   ═══════════════════════════════════════ */
-  function loadRemoteReps(clientId){
-    if(rrUnsub){ rrUnsub(); rrUnsub=null; }
-    rrUnsub=onSnapshot(query(rrCol(clientId),orderBy('createdAt','desc')),snap=>{
-      remoteReps=snap.docs.map(d=>({_id:d.id,...d.data()}));
-      document.getElementById('remoteRepTabCount').textContent=remoteReps.length?`(${remoteReps.length})`:'';
-      document.getElementById('remoteRepCountLabel').textContent=`총 ${remoteReps.length}건`;
-      renderRemoteRepList();
-    });
+  async function loadRemoteReps(clientId){
+    remoteReps = await fetchSub(clientId, rrCol, 'remote_reports');
+    document.getElementById('remoteRepTabCount').textContent=remoteReps.length?`(${remoteReps.length})`:'';
+    document.getElementById('remoteRepCountLabel').textContent=`총 ${remoteReps.length}건`;
+    renderRemoteRepList();
   }
   function renderRemoteRepList(){
     const el=document.getElementById('remoteRepList');
     if(!remoteReps.length){ el.innerHTML='<div class="generic-empty">등록된 원격의뢰/보고가 없습니다</div>'; return; }
-    el.innerHTML=remoteReps.map(r=>`<div class="item-card" data-id="${r._id}"><div class="item-card-header"><div><div class="item-card-title">${esc(r.title||'(제목 없음)')}</div><div class="item-card-meta">${r.author?`<span>작성: ${esc(r.author)}</span>`:''}</div></div><div class="item-date">${r.startDate||fmtDate(r.createdAt)}</div></div>${r.content?`<div class="item-card-body">${esc(r.content)}</div>`:''}</div>`).join('');
+    el.innerHTML=remoteReps.map(r=>{
+      const dtStr=v=>v?v.replace('T',' ').slice(0,16):'';
+      const dateLabel=(dtStr(r.startDate)||(r.createdAt?fmtDate(r.createdAt):''))+(r.endDate?` ~ ${dtStr(r.endDate)}`:'');
+      return `<div class="item-card" data-id="${r._id}"><div class="item-card-header"><div><div class="item-card-title">${esc(r.title||'(제목 없음)')}</div><div class="item-card-meta">${r.author?`<span>작성: ${esc(r.author)}</span>`:''}</div></div><div class="item-date" style="font-size:11px;white-space:nowrap;">${dateLabel}</div></div>${r.content?`<div class="item-card-body">${esc(r.content)}</div>`:''}</div>`;
+    }).join('');
     el.querySelectorAll('.item-card').forEach(c=>c.addEventListener('click',()=>openRemoteRepModal(remoteReps.find(r=>r._id===c.dataset.id))));
   }
   function openRemoteRepModal(item=null){
     editingRrId=item?item._id:null;
     document.getElementById('remoteRepModalTitle').textContent=item?'원격의뢰/보고 수정':'원격의뢰/보고 등록';
     document.getElementById('remoteRepDeleteBtn').style.display=item?'':'none';
-    document.getElementById('rrStartDate').value=item?.startDate||new Date().toISOString().slice(0,10);
-    document.getElementById('rrEndDate').value=item?.endDate||'';
+    function toRrDt(v) {
+      if (!v) return '';
+      if (v.length === 10) return v + 'T00:00'; // "2024-01-15" → "2024-01-15T00:00"
+      return v.slice(0, 16);                    // "2024-01-15T15:13:..." → "2024-01-15T15:13"
+    }
+    const _now = new Date(); _now.setSeconds(0,0);
+    const _nowDt = _now.getFullYear()+'-'+String(_now.getMonth()+1).padStart(2,'0')+'-'+String(_now.getDate()).padStart(2,'0')+'T'+String(_now.getHours()).padStart(2,'0')+':'+String(_now.getMinutes()).padStart(2,'0');
+    document.getElementById('rrStartDate').value = toRrDt(item?.startDate) || _nowDt;
+    document.getElementById('rrEndDate').value   = toRrDt(item?.endDate)   || '';
     document.getElementById('rrAuthor').value=item?.author||getDisplayName();
     document.getElementById('rrTitle').value=item?.title||'';
     document.getElementById('rrContent').value=item?.content||'';
     document.getElementById('rrNote').value=item?.note||'';
+    /* 이미지 초기화 */
+    function rrRenderImgs(containerId, imgs){
+      const el=document.getElementById(containerId); if(!el) return; el.innerHTML='';
+      (imgs||[]).forEach(img=>{
+        const src=typeof img==='string'?img:(img.data||img.src||''); if(!src) return;
+        const i=document.createElement('img'); i.className='quote-img-thumb'; i.src=src; i.alt='이미지';
+        const wrap=document.createElement('div'); wrap.style.cssText='position:relative;display:inline-block;';
+        const del=document.createElement('button');
+        del.textContent='✕'; del.style.cssText='position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:var(--red,#c0392b);color:#fff;border:none;border-radius:50%;font-size:9px;cursor:pointer;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;';
+        del.addEventListener('click',e=>{ e.stopPropagation(); wrap.remove(); });
+        i.addEventListener('click',()=>showLightbox(src));
+        wrap.appendChild(i); wrap.appendChild(del); el.appendChild(wrap);
+      });
+    }
+    rrRenderImgs('rrWorkImages', item?.images?.work||[]);
+    rrRenderImgs('rrEtcImages',  item?.images?.etc||[]);
+    /* 이미지 탭 초기화 */
+    document.getElementById('rrWorkImages').style.display='';
+    document.getElementById('rrEtcImages').style.display='none';
+    document.querySelectorAll('[data-rrtab]').forEach(b=>b.classList.toggle('active', b.dataset.rrtab==='work'));
     document.getElementById('remoteRepModal').classList.add('open');
     setTimeout(()=>{ document.querySelectorAll('#remoteRepModal .form-textarea').forEach(autoResize); },30);
     setTimeout(()=>{ _crmTakeSnapshot('remoteRepModal'); },60);
@@ -1956,13 +2019,19 @@ function initApp(){
     const ok=await showConfirm('원격의뢰/보고 삭제','이 원격의뢰/보고를 삭제하시겠습니까?','🗑️');
     if(!ok) return;
     await deleteDoc(doc(db,`crm_clients/${selectedClient._id}/remote_reports`,editingRrId));
+    _subCacheClear(selectedClient._id,'remote_reports');
     document.getElementById('remoteRepModal').classList.remove('open'); showToast('삭제되었습니다');
+    loadRemoteReps(selectedClient._id);
   });
   document.getElementById('remoteRepSaveBtn').addEventListener('click',async()=>{
     const title=document.getElementById('rrTitle').value.trim();
     if(!title){ document.getElementById('rrTitle').classList.add('error'); setTimeout(()=>document.getElementById('rrTitle').classList.remove('error'),600); return; }
     if(!selectedClient) return;
     const btn=document.getElementById('remoteRepSaveBtn'); btn.disabled=true; btn.textContent='저장 중…';
+    /* 이미지 수집 */
+    function collectRrImgs(containerId){
+      return Array.from(document.getElementById(containerId)?.querySelectorAll('img')||[]).map(i=>({data:i.src,name:''}));
+    }
     const data={
       title,
       startDate: document.getElementById('rrStartDate').value,
@@ -1970,30 +2039,69 @@ function initApp(){
       author:    document.getElementById('rrAuthor').value.trim(),
       content:   document.getElementById('rrContent').value.trim(),
       note:      document.getElementById('rrNote').value.trim(),
+      images:    { work:collectRrImgs('rrWorkImages'), etc:collectRrImgs('rrEtcImages') },
     };
     try{
       if(editingRrId){ await updateDoc(doc(db,`crm_clients/${selectedClient._id}/remote_reports`,editingRrId),data); showToast('수정되었습니다','success'); }
       else { data.createdAt=serverTimestamp(); await addDoc(rrCol(selectedClient._id),data); showToast('원격의뢰/보고가 등록되었습니다','success'); }
+      _subCacheClear(selectedClient._id,'remote_reports');
       _crmSnapshot=null;
       document.getElementById('remoteRepModal').classList.remove('open');
+      loadRemoteReps(selectedClient._id);
     } catch(e){ console.error(e); showToast('저장 실패','error'); }
     btn.disabled=false; btn.textContent='저장';
   });
   document.getElementById('newRemoteRepBtn').addEventListener('click',()=>openRemoteRepModal());
+
+  /* 날짜+시간 칸 클릭 시 피커 열기 */
+  ['rrStartDate','rrEndDate'].forEach(id=>{
+    document.getElementById(id).addEventListener('click', function(){ try{ this.showPicker(); }catch(_){} });
+  });
+
+  /* 이미지 탭 전환 */
+  document.querySelectorAll('[data-rrtab]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('[data-rrtab]').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const t=btn.dataset.rrtab;
+      document.getElementById('rrWorkImages').style.display=t==='work'?'':'none';
+      document.getElementById('rrEtcImages').style.display=t==='etc'?'':'none';
+    });
+  });
+
+  /* 이미지 파일 업로드 */
+  document.getElementById('rrImgFileInput').addEventListener('change', function(){
+    const activeTab=document.querySelector('[data-rrtab].active')?.dataset.rrtab||'work';
+    const containerId=activeTab==='work'?'rrWorkImages':'rrEtcImages';
+    const container=document.getElementById(containerId);
+    Array.from(this.files).forEach(file=>{
+      if(!file.type.startsWith('image/')) return;
+      const reader=new FileReader();
+      reader.onload=e=>{
+        const src=e.target.result;
+        const wrap=document.createElement('div'); wrap.style.cssText='position:relative;display:inline-block;';
+        const img=document.createElement('img'); img.className='quote-img-thumb'; img.src=src; img.alt=file.name;
+        const del=document.createElement('button');
+        del.textContent='✕'; del.style.cssText='position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:var(--red,#c0392b);color:#fff;border:none;border-radius:50%;font-size:9px;cursor:pointer;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;';
+        del.addEventListener('click',e=>{ e.stopPropagation(); wrap.remove(); });
+        img.addEventListener('click',()=>showLightbox(src));
+        wrap.appendChild(img); wrap.appendChild(del); container.appendChild(wrap);
+      };
+      reader.readAsDataURL(file);
+    });
+    this.value=''; // 같은 파일 재선택 허용
+  });
   document.getElementById('remoteRepModalClose').addEventListener('click',()=>crmTryClose('remoteRepModal',()=>document.getElementById('remoteRepModal').classList.remove('open')));
   document.getElementById('remoteRepCancelBtn').addEventListener('click',()=>crmTryClose('remoteRepModal',()=>document.getElementById('remoteRepModal').classList.remove('open')));
 
   /* ═══════════════════════════════════════
      매출기록 탭
   ═══════════════════════════════════════ */
-  function loadSales(clientId){
-    if(slUnsub){ slUnsub(); slUnsub=null; }
-    slUnsub=onSnapshot(query(slCol(clientId),orderBy('createdAt','desc')),snap=>{
-      salesRecs=snap.docs.map(d=>({_id:d.id,...d.data()}));
-      document.getElementById('salesTabCount').textContent=salesRecs.length?`(${salesRecs.length})`:'';
-      document.getElementById('salesCountLabel').textContent=`총 ${salesRecs.length}건`;
-      renderSalesSummary(); renderSalesList();
-    });
+  async function loadSales(clientId){
+    salesRecs = await fetchSub(clientId, slCol, 'sales_records');
+    document.getElementById('salesTabCount').textContent=salesRecs.length?`(${salesRecs.length})`:'';
+    document.getElementById('salesCountLabel').textContent=`총 ${salesRecs.length}건`;
+    renderSalesSummary(); renderSalesList();
   }
   function renderSalesSummary(){
     const total=salesRecs.reduce((s,r)=>s+(Number(r.amount)||0),0);
@@ -2066,7 +2174,9 @@ function initApp(){
     const ok=await showConfirm('매출 삭제','이 매출 기록을 삭제하시겠습니까?','🗑️');
     if(!ok) return;
     await deleteDoc(doc(db,`crm_clients/${selectedClient._id}/sales_records`,editingSlId));
+    _subCacheClear(selectedClient._id,'sales_records');
     document.getElementById('salesModal').classList.remove('open'); showToast('삭제되었습니다');
+    loadSales(selectedClient._id);
   });
   document.getElementById('salesSaveBtn').addEventListener('click',async()=>{
     const title=document.getElementById('slTitle').value.trim();
@@ -2080,8 +2190,10 @@ function initApp(){
     try{
       if(editingSlId){ await updateDoc(doc(db,`crm_clients/${selectedClient._id}/sales_records`,editingSlId),data); showToast('수정되었습니다','success'); }
       else { data.createdAt=serverTimestamp(); await addDoc(slCol(selectedClient._id),data); showToast('매출이 등록되었습니다','success'); }
+      _subCacheClear(selectedClient._id,'sales_records');
       _crmSnapshot = null;
       document.getElementById('salesModal').classList.remove('open');
+      loadSales(selectedClient._id);
     } catch(e){ console.error(e); showToast('저장 실패','error'); }
     btn.disabled=false; btn.textContent='저장';
   });
