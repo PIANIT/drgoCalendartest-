@@ -2182,7 +2182,7 @@ function render() {
       const evList = document.createElement('div');
       evList.className = 'events-list';
       const dayEvs = singleMap[dk]||[];
-      const MAX=3;
+      const MAX=calcMaxChips(lanes);
       dayEvs.slice(0,MAX).forEach(({evIdx,ev})=>{
         const chip=document.createElement('div');
         chip.className=`event-chip single chip-month color-${ev.color||'gold'}`;
@@ -5054,6 +5054,20 @@ function renderAll() {
   }
 }
 
+/* ── 행 높이에서 표시 가능한 최대 칩 수 계산 ── */
+function calcMaxChips(lanes) {
+  const rowH      = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--row-h')||'110', 10);
+  const PAD_V     = 6;          // day-cell padding top
+  const NUM_ROW_H = 26;         // day-num-row (24px + 2px margin)
+  const LANE_H    = 26;         // lane-spacer (24px + 2px)
+  const CHIP_H    = 24;         // chip (22px + 2px gap)
+  const MORE_H    = 22;         // more-badge 예약 공간
+  const usedByLanes = lanes * LANE_H;
+  const available = rowH - PAD_V - NUM_ROW_H - usedByLanes - MORE_H;
+  const max = Math.max(1, Math.floor(available / CHIP_H));
+  return max;
+}
+
 /* ── 캘린더 높이 드래그 조절 ── */
 (function(){
   const CAL_ROW_H_KEY = 'cal_row_h';
@@ -5099,6 +5113,8 @@ function renderAll() {
     const cur = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--row-h')||'110',10);
     savedRowH = cur;
     localStorage.setItem(CAL_ROW_H_KEY, cur);
+    /* 행 높이 변경 후 칩 수 재계산을 위해 재렌더링 */
+    if (typeof render === 'function') render();
   }
   document.addEventListener('mouseup',  stopDrag);
   document.addEventListener('touchend', stopDrag);
