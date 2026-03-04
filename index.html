@@ -2979,7 +2979,19 @@ function collectGoldTextFields(){
   };
 }
 
+function _forceRestoreGoldFields(){
+  /* 혹시 이전 잠금 해제 버그로 숨겨진 요소 강제 복원 */
+  document.querySelectorAll('[data-lc-hide],[data-lchidden],[data-_lchidden]').forEach(el=>{
+    el.style.display=''; el.removeAttribute('data-lc-hide');
+    el.removeAttribute('data-lchidden'); el.removeAttribute('data-_lchidden');
+  });
+  const cg=document.getElementById('_compactGold'); if(cg) cg.remove();
+  const cm=document.getElementById('_compactMeta'); if(cm) cm.remove();
+  const cd=document.getElementById('_compactDt'); if(cd) cd.remove();
+}
+
 function openNewModal(dk){
+  _forceRestoreGoldFields();
   editingId=null;
   document.getElementById('modalDateBadge').textContent=formatDateBadge(dk);
   ['modalTitle','modalName','modalAddress','modalDesc'].forEach(id=>document.getElementById(id).value='');
@@ -3011,6 +3023,7 @@ function openNewModal(dk){
 }
 
 function openModal(evIdx){
+  _forceRestoreGoldFields();
   const ev=events[evIdx];
   editingId=ev._id;
   document.getElementById('modalDateBadge').textContent=formatDateBadge(ev.startDate);
@@ -3586,17 +3599,17 @@ function _showLockedGoldCompact(){
   radioGroupIds.forEach(id => {
     const g = document.getElementById(id); if (!g) return;
     const fg = g.closest('.field-group');
-    if (fg) { fg.dataset._lcHidden='1'; fg.style.display='none'; }
-    else { g.dataset._lcHidden='1'; g.style.display='none'; }
+    if (fg) { fg.setAttribute('data-lc-hide','1'); fg.style.display='none'; }
+    else { g.setAttribute('data-lc-hide','1'); g.style.display='none'; }
   });
   /* conditional 직접입력 칸도 숨기기 */
   ['g_platform_etc_wrap','g_topic_etc_wrap','g_budget_etc_wrap','g_balance_amount_wrap',
    'g_source_ref_wrap','g_req_topic_etc_wrap'].forEach(id=>{
-    const el=document.getElementById(id); if(el){el.dataset._lcHidden='1';el.style.display='none';}
+    const el=document.getElementById(id); if(el){el.setAttribute('data-lc-hide','1');el.style.display='none';}
   });
   /* 특수옵션 사유 wrap 숨기기 */
   const spRW=document.getElementById('specialReasonWrap');
-  if(spRW){spRW.dataset._lcHidden='1';spRW.style.display='none';}
+  if(spRW){spRW.setAttribute('data-lc-hide','1');spRW.style.display='none';}
 
   /* 값 수집 헬퍼 */
   function getActiveVals(gid){
@@ -3680,9 +3693,10 @@ function _showLockedGoldCompact(){
 }
 
 function _hideLockedGoldCompact(){
-  /* 숨겼던 라디오 그룹 복원 */
-  document.querySelectorAll('[data-lchidden="1"], [data-_lcHidden="1"]').forEach(el=>{
-    el.style.display=''; delete el.dataset._lcHidden;
+  /* 숨겼던 라디오 그룹/field-group 복원 */
+  document.querySelectorAll('[data-lc-hide="1"]').forEach(el=>{
+    el.style.display='';
+    el.removeAttribute('data-lc-hide');
   });
   /* _compactGold 제거 */
   const cg = document.getElementById('_compactGold'); if(cg) cg.remove();
