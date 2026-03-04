@@ -867,6 +867,7 @@
   .pc-day-card.color-red   { border-left-color:var(--chip-red-bg); }
   .pc-day-card.color-green  { border-left-color:var(--chip-green-bg); }
   .pc-day-card.color-purple { border-left-color:var(--chip-purple-bg); }
+  .pc-day-card.color-teal   { border-left-color:var(--chip-teal-bg); }
   .pc-day-time {
     min-width:72px; font-family:var(--font-mono); font-size:12px;
     color:var(--text-muted); padding-top:2px; flex-shrink:0;
@@ -913,6 +914,7 @@
     .mv-date-dot.red   { background:var(--chip-red-bg); }
     .mv-date-dot.green  { background:var(--chip-green-bg); }
     .mv-date-dot.purple { background:var(--chip-purple-bg); }
+    .mv-date-dot.teal   { background:var(--chip-teal-bg); }
     .mv-date-cell.selected .mv-date-num { background:rgba(200,176,138,0.25); box-shadow:0 0 0 2px var(--accent); }
 
     /* ── 모바일 월간 ── */
@@ -5152,7 +5154,7 @@ let mvMonthYear  = new Date().getFullYear();
 let mvMonthMonth = new Date().getMonth(); // 0-based
 
 const DOW_KR = ['일','월','화','수','목','금','토'];
-const TYPE_LABELS_MV = { gold:'방문의뢰', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방' };
+const TYPE_LABELS_MV = { gold:'방문의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방' };
 
 function addDays(dk, n) { const d=new Date(dk+'T00:00:00'); d.setDate(d.getDate()+n); return fmtDate(d); }
 function getWeekStart(dk) { const d=new Date(dk+'T00:00:00'); d.setDate(d.getDate()-d.getDay()); return fmtDate(d); }
@@ -5259,7 +5261,7 @@ function renderMvMonth() {
       const dotsRow = document.createElement('div');
       dotsRow.style.cssText = 'display:flex;gap:3px;flex-wrap:wrap;justify-content:center;margin-top:1px;';
       /* 색상 순서 고정 */
-      ['gold','blue','red','green','purple'].forEach(c => {
+      ['gold','teal','blue','red','green','purple'].forEach(c => {
         if (!colorCount[c]) return;
         const wrap = document.createElement('div');
         wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:1px;';
@@ -5324,7 +5326,7 @@ function renderMvWeek() {
     if (evs.length > 0) {
       const colorCount={};
       evs.forEach(ev=>{ const c=ev.color||'gold'; colorCount[c]=(colorCount[c]||0)+1; });
-      ['gold','blue','red','green','purple'].forEach(c=>{
+      ['gold','teal','blue','red','green','purple'].forEach(c=>{
         if (!colorCount[c]) return;
         const wrap=document.createElement('div');
         wrap.style.cssText='display:flex;flex-direction:column;align-items:center;gap:1px;';
