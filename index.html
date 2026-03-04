@@ -309,7 +309,18 @@
     cursor:default;
     overflow:hidden;
   }
-  .week-row { min-height:110px; }
+  .week-row { min-height:var(--row-h, 110px); }
+  /* ── 캘린더 크기 조절 핸들 ── */
+  .cal-resize-handle {
+    height:10px; cursor:ns-resize; display:flex; align-items:center;
+    justify-content:center; user-select:none; margin-top:2px;
+    color:var(--text-muted); opacity:0.45; transition:opacity .2s;
+  }
+  .cal-resize-handle:hover { opacity:1; }
+  .cal-resize-handle::before {
+    content:''; display:block; width:40px; height:4px;
+    background:var(--border); border-radius:2px;
+  }
   .day-cell:hover { background:var(--surface2); }
   .day-cell.other-month { background:#111; }
   .day-cell.today .day-num {
@@ -1039,6 +1050,7 @@
     <div class="weekday">SAT</div>
   </div>
   <div class="days-grid" id="daysGrid"></div>
+  <div class="cal-resize-handle" id="calResizeHandle" title="드래그하여 높이 조절"></div>
 </div>
 
 <div id="pcWeekView" style="display:none;">
@@ -1381,10 +1393,20 @@
         <div class="special-opts" id="specialOpts">
           <div class="special-opt-btn" data-opt="car">    <span class="opt-icon">🚗</span>차량 이용 필요</div>
           <div class="special-opt-btn" data-opt="brief">  <span class="opt-icon">💼</span>들고 갈 제품 있음</div>
-          <div class="special-opt-btn" data-opt="return"> <span class="opt-icon">←</span>일정 당김 희망</div>
           <div class="special-opt-btn" data-opt="group">  <span class="opt-icon">👥</span>2인필수 작업</div>
-          <div class="special-opt-btn" data-opt="urgent"> <span class="opt-icon">🚨</span>긴급 일정</div>
           <div class="special-opt-btn" data-opt="ladder"> <span class="opt-icon">▤</span>사다리 필요</div>
+        </div>
+      </div>
+
+      <div class="field-group" style="margin-top:10px;">
+        <div class="field-label">일정 옵션</div>
+        <div class="special-opts" id="schedEventOpts">
+          <div class="special-opt-btn" data-seopt="fast">    <span class="opt-icon">←</span>빠른 일정 희망</div>
+          <div class="special-opt-btn" data-seopt="urgent">  <span class="opt-icon">🚨</span>긴급 일정</div>
+          <div class="special-opt-btn" data-seopt="after">   <span class="opt-icon">→</span><span id="schedAfterLabel">00</span>일 이후 희망</div>
+        </div>
+        <div id="schedAfterWrap" style="display:none;margin-top:8px;">
+          <input class="field-input" id="schedAfterReason" placeholder="사유를 입력하세요" style="font-size:13px;" />
         </div>
       </div>
 
@@ -1469,8 +1491,19 @@
         </div>
         <div class="field-row">
           <div class="field-group">
-            <label class="field-label" for="g_platform">플랫폼</label>
-            <input class="field-input" id="g_platform" placeholder="유튜브, 인스타그램 등" />
+            <label class="field-label">플랫폼</label>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+              <div class="radio-group" id="g_platform_group" style="flex-wrap:wrap;gap:5px;">
+                <div class="radio-btn" data-val="SOOP">SOOP</div>
+                <div class="radio-btn" data-val="치지직">치지직</div>
+                <div class="radio-btn" data-val="유튜브">유튜브</div>
+                <div class="radio-btn" data-val="틱톡">틱톡</div>
+                <div class="radio-btn" data-val="기타">기타</div>
+              </div>
+              <div class="conditional-field" id="g_platform_etc_wrap" style="margin-top:0;flex:1;min-width:120px;">
+                <input class="field-input" id="g_platform_etc" placeholder="직접 입력" style="font-size:13px;" />
+              </div>
+            </div>
           </div>
           <div class="field-group">
             <label class="field-label">경력 여부</label>
@@ -1491,6 +1524,20 @@
           </div>
           <div class="conditional-field" id="g_topic_etc_wrap" style="margin-top:8px;">
             <input class="field-input" id="g_topic_etc" placeholder="방송 주제를 직접 입력하세요" />
+          </div>
+        </div>
+        <div class="field-group" style="margin-top:10px;">
+          <label class="field-label">예산 성향</label>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+            <div class="radio-group" id="g_budget_group" style="flex-wrap:wrap;gap:5px;">
+              <div class="radio-btn" data-val="풍족">풍족</div>
+              <div class="radio-btn" data-val="부족">부족</div>
+              <div class="radio-btn" data-val="모름">모름</div>
+              <div class="radio-btn" data-val="직접입력">직접입력</div>
+            </div>
+            <div class="conditional-field" id="g_budget_etc_wrap" style="margin-top:0;flex:1;min-width:120px;">
+              <input class="field-input" id="g_budget_etc" placeholder="예산 성향 직접 입력" style="font-size:13px;" />
+            </div>
           </div>
         </div>
         <div class="divider"></div>
@@ -2001,8 +2048,11 @@ function subscribeEvents(year, month) {
 subscribeEvents(today.getFullYear(), today.getMonth());
 
 function getSpecialIconStr(ev) {
-  if (!ev.specialOpts || ev.specialOpts.length === 0) return '';
-  return ev.specialOpts.map(k => SPECIAL_ICONS[k]||'').join('') + ' ';
+  const sp = (ev.specialOpts||[]).map(k => SPECIAL_ICONS[k]||'').join('');
+  const se = (ev.schedEventOpts||[]).map(k => SCHED_EVENT_ICONS[k]||'').join('');
+  const afterStr = (ev.schedEventOpts||[]).includes('after') && ev.schedAfterDays
+    ? `<span title="${ev.schedAfterDays}일 이후 희망${ev.schedAfterReason?' - '+ev.schedAfterReason:''}" style="font-size:10px;color:var(--text-muted);">${ev.schedAfterDays}일↑</span>` : '';
+  return (sp||se) ? sp+se+afterStr+' ' : '';
 }
 function getSchedSuffix(ev) {
   if (!ev.schedOpt || !SCHED_OPTS[ev.schedOpt]) return '';
@@ -2220,6 +2270,11 @@ let isAllDay=true;
 let specialOpts=new Set();
 
 const SPECIAL_ICONS = { car:'🚗', brief:'💼', return:'←', group:'👥', urgent:'🚨', ladder:'▤' };
+/* 일정 옵션 */
+let schedEventOpts = new Set(); // 'fast', 'urgent', 'after'
+let schedAfterDays = 7;
+const SCHED_EVENT_ICONS = { fast:'←', urgent:'🚨', after:'→' };
+const SCHED_EVENT_LABELS_LOG = { fast:'← 빠른 일정 희망', urgent:'🚨 긴급 일정', after:'→ {n}일 이후 희망' };
 const SCHED_OPTS = {
   suggest: { icon:'💬', label:'제안', desc:'상대방에게 일정 제안중' },
   hope:    { icon:'🙏', label:'희망', desc:'상대방이 일정 희망' },
@@ -2322,6 +2377,62 @@ document.getElementById('specialOpts').addEventListener('click', e => {
   else                       { specialOpts.add(opt);    btn.classList.add('active'); }
 });
 
+/* ── 일정 옵션 ── */
+document.getElementById('schedEventOpts').addEventListener('click', e => {
+  if (isLocked) return;
+  /* '00' 숫자 클릭 → 모달 */
+  if (e.target.id === 'schedAfterLabel') {
+    document.getElementById('afterDayNum').textContent = schedAfterDays;
+    document.getElementById('afterDayModalOverlay').classList.add('open');
+    return;
+  }
+  const btn = e.target.closest('.special-opt-btn');
+  if (!btn) return;
+  const opt = btn.dataset.seopt;
+  if (schedEventOpts.has(opt)) {
+    schedEventOpts.delete(opt); btn.classList.remove('active');
+  } else {
+    schedEventOpts.add(opt); btn.classList.add('active');
+  }
+  /* 'after' 토글 시 사유 입력란 */
+  const afterWrap = document.getElementById('schedAfterWrap');
+  if (afterWrap) afterWrap.style.display = schedEventOpts.has('after') ? '' : 'none';
+});
+
+/* afterDay 모달 */
+(function(){
+  let _tmpDays = 7;
+  const numEl = document.getElementById('afterDayNum');
+
+  document.getElementById('afterDayMinus').addEventListener('click', () => {
+    _tmpDays = Math.max(1, parseInt(numEl.textContent||'7',10) - 1);
+    numEl.textContent = _tmpDays;
+  });
+  document.getElementById('afterDayPlus').addEventListener('click', () => {
+    _tmpDays = Math.min(999, parseInt(numEl.textContent||'7',10) + 1);
+    numEl.textContent = _tmpDays;
+  });
+  document.querySelectorAll('.after-day-preset').forEach(btn => {
+    btn.addEventListener('click', () => {
+      _tmpDays = parseInt(btn.dataset.d, 10);
+      numEl.textContent = _tmpDays;
+    });
+  });
+  document.getElementById('afterDayConfirm').addEventListener('click', () => {
+    schedAfterDays = parseInt(numEl.textContent||'7',10);
+    const lbl = document.getElementById('schedAfterLabel');
+    if (lbl) lbl.textContent = schedAfterDays;
+    document.getElementById('afterDayModalOverlay').classList.remove('open');
+  });
+  document.getElementById('afterDayCancel').addEventListener('click', () => {
+    document.getElementById('afterDayModalOverlay').classList.remove('open');
+  });
+  document.getElementById('afterDayModalOverlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('afterDayModalOverlay'))
+      document.getElementById('afterDayModalOverlay').classList.remove('open');
+  });
+})();
+
 document.getElementById('scheduleOpts').addEventListener('click', e => {
   const btn = e.target.closest('.sched-opt-btn');
   if (!btn || isLocked) return;
@@ -2335,7 +2446,7 @@ document.getElementById('scheduleOpts').addEventListener('click', e => {
   desc.textContent = schedOpt ? SCHED_OPTS[schedOpt].desc : '';
 });
 
-function setSpecialOpts(opts, sopt) {
+function setSpecialOpts(opts, sopt, seOpts, afterDays, afterReason) {
   specialOpts = new Set(opts||[]);
   document.querySelectorAll('.special-opt-btn').forEach(btn => {
     btn.classList.toggle('active', specialOpts.has(btn.dataset.opt));
@@ -2346,6 +2457,19 @@ function setSpecialOpts(opts, sopt) {
   });
   const descEl = document.getElementById('schedOptDesc');
   if (descEl) descEl.textContent = schedOpt ? (SCHED_OPTS[schedOpt]?.desc||'') : '';
+
+  /* 일정 옵션 복원 */
+  schedEventOpts = new Set(seOpts||[]);
+  schedAfterDays = afterDays||7;
+  document.querySelectorAll('#schedEventOpts .special-opt-btn').forEach(btn => {
+    btn.classList.toggle('active', schedEventOpts.has(btn.dataset.seopt));
+  });
+  const afterLabel = document.getElementById('schedAfterLabel');
+  if (afterLabel) afterLabel.textContent = schedAfterDays;
+  const afterWrap = document.getElementById('schedAfterWrap');
+  if (afterWrap) afterWrap.style.display = schedEventOpts.has('after') ? '' : 'none';
+  const afterReasonEl = document.getElementById('schedAfterReason');
+  if (afterReasonEl) afterReasonEl.value = afterReason||'';
 }
 
 function initRadioGroup(groupId){
@@ -2413,6 +2537,34 @@ document.getElementById('g_order_group').addEventListener('click', e => {
     if (!isEtc) { const e=document.getElementById('g_topic_etc'); if(e) e.value=''; }
   }
   g.querySelectorAll('.radio-btn').forEach(btn => btn.addEventListener('click', updateTopicEtc));
+})();
+
+/* 플랫폼 버튼 - 기타 선택 시 직접입력 칸 토글 */
+(function(){
+  const g = document.getElementById('g_platform_group');
+  if (!g) return;
+  const wrap = document.getElementById('g_platform_etc_wrap');
+  function updatePlatformEtc(){
+    const active = g.querySelector('.radio-btn.active');
+    const isEtc = active && active.dataset.val === '기타';
+    if (wrap) wrap.classList.toggle('visible', isEtc);
+    if (!isEtc) { const e=document.getElementById('g_platform_etc'); if(e) e.value=''; }
+  }
+  g.querySelectorAll('.radio-btn').forEach(btn => btn.addEventListener('click', updatePlatformEtc));
+})();
+
+/* 예산 성향 - 직접입력 선택 시 입력 칸 토글 */
+(function(){
+  const g = document.getElementById('g_budget_group');
+  if (!g) return;
+  const wrap = document.getElementById('g_budget_etc_wrap');
+  function updateBudgetEtc(){
+    const active = g.querySelector('.radio-btn.active');
+    const isDirect = active && active.dataset.val === '직접입력';
+    if (wrap) wrap.classList.toggle('visible', isDirect);
+    if (!isDirect) { const e=document.getElementById('g_budget_etc'); if(e) e.value=''; }
+  }
+  g.querySelectorAll('.radio-btn').forEach(btn => btn.addEventListener('click', updateBudgetEtc));
 })();
 
 
@@ -2500,6 +2652,11 @@ function resetGoldFields(){
   const etcEl=document.getElementById('g_topic_etc'); if(etcEl) etcEl.value='';
   document.getElementById('g_topic_group').querySelectorAll('.radio-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('g_topic_etc_wrap').classList.remove('visible');
+  /* 플랫폼/예산 초기화 */
+  document.getElementById('g_platform_group')?.querySelectorAll('.radio-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('g_platform_etc_wrap')?.classList.remove('visible');
+  document.getElementById('g_budget_group')?.querySelectorAll('.radio-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('g_budget_etc_wrap')?.classList.remove('visible');
   setRadio('g_career_group','처음'); setRadio('g_paid_group','미결제');
   setRadio('g_order_group','X'); setRadio('g_balance_group','X'); setRadio('g_delivery_group','X');
   const dw=document.getElementById('g_delivery_wrap'); if(dw) dw.style.display='none';
@@ -2510,7 +2667,7 @@ function resetGoldFields(){
 
 function loadGoldFields(ev){
   const g=ev.gold||{};
-  const MAP={g_name:'name',g_phone:'phone',g_platform:'platform',
+  const MAP={g_name:'name',g_phone:'phone',
     g_equipment:'equipment',g_req_topic:'req_topic',g_req_detail:'req_detail',
     g_special:'special',g_balance_amount:'balance_amount',
     g_estimate_amount:'estimate_amount'};
@@ -2528,6 +2685,34 @@ function loadGoldFields(ev){
   } else {
     document.getElementById('g_topic_group').querySelectorAll('.radio-btn').forEach(b=>b.classList.remove('active'));
     document.getElementById('g_topic_etc_wrap').classList.remove('visible');
+  }
+  /* 플랫폼 복원 */
+  const PLAT_VALS = ['SOOP','치지직','유튜브','틱톡'];
+  const savedPlat = g.platform||'';
+  if (PLAT_VALS.includes(savedPlat)) {
+    setRadio('g_platform_group', savedPlat);
+    document.getElementById('g_platform_etc_wrap').classList.remove('visible');
+  } else if (savedPlat) {
+    setRadio('g_platform_group','기타');
+    document.getElementById('g_platform_etc').value = savedPlat;
+    document.getElementById('g_platform_etc_wrap').classList.add('visible');
+  } else {
+    document.getElementById('g_platform_group').querySelectorAll('.radio-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('g_platform_etc_wrap').classList.remove('visible');
+  }
+  /* 예산 성향 복원 */
+  const BUDGET_VALS = ['풍족','부족','모름'];
+  const savedBudget = g.budget||'';
+  if (BUDGET_VALS.includes(savedBudget)) {
+    setRadio('g_budget_group', savedBudget);
+    document.getElementById('g_budget_etc_wrap').classList.remove('visible');
+  } else if (savedBudget) {
+    setRadio('g_budget_group','직접입력');
+    document.getElementById('g_budget_etc').value = savedBudget;
+    document.getElementById('g_budget_etc_wrap').classList.add('visible');
+  } else {
+    document.getElementById('g_budget_group').querySelectorAll('.radio-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('g_budget_etc_wrap').classList.remove('visible');
   }
   setRadio('g_career_group',g.career||'처음'); setRadio('g_paid_group',g.paid||'미결제');
   setRadio('g_order_group',g.order||'X'); setRadio('g_balance_group',g.balance||'X');
@@ -2554,9 +2739,19 @@ function collectGoldTextFields(){
   const topic = topicSel === '기타'
     ? (document.getElementById('g_topic_etc').value.trim() || '기타')
     : topicSel;
+  /* 플랫폼 수집 */
+  const platSel = getRadio('g_platform_group');
+  const platform = platSel === '기타'
+    ? (document.getElementById('g_platform_etc').value.trim() || '기타')
+    : (platSel || '');
+  /* 예산 성향 수집 */
+  const budgetSel = getRadio('g_budget_group');
+  const budget = budgetSel === '직접입력'
+    ? (document.getElementById('g_budget_etc').value.trim() || '직접입력')
+    : (budgetSel || '');
   return {
     name:document.getElementById('g_name').value.trim(), phone:document.getElementById('g_phone').value.trim(),
-    platform:document.getElementById('g_platform').value.trim(), topic,
+    platform, topic, budget,
     equipment:document.getElementById('g_equipment').value.trim(), req_topic:document.getElementById('g_req_topic').value.trim(),
     estimate_amount:document.getElementById('g_estimate_amount')?.value.trim()||'',
     req_detail:document.getElementById('g_req_detail').value.trim(), special:document.getElementById('g_special').value.trim(),
@@ -2589,7 +2784,7 @@ function openNewModal(dk){
   });
   currentAttachments=[]; currentColor='gold'; isLocked=false;
   document.getElementById('notifSelect').value='';
-  setColor('gold'); setAllDay(false); setSpecialOpts([],null);
+  setColor('gold'); setAllDay(false); setSpecialOpts([],null,[],7,'');
   resetGoldFields(); renderAttachments();
   document.getElementById('deleteBtn').style.display='none';
   document.getElementById('logBtn').style.display='none';
@@ -2633,7 +2828,7 @@ function openModal(evIdx){
   if (currentColor==='gold') { loadGoldFields(ev); resetTealFields(); }
   else if (currentColor==='teal') { resetTealFields(); loadTealFields(ev); resetGoldFields(); }
   else { resetGoldFields(); resetTealFields(); }
-  setSpecialOpts(ev.specialOpts||[], ev.schedOpt||null);
+  setSpecialOpts(ev.specialOpts||[], ev.schedOpt||null, ev.schedEventOpts||[], ev.schedAfterDays||7, ev.schedAfterReason||'');
   renderAttachments();
   document.getElementById('deleteBtn').style.display='';
   document.getElementById('logBtn').style.display='';
@@ -2712,6 +2907,9 @@ async function saveEvent(){
       desc:document.getElementById('modalDesc').value.trim(),
       attachments:currentAttachments, locked:isLocked,
       specialOpts:[...specialOpts], schedOpt:schedOpt,
+      schedEventOpts:[...schedEventOpts],
+      schedAfterDays: schedEventOpts.has('after') ? schedAfterDays : null,
+      schedAfterReason: schedEventOpts.has('after') ? (document.getElementById('schedAfterReason')?.value.trim()||'') : '',
       updatedAt:serverTimestamp(),
     };
     if (currentColor==='gold') evData.gold=collectGoldTextFields();
@@ -2764,11 +2962,11 @@ const LOG_FIELD_LABELS = {
   startDate:'시작일', endDate:'종료일',
   startTime:'시작시간', endTime:'종료시간', allDay:'종일여부',
   location:'장소', name:'담당자', desc:'내용',
-  schedOpt:'일정유형', specialOpts:'특수옵션',
+  schedOpt:'일정유형', specialOpts:'특수옵션', schedEventOpts:'일정옵션',
   notifMinutes:'알림', locked:'잠금',
 };
 const GOLD_FIELD_LABELS = {
-  name:'의뢰자 이름', phone:'전화번호', platform:'플랫폼',
+  name:'의뢰자 이름', phone:'전화번호', platform:'플랫폼', budget:'예산 성향',
   career:'경력 여부', topic:'방송 주제',
   equipment:'장비 목록', req_topic:'의뢰 주제', req_detail:'의뢰 세부항목',
   special:'특이사항', paid:'결제 여부', order:'주문 여부',
@@ -2816,6 +3014,10 @@ function calcChanges(prev, next) {
     /* teal 상세 필드는 별도 블록에서 처리 */
     if (f==='allDay')       { pvDisp=pv==='true'?'종일':'시간지정'; nvDisp=nv==='true'?'종일':'시간지정'; }
     if (f==='schedOpt')     { pvDisp=SCHED_LABELS_LOG[pv]||pv||'(없음)'; nvDisp=SCHED_LABELS_LOG[nv]||nv||'(없음)'; }
+    if (f==='schedEventOpts') {
+      const fmt=arr=>(arr||[]).map(k=>SCHED_EVENT_LABELS_LOG[k]||k).join(', ')||'(없음)';
+      pvDisp=fmt(pv); nvDisp=fmt(nv);
+    }
     if (f==='locked')       { pvDisp=pv==='true'?'잠금':'해제'; nvDisp=nv==='true'?'잠금':'해제'; }
     if (f==='notifMinutes') {
       const fmt = v => v===''||v==='null'?'없음': v==='allday'?'당일 오전 9시': `${v}분 전`;
@@ -2908,7 +3110,7 @@ async function deleteEvent(){
     const endMap = { startTime:'endTime', goldStartTime:'goldEndTime' };
     const endId  = endMap[targetId];
     if (endId) {
-      const endH   = (h + 1) % 24;
+      const endH   = (h + 2) % 24;
       const endFmt = fmt(endH, m);
       /* 기존 종료시간이 새 시작시간보다 이전이거나 같을 때만 자동 설정 */
       const endInp = document.getElementById(endId);
@@ -3189,7 +3391,11 @@ document.getElementById('lockBtn').addEventListener('click', async ()=>{
         location:document.getElementById('modalLocation').value.trim(),
         desc:document.getElementById('modalDesc').value.trim(),
         attachments:currentAttachments, locked:true,
-        specialOpts:[...specialOpts], updatedAt:serverTimestamp(),
+        specialOpts:[...specialOpts],
+        schedEventOpts:[...schedEventOpts],
+        schedAfterDays: schedEventOpts.has('after') ? schedAfterDays : null,
+        schedAfterReason: schedEventOpts.has('after') ? (document.getElementById('schedAfterReason')?.value.trim()||'') : '',
+        updatedAt:serverTimestamp(),
       };
       if (currentColor==='gold') evData.gold=collectGoldTextFields();
     if (currentColor==='teal') { const td=collectTealFields(); evData.teal=td; evData.desc=td.desc||evData.desc; }
@@ -4848,6 +5054,56 @@ function renderAll() {
   }
 }
 
+/* ── 캘린더 높이 드래그 조절 ── */
+(function(){
+  const CAL_ROW_H_KEY = 'cal_row_h';
+  let savedRowH = parseInt(localStorage.getItem(CAL_ROW_H_KEY)||'110',10);
+  document.documentElement.style.setProperty('--row-h', savedRowH+'px');
+
+  const handle = document.getElementById('calResizeHandle');
+  if (!handle) return;
+
+  let dragging = false, startY = 0, startRowH = 0;
+
+  handle.addEventListener('mousedown', e => {
+    dragging = true; startY = e.clientY; startRowH = savedRowH;
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'ns-resize';
+    e.preventDefault();
+  });
+  handle.addEventListener('touchstart', e => {
+    dragging = true; startY = e.touches[0].clientY; startRowH = savedRowH;
+    e.preventDefault();
+  }, {passive:false});
+
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const delta = e.clientY - startY;
+    const rows  = document.querySelectorAll('#daysGrid .week-row').length || 5;
+    const newH  = Math.max(70, Math.min(300, startRowH + Math.round(delta / rows)));
+    document.documentElement.style.setProperty('--row-h', newH+'px');
+  });
+  document.addEventListener('touchmove', e => {
+    if (!dragging) return;
+    const delta = e.touches[0].clientY - startY;
+    const rows  = document.querySelectorAll('#daysGrid .week-row').length || 5;
+    const newH  = Math.max(70, Math.min(300, startRowH + Math.round(delta / rows)));
+    document.documentElement.style.setProperty('--row-h', newH+'px');
+  }, {passive:true});
+
+  function stopDrag() {
+    if (!dragging) return;
+    dragging = false;
+    document.body.style.userSelect = '';
+    document.body.style.cursor = '';
+    const cur = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--row-h')||'110',10);
+    savedRowH = cur;
+    localStorage.setItem(CAL_ROW_H_KEY, cur);
+  }
+  document.addEventListener('mouseup',  stopDrag);
+  document.addEventListener('touchend', stopDrag);
+})();
+
 window.addEventListener('resize',()=>{ renderAll(); });
 
 (function() {
@@ -4969,5 +5225,32 @@ function slideAnimate(el,toLeft,callback){
 })();
 </script>
 
+<!-- 00일 이후 희망 숫자 지정 모달 -->
+<div class="modal-overlay" id="afterDayModalOverlay" style="z-index:3100;">
+  <div class="modal" style="max-width:300px;padding:0;overflow:hidden;">
+    <div style="padding:20px 24px 16px;">
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:16px;">📅 며칠 이후 희망?</div>
+      <div style="display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:16px;">
+        <button id="afterDayMinus" style="width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:20px;line-height:1;cursor:pointer;">−</button>
+        <div style="display:flex;align-items:baseline;gap:4px;">
+          <span id="afterDayNum" style="font-size:40px;font-weight:700;color:var(--accent);font-family:var(--font-mono);min-width:56px;text-align:center;">7</span>
+          <span style="font-size:16px;color:var(--text-muted);">일</span>
+        </div>
+        <button id="afterDayPlus"  style="width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:20px;line-height:1;cursor:pointer;">+</button>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:4px;">
+        <button class="after-day-preset" data-d="3"  style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;cursor:pointer;">3일</button>
+        <button class="after-day-preset" data-d="5"  style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;cursor:pointer;">5일</button>
+        <button class="after-day-preset" data-d="7"  style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;cursor:pointer;">7일</button>
+        <button class="after-day-preset" data-d="14" style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;cursor:pointer;">14일</button>
+        <button class="after-day-preset" data-d="30" style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;cursor:pointer;">30일</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;padding:0 16px 16px;">
+      <button id="afterDayCancel"  style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-size:13px;">취소</button>
+      <button id="afterDayConfirm" style="flex:1;padding:10px;border-radius:8px;background:var(--accent);color:#1a1207;font-weight:700;cursor:pointer;border:none;font-size:13px;">확인</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

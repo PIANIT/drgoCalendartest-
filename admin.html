@@ -805,6 +805,13 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
     <button class="filter-btn f-green" data-filter="green"><span class="color-dot cd-green"></span>촬영관련</button>
     <button class="filter-btn f-purple" data-filter="purple"><span class="color-dot cd-purple"></span>미팅/내방</button>
   </div>
+  <div class="filter-group" id="seOptFilterGroup" style="margin-top:6px;gap:5px;">
+    <span style="font-size:11px;color:var(--text-muted);padding:0 4px;">일정옵션</span>
+    <button class="filter-btn" data-sefilter="all" style="font-size:11px;padding:3px 10px;" >전체</button>
+    <button class="filter-btn" data-sefilter="fast"   style="font-size:11px;padding:3px 10px;">← 빠른일정</button>
+    <button class="filter-btn" data-sefilter="urgent" style="font-size:11px;padding:3px 10px;">🚨 긴급</button>
+    <button class="filter-btn" data-sefilter="after"  style="font-size:11px;padding:3px 10px;">→ 일이후</button>
+  </div>
   <div class="date-range-wrap" id="dateRangeWrap">
     <span class="date-range-label">기간</span>
     <div class="dr-date-box" id="drFromBox">
@@ -1069,8 +1076,10 @@ const LOCK_MS     = 120000;
 const AUTH_EXPIRE_MS = 30 * 24 * 60 * 60 * 1000; /* 30일 */
 
 const TYPE_LABELS    = { gold:'방문의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방' };
-const SPECIAL_LABELS = { car:'🚗차량', brief:'💼제품', return:'←', group:'👥2인', urgent:'🚨긴급', ladder:'🪜사다리' };
+const SPECIAL_LABELS = { car:'🚗차량', brief:'💼제품', return:'←일정당김', group:'👥2인', urgent:'🚨긴급(구)', ladder:'🪜사다리' }; /* return/urgent는 구버전 호환 */
 const SCHED_LABELS   = { suggest:'💬제안', hope:'🙏희망', target:'🎯목표' };
+/* 일정 옵션 (신규) */
+const SCHED_EVENT_LABELS = { fast:'←빠른일정', urgent:'🚨긴급', after:'→{n}일이후' };
 
 /* ══════════════════════════════
    STATE
@@ -1078,6 +1087,7 @@ const SCHED_LABELS   = { suggest:'💬제안', hope:'🙏희망', target:'🎯�
 let allEvents      = [];
 let filteredEvents = [];
 let selectedIds    = new Set();
+let currentSeFilter = 'all'; // 일정옵션 필터
 let currentFilter  = 'all';
 let searchQuery    = '';
 let sortKey        = 'startDate';
@@ -1258,12 +1268,22 @@ function initApp() {
   document.getElementById('filterGroup').addEventListener('click', e => {
     const btn = e.target.closest('.filter-btn');
     if (!btn) return;
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#filterGroup .filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     currentFilter = btn.dataset.filter;
     currentPage = 1;
     applyFilters();
   });
+  document.getElementById('seOptFilterGroup').addEventListener('click', e => {
+    const btn = e.target.closest('.filter-btn[data-sefilter]');
+    if (!btn) return;
+    document.querySelectorAll('#seOptFilterGroup .filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentSeFilter = btn.dataset.sefilter;
+    currentPage = 1;
+    applyFilters();
+  });
+  document.querySelector('#seOptFilterGroup .filter-btn[data-sefilter="all"]').classList.add('active');
 
   /* -- 정렬 -- */
   document.querySelectorAll('.sort-col').forEach(colEl => {
@@ -1494,6 +1514,8 @@ function updateDateClearBtn() {
 function applyFilters() {
   let evs = [...allEvents];
   if (currentFilter !== 'all') evs = evs.filter(e => (e.color||'gold') === currentFilter);
+  if (currentSeFilter && currentSeFilter !== 'all')
+    evs = evs.filter(e => (e.schedEventOpts||[]).includes(currentSeFilter));
   if (searchQuery) evs = evs.filter(e =>
     (e.title||'').toLowerCase().includes(searchQuery) ||
     (e.name||'').toLowerCase().includes(searchQuery) ||
@@ -1545,8 +1567,12 @@ function renderList() {
       const dateStr    = ev.startDate || '';
       const endStr     = ev.endDate && ev.endDate !== ev.startDate ? ` ~ ${ev.endDate}` : '';
       const flags      = [
-        ...(ev.specialOpts||[]).map(k => SPECIAL_LABELS[k]||''),
-        ...(ev.schedOpt ? [SCHED_LABELS[ev.schedOpt]||''] : [])
+        ...(ev.specialOpts||[]).map(k => SPECIAL_LABELS[k]||'').filter(Boolean),
+        ...(ev.schedOpt ? [SCHED_LABELS[ev.schedOpt]||''] : []),
+        ...(ev.schedEventOpts||[]).map(k => {
+          if(k==='after') return `→${ev.schedAfterDays||'?'}일이후`;
+          return SCHED_EVENT_LABELS[k]||'';
+        }).filter(Boolean),
       ];
       const personName = c === 'gold' ? (ev.gold?.name || ev.name || '') : (ev.name || '');
       const personAddr = ev.address || ev.location || '';
@@ -1637,7 +1663,18 @@ function openDetail(ev) {
     ['이름/담당자', ev.name||(ev.gold?.name)||'—'],
     ['장소',      ev.address||'—'],
     ['잠금',      ev.locked ? '🔒 잠금됨' : '없음'],
-    ['특수옵션',  (ev.specialOpts||[]).map(k=>SPECIAL_LABELS[k]||k).join(', ') || (ev.schedOpt ? SCHED_LABELS[ev.schedOpt] : '없음')],
+    ['특수옵션',  (()=>{
+      const sp=(ev.specialOpts||[]).map(k=>SPECIAL_LABELS[k]||k).filter(Boolean).join(', ');
+      const sc=ev.schedOpt?SCHED_LABELS[ev.schedOpt]:'';
+      return [sp,sc].filter(Boolean).join(', ')||'없음';
+    })()],
+    ['일정옵션',  (()=>{
+      const se=(ev.schedEventOpts||[]).map(k=>{
+        if(k==='after') return `→${ev.schedAfterDays||'?'}일 이후 희망${ev.schedAfterReason?' ('+ev.schedAfterReason+')':''}`;
+        return SCHED_EVENT_LABELS[k]||k;
+      }).filter(Boolean).join(', ');
+      return se||'없음';
+    })()],
   ]));
 
   if (ev.desc) body.appendChild(makeSection('상세 설명', [['내용', ev.desc]]));
@@ -1646,9 +1683,10 @@ function openDetail(ev) {
     const g = ev.gold;
     body.appendChild(makeSection('의뢰자 정보', [
       ['전화번호', g.phone||'—'], ['플랫폼',  g.platform||'—'],
-      ['방송주제', g.topic||'—'], ['경력',    g.career||'—'],
-      ['결제',     g.paid||'—'],  ['주문제품', g.order||'—'],
-      ['잔금',     g.balance||'—'],['잔금금액', g.balance_amount||'—'],
+      ['방송주제', g.topic||'—'], ['예산 성향', g.budget||'—'],
+      ['경력',     g.career||'—'],['결제',     g.paid||'—'],
+      ['주문제품', g.order||'—'], ['잔금',     g.balance||'—'],
+      ['잔금금액', g.balance_amount||'—'],
     ]));
     if (g.equipment) body.appendChild(makeSection('장비 목록', [['장비', g.equipment]]));
     if (g.req_topic||g.req_detail) body.appendChild(makeSection('의뢰 내용', [['주제',g.req_topic||'—'],['세부',g.req_detail||'—']]));
