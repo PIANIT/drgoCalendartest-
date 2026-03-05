@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>재고관리 데이터 마이그레이션</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --font-main:"Malgun Gothic","맑은 고딕",-apple-system,sans-serif;
+  --font-mono:'DM Mono',monospace;
+  --bg:#111111; --surface:#1c1c1c; --surface2:#272727;
+  --border:#3a3a3a; --accent:#d4bc96; --text:#f0ebe2; --text-muted:#a09890;
+  --green:#88d488; --red:#d48888; --yellow:#d4c488; --blue:#88aad4;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-main);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:600px;overflow:hidden;}
+.card-header{padding:22px 26px 18px;border-bottom:1px solid var(--border);}
+.card-title{font-family:var(--font-mono);font-size:15px;font-weight:500;letter-spacing:.1em;color:var(--accent);margin-bottom:6px;}
+.card-desc{font-size:12px;color:var(--text-muted);line-height:1.6;}
+.card-body{padding:22px 26px;display:flex;flex-direction:column;gap:14px;}
+
+/* 데이터 미리보기 */
+.preview-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.preview-box{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.preview-label{font-size:10px;font-family:var(--font-mono);letter-spacing:.1em;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;}
+.preview-count{font-size:26px;font-weight:700;font-family:var(--font-mono);color:var(--text);}
+.preview-sub{font-size:11px;color:var(--text-muted);margin-top:3px;}
+.preview-count.has{color:var(--accent);}
+.preview-count.none{color:var(--text-muted);}
+
+/* 상태 로그 */
+.log-wrap{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;max-height:260px;overflow-y:auto;font-family:var(--font-mono);font-size:12px;line-height:1.7;}
+.log-wrap::-webkit-scrollbar{width:4px;}
+.log-wrap::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.log-item{display:flex;gap:8px;align-items:flex-start;}
+.log-icon{flex-shrink:0;width:16px;}
+.log-item.ok    .log-icon::before{content:'✓';color:var(--green);}
+.log-item.err   .log-icon::before{content:'✗';color:var(--red);}
+.log-item.info  .log-icon::before{content:'·';color:var(--text-muted);}
+.log-item.warn  .log-icon::before{content:'!';color:var(--yellow);}
+.log-item.run   .log-icon::before{content:'→';color:var(--blue);}
+.log-text{color:var(--text-muted);}
+.log-text b{color:var(--text);}
+
+/* 버튼 */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 22px;border-radius:8px;font-size:13px;font-family:var(--font-main);cursor:pointer;transition:all .17s;font-weight:600;border:none;width:100%;}
+.btn-primary{background:var(--accent);color:#1a1207;}
+.btn-primary:hover:not(:disabled){background:#dcc8a4;transform:translateY(-1px);}
+.btn-primary:disabled{opacity:.45;cursor:not-allowed;transform:none;}
+.btn-ghost{background:none;border:1px solid var(--border);color:var(--text-muted);}
+.btn-ghost:hover:not(:disabled){border-color:var(--accent);color:var(--accent);}
+.btn-ghost:disabled{opacity:.4;cursor:not-allowed;}
+.btn-row{display:flex;gap:8px;}
+.btn-row .btn{flex:1;}
+
+/* 완료 배너 */
+.done-banner{background:rgba(136,212,136,.12);border:1px solid rgba(136,212,136,.3);border-radius:10px;padding:16px 18px;text-align:center;display:none;}
+.done-banner.show{display:block;}
+.done-banner .done-icon{font-size:28px;margin-bottom:6px;}
+.done-banner .done-title{font-size:14px;font-weight:700;color:var(--green);margin-bottom:4px;}
+.done-banner .done-sub{font-size:12px;color:var(--text-muted);line-height:1.5;}
+
+/* 경고 배너 */
+.warn-banner{background:rgba(212,196,136,.1);border:1px solid rgba(212,196,136,.3);border-radius:10px;padding:14px 16px;font-size:12px;color:var(--yellow);line-height:1.6;display:none;}
+.warn-banner.show{display:block;}
+
+/* 진행바 */
+.progress-wrap{display:none;}
+.progress-wrap.show{display:block;}
+.progress-bar-bg{background:var(--surface2);border-radius:6px;height:6px;overflow:hidden;margin-top:6px;}
+.progress-bar{height:100%;background:var(--accent);border-radius:6px;transition:width .3s ease;width:0%;}
+.progress-label{font-size:11px;color:var(--text-muted);font-family:var(--font-mono);margin-bottom:4px;}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">📦 재고관리 데이터 마이그레이션</div>
+    <div class="card-desc">
+      이 브라우저의 <b>localStorage</b>에 저장된 재고 데이터를<br>
+      <b>Firebase Firestore</b>로 옮깁니다. 한 번만 실행하면 됩니다.
+    </div>
+  </div>
+  <div class="card-body">
+
+    <!-- 미리보기 -->
+    <div class="preview-grid">
+      <div class="preview-box">
+        <div class="preview-label">품목</div>
+        <div class="preview-count" id="cntItems">—</div>
+        <div class="preview-sub" id="subItems">확인 중…</div>
+      </div>
+      <div class="preview-box">
+        <div class="preview-label">입출고 기록</div>
+        <div class="preview-count" id="cntHistory">—</div>
+        <div class="preview-sub" id="subHistory">확인 중…</div>
+      </div>
+      <div class="preview-box">
+        <div class="preview-label">카테고리</div>
+        <div class="preview-count" id="cntCats">—</div>
+        <div class="preview-sub" id="subCats">확인 중…</div>
+      </div>
+    </div>
+
+    <!-- 경고 -->
+    <div class="warn-banner" id="warnBanner">
+      ⚠️ Firestore에 이미 데이터가 있습니다.<br>
+      <b>품목은 문서 ID를 새로 생성해 추가</b>되며, 카테고리는 덮어씁니다.<br>
+      중복이 생길 수 있으니 Firestore 데이터가 비어있을 때 실행하는 걸 권장합니다.
+    </div>
+
+    <!-- 진행바 -->
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-label" id="progressLabel">준비 중…</div>
+      <div class="progress-bar-bg"><div class="progress-bar" id="progressBar"></div></div>
+    </div>
+
+    <!-- 로그 -->
+    <div class="log-wrap" id="logWrap">
+      <div class="log-item info"><span class="log-icon"></span><span class="log-text">localStorage 데이터를 확인하고 있습니다…</span></div>
+    </div>
+
+    <!-- 완료 배너 -->
+    <div class="done-banner" id="doneBanner">
+      <div class="done-icon">✅</div>
+      <div class="done-title">마이그레이션 완료!</div>
+      <div class="done-sub">
+        이제 <b>inven.html</b>을 열면 Firestore에서 데이터를 불러옵니다.<br>
+        이 페이지는 더 이상 필요 없습니다.
+      </div>
+    </div>
+
+    <!-- 버튼 -->
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="clearBtn" disabled>🗑 localStorage 정리</button>
+      <button class="btn btn-primary" id="migrateBtn" disabled>🚀 Firestore로 마이그레이션</button>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp }  from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getFirestore, collection, doc, setDoc, addDoc, getDocs,
+         serverTimestamp, writeBatch, Timestamp }
+  from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
+/* ── Firebase ── */
+const firebaseConfig = {
+  apiKey:            "AIzaSyDnEOATYmwq0WJr6pCl-86-Q3ZEQjrrfeY",
+  authDomain:        "drgo-calender.firebaseapp.com",
+  projectId:         "drgo-calender",
+  storageBucket:     "drgo-calender.firebasestorage.app",
+  messagingSenderId: "163730741115",
+  appId:             "1:163730741115:web:73a06d5b1cf1a477734fde"
+};
+const app = initializeApp(firebaseConfig, 'migrate_' + Date.now());
+const db  = getFirestore(app);
+
+/* ── localStorage 키 ── */
+const STORE_KEY = 'drgo_inven_items_v2';
+const HIST_KEY  = 'drgo_inven_history_v2';
+const CAT_KEY   = 'drgo_inven_cats_v2';
+
+/* ── 상태 ── */
+let localItems   = [];
+let localHistory = [];
+let localCats    = null;
+let migDone      = false;
+
+/* ══════ 유틸 ══════ */
+function log(type, html) {
+  const wrap = document.getElementById('logWrap');
+  const div  = document.createElement('div'); div.className = `log-item ${type}`;
+  div.innerHTML = `<span class="log-icon"></span><span class="log-text">${html}</span>`;
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+function setProgress(pct, label) {
+  document.getElementById('progressWrap').classList.add('show');
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = label;
+}
+function toTimestamp(val) {
+  if (!val) return serverTimestamp();
+  if (typeof val === 'number') return Timestamp.fromMillis(val);
+  return serverTimestamp();
+}
+
+/* ══════ 데이터 스캔 ══════ */
+async function scanLocal() {
+  try {
+    localItems   = JSON.parse(localStorage.getItem(STORE_KEY)  || '[]');
+    localHistory = JSON.parse(localStorage.getItem(HIST_KEY)   || '[]');
+    localCats    = JSON.parse(localStorage.getItem(CAT_KEY)    || 'null');
+  } catch(e) {
+    log('err', `localStorage 파싱 오류: ${e.message}`);
+  }
+
+  /* 품목 */
+  const cI = document.getElementById('cntItems'), sI = document.getElementById('subItems');
+  if (localItems.length > 0) {
+    cI.textContent = localItems.length; cI.className = 'preview-count has';
+    sI.textContent = `이미지 포함 ${localItems.filter(i=>i.imgs?.length).length}건`;
+    log('ok', `<b>품목 ${localItems.length}건</b> 발견`);
+  } else {
+    cI.textContent = '0'; cI.className = 'preview-count none';
+    sI.textContent = '데이터 없음';
+    log('warn', '품목 데이터가 없습니다');
+  }
+
+  /* 입출고 기록 */
+  const cH = document.getElementById('cntHistory'), sH = document.getElementById('subHistory');
+  if (localHistory.length > 0) {
+    cH.textContent = localHistory.length; cH.className = 'preview-count has';
+    sH.textContent = `입고/출고/조정 기록`;
+    log('ok', `<b>입출고 기록 ${localHistory.length}건</b> 발견`);
+  } else {
+    cH.textContent = '0'; cH.className = 'preview-count none';
+    sH.textContent = '데이터 없음';
+    log('info', '입출고 기록 없음');
+  }
+
+  /* 카테고리 */
+  const cC = document.getElementById('cntCats'), sC = document.getElementById('subCats');
+  const catCount = localCats ? localCats.length : 0;
+  if (catCount > 0) {
+    cC.textContent = catCount; cC.className = 'preview-count has';
+    sC.textContent = `대분류 ${catCount}개`;
+    log('ok', `<b>카테고리 대분류 ${catCount}개</b> 발견`);
+  } else {
+    cC.textContent = '0'; cC.className = 'preview-count none';
+    sC.textContent = '데이터 없음';
+    log('info', '카테고리 없음 (Firestore 기본값 사용)');
+  }
+
+  /* Firestore에 기존 데이터 있는지 확인 */
+  try {
+    const snap = await getDocs(collection(db, 'inventory_items'));
+    if (!snap.empty) {
+      log('warn', `Firestore에 이미 품목 <b>${snap.size}건</b>이 존재합니다`);
+      document.getElementById('warnBanner').classList.add('show');
+    } else {
+      log('info', 'Firestore는 현재 비어 있습니다 (안전하게 마이그레이션 가능)');
+    }
+  } catch(e) {
+    log('warn', `Firestore 확인 중 오류: ${e.message}`);
+  }
+
+  /* 마이그레이션할 데이터가 하나라도 있으면 버튼 활성화 */
+  const hasData = localItems.length > 0 || localHistory.length > 0 || catCount > 0;
+  document.getElementById('migrateBtn').disabled = !hasData;
+  if (hasData) log('info', '마이그레이션 버튼을 눌러 시작하세요');
+  else log('warn', '옮길 데이터가 없습니다. 이미 마이그레이션했거나 데이터가 없습니다.');
+}
+
+/* ══════ 마이그레이션 실행 ══════ */
+async function migrate() {
+  if (migDone) return;
+  document.getElementById('migrateBtn').disabled = true;
+  document.getElementById('clearBtn').disabled   = true;
+  document.getElementById('warnBanner').classList.remove('show');
+
+  const total = localItems.length + localHistory.length + (localCats ? 1 : 0);
+  let done = 0;
+
+  function tick(label) {
+    done++;
+    setProgress(Math.round(done / total * 100), label);
+  }
+
+  log('run', '마이그레이션 시작…');
+
+  /* ── 1. 카테고리 ── */
+  if (localCats) {
+    try {
+      await setDoc(doc(db, 'settings', 'inven_cats'), {
+        tree: localCats, updatedAt: serverTimestamp()
+      });
+      tick('카테고리 저장 완료');
+      log('ok', '카테고리 트리 저장 완료');
+    } catch(e) {
+      log('err', `카테고리 저장 실패: ${e.message}`);
+    }
+  }
+
+  /* ── 2. 품목 (writeBatch, 500개 단위) ── */
+  if (localItems.length > 0) {
+    log('run', `품목 ${localItems.length}건 업로드 중…`);
+    const BATCH_SIZE = 400;
+    for (let i = 0; i < localItems.length; i += BATCH_SIZE) {
+      const chunk = localItems.slice(i, i + BATCH_SIZE);
+      const batch = writeBatch(db);
+      chunk.forEach(item => {
+        const { id: _localId, ...rest } = item; // 로컬 id 제거, Firestore가 새 ID 생성
+        const ref = doc(collection(db, 'inventory_items'));
+        batch.set(ref, {
+          ...rest,
+          imgs:      (rest.imgs || []).map(img => ({ name:img.name||'', data:img.data||'', note:img.note||'' })),
+          createdAt: toTimestamp(rest.createdAt),
+          updatedAt: serverTimestamp()
+        });
+        tick(`품목 업로드: ${rest.name}`);
+      });
+      try {
+        await batch.commit();
+        log('ok', `품목 ${Math.min(i+BATCH_SIZE, localItems.length)}/${localItems.length} 업로드 완료`);
+      } catch(e) {
+        log('err', `품목 배치 저장 실패: ${e.message}`);
+      }
+    }
+  }
+
+  /* ── 3. 입출고 기록 (writeBatch) ── */
+  if (localHistory.length > 0) {
+    log('run', `입출고 기록 ${localHistory.length}건 업로드 중…`);
+    const BATCH_SIZE = 400;
+    for (let i = 0; i < localHistory.length; i += BATCH_SIZE) {
+      const chunk = localHistory.slice(i, i + BATCH_SIZE);
+      const batch = writeBatch(db);
+      chunk.forEach(h => {
+        const ref = doc(collection(db, 'inventory_history'));
+        batch.set(ref, {
+          itemId:   h.itemId   || '',
+          itemName: h.itemName || '',
+          type:     h.type     || 'adj',
+          delta:    h.delta    ?? 0,
+          newQty:   h.newQty   ?? 0,
+          note:     h.note     || '',
+          ts:       toTimestamp(h.ts)
+        });
+        tick(`기록 업로드: ${h.itemName}`);
+      });
+      try {
+        await batch.commit();
+        log('ok', `기록 ${Math.min(i+BATCH_SIZE, localHistory.length)}/${localHistory.length} 업로드 완료`);
+      } catch(e) {
+        log('err', `기록 배치 저장 실패: ${e.message}`);
+      }
+    }
+  }
+
+  /* ── 완료 ── */
+  setProgress(100, '완료!');
+  log('ok', '<b>모든 데이터 마이그레이션 완료 ✓</b>');
+  document.getElementById('doneBanner').classList.add('show');
+  document.getElementById('clearBtn').disabled = false;
+  migDone = true;
+}
+
+/* ══════ localStorage 정리 ══════ */
+function clearLocal() {
+  if (!confirm('localStorage의 재고 데이터를 삭제하시겠습니까?\nFirestore로 옮긴 후에만 실행하세요.')) return;
+  localStorage.removeItem(STORE_KEY);
+  localStorage.removeItem(HIST_KEY);
+  localStorage.removeItem(CAT_KEY);
+  log('ok', 'localStorage 재고 데이터 삭제 완료');
+  document.getElementById('clearBtn').disabled = true;
+  document.getElementById('clearBtn').textContent = '✓ 정리 완료';
+}
+
+/* ══════ 이벤트 ══════ */
+document.getElementById('migrateBtn').addEventListener('click', migrate);
+document.getElementById('clearBtn').addEventListener('click', clearLocal);
+
+/* ══════ 초기 스캔 ══════ */
+scanLocal();
+</script>
+</body>
+</html>
