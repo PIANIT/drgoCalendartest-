@@ -921,7 +921,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 import { getFirestore, collection, doc, setDoc, deleteDoc, addDoc, getDoc, getDocs,
-         onSnapshot, query, orderBy, serverTimestamp, updateDoc, arrayUnion }
+         onSnapshot, query, orderBy, where, limit, startAfter, endAt, serverTimestamp, updateDoc, arrayUnion }
   from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -1054,7 +1054,16 @@ function initApp(){
   const rrCol =id=>collection(db,`crm_clients/${id}/remote_reports`);
   const eventsCol=collection(db,'events');
 
-  let clients=[], filteredType='all', searchQuery='';
+  /* ── 페이지네이션 상태 ── */
+  const PAGE_SIZE = 30;
+  let clients=[];           // 현재 페이지 데이터
+  let totalCount = 0;       // 전체 고객 수 (카운트 문서에서)
+  let currentPage = 1;      // 현재 페이지 번호
+  let cursors = [null];     // cursors[0]=null(1페이지 시작), cursors[n]=n+1페이지 시작 커서
+  let lastDoc = null;       // 현재 페이지 마지막 문서
+  let hasNext = false;
+  let filteredType='all', searchQuery='';
+  let isSearchMode = false; // 검색어가 있을 때 전체 검색 모드
   let selectedClient=null, currentTab='info';
   let consultations=[], consultUnsub=null;
   let editingClientId=null, editingConsultId=null;
@@ -1140,25 +1149,23 @@ function initApp(){
   }
 
   /* ── RENDER CLIENT LIST ── */
-  function getFiltered(){
-    let list=[...clients];
-    if(filteredType!=='all') list=list.filter(c=>c.type===filteredType);
-    if(searchQuery){
-      const q=searchQuery.toLowerCase();
-      list=list.filter(c=>(c.name||'').toLowerCase().includes(q)||(c.nick||'').toLowerCase().includes(q)||(c.phone||'').includes(q));
-    }
-    return list;
-  }
-
   function renderClientList(){
-    const list=getFiltered();
     const el=document.getElementById('clientList');
-    document.getElementById('clientCountBadge').textContent=`(${clients.length})`;
-    if(!list.length){
-      el.innerHTML=`<div class="empty-state">${clients.length?'검색 결과가 없습니다':'등록된 고객이 없습니다<br>상단의 + 고객 등록을 눌러주세요'}</div>`;
+    const badge=document.getElementById('clientCountBadge');
+
+    if(isSearchMode){
+      badge.textContent=`(${clients.length}건)`;
+    } else {
+      const pageEnd = Math.min(currentPage*PAGE_SIZE, (currentPage-1)*PAGE_SIZE+clients.length);
+      badge.textContent=`(${(currentPage-1)*PAGE_SIZE+1}–${pageEnd})`;
+    }
+
+    if(!clients.length){
+      el.innerHTML=`<div class="empty-state">${isSearchMode?'검색 결과가 없습니다':'등록된 고객이 없습니다<br>상단의 + 고객 등록을 눌러주세요'}</div>`;
+      renderPager();
       return;
     }
-    el.innerHTML=list.map(c=>`
+    el.innerHTML=clients.map(c=>`
       <div class="client-item${selectedClient&&selectedClient._id===c._id?' active':''}" data-id="${c._id}">
         <div class="client-avatar">${avatarChar(c.name)}</div>
         <div class="client-info">
@@ -1169,11 +1176,116 @@ function initApp(){
       </div>
     `).join('');
     el.querySelectorAll('.client-item').forEach(item=>item.addEventListener('click',()=>selectClient(item.dataset.id)));
+    renderPager();
+  }
+
+  function renderPager(){
+    let pager=document.getElementById('clientPager');
+    if(!pager){
+      pager=document.createElement('div');
+      pager.id='clientPager';
+      pager.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-top:1px solid var(--border);gap:6px;flex-shrink:0;';
+      document.querySelector('.client-panel').appendChild(pager);
+    }
+    if(isSearchMode){ pager.style.display='none'; return; }
+    pager.style.display='flex';
+    const prev=currentPage>1;
+    const next=hasNext;
+    pager.innerHTML=`
+      <button id="pagerPrev" style="background:none;border:1px solid var(--border);color:${prev?'var(--text)':'var(--text-muted)'};border-radius:5px;padding:3px 10px;font-size:12px;cursor:${prev?'pointer':'default'};opacity:${prev?1:0.35};font-family:var(--font-main);">◀ 이전</button>
+      <span style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono);">${currentPage} 페이지</span>
+      <button id="pagerNext" style="background:none;border:1px solid var(--border);color:${next?'var(--text)':'var(--text-muted)'};border-radius:5px;padding:3px 10px;font-size:12px;cursor:${next?'pointer':'default'};opacity:${next?1:0.35};font-family:var(--font-main);">다음 ▶</button>
+    `;
+    if(prev) document.getElementById('pagerPrev').addEventListener('click',()=>loadPage('prev'));
+    if(next) document.getElementById('pagerNext').addEventListener('click',()=>loadPage('next'));
+  }
+
+  /* ── 페이지 로드 ── */
+  async function loadPage(dir='first'){
+    setLoading(true);
+    try {
+      let q;
+      const baseOrder = orderBy('createdAt','desc');
+      const typeFilter = filteredType!=='all' ? [where('type','==',filteredType)] : [];
+
+      if(dir==='first'){
+        currentPage=1; cursors=[null];
+        q = query(clientsCol, ...typeFilter, baseOrder, limit(PAGE_SIZE));
+      } else if(dir==='next'){
+        currentPage++;
+        q = query(clientsCol, ...typeFilter, baseOrder, startAfter(lastDoc), limit(PAGE_SIZE));
+      } else if(dir==='prev'){
+        currentPage--;
+        const cursor=cursors[currentPage-1]||null;
+        q = cursor
+          ? query(clientsCol, ...typeFilter, baseOrder, startAfter(cursor), limit(PAGE_SIZE))
+          : query(clientsCol, ...typeFilter, baseOrder, limit(PAGE_SIZE));
+      }
+
+      const snap=await getDocs(q);
+      clients=snap.docs.map(d=>({_id:d.id,...d.data()}));
+      lastDoc=snap.docs[snap.docs.length-1]||null;
+      hasNext=snap.docs.length===PAGE_SIZE;
+
+      /* 다음 페이지 커서 저장 */
+      if(dir==='next'||dir==='first'){
+        cursors[currentPage]=lastDoc;
+      }
+    } catch(e){
+      console.error(e); showToast('목록 로딩 오류','error');
+    } finally {
+      setLoading(false);
+    }
+    renderClientList();
+    if(selectedClient){
+      const updated=clients.find(c=>c._id===selectedClient._id);
+      if(updated){ selectedClient=updated; if(currentTab==='info') renderInfo(updated); }
+    }
+  }
+
+  /* ── 검색 모드 (전체 텍스트 검색) ── */
+  async function loadSearch(q){
+    searchQuery=q;
+    if(!q){
+      isSearchMode=false;
+      await loadPage('first');
+      return;
+    }
+    isSearchMode=true;
+    setLoading(true);
+    try {
+      const ql=q.toLowerCase();
+      /* Firestore는 full-text search 미지원 → 전체 목록에서 이름/닉/전화 필터 */
+      /* 실용적 타협: 최대 200건 읽어 클라이언트 필터 */
+      const typeFilter = filteredType!=='all' ? [where('type','==',filteredType)] : [];
+      const snap=await getDocs(query(clientsCol,...typeFilter,orderBy('createdAt','desc'),limit(200)));
+      const all=snap.docs.map(d=>({_id:d.id,...d.data()}));
+      clients=all.filter(c=>
+        (c.name||'').toLowerCase().includes(ql)||
+        (c.nick||'').toLowerCase().includes(ql)||
+        (c.phone||'').includes(q)||
+        (c.source||'').toLowerCase().includes(ql)||
+        (c.platform||'').toLowerCase().includes(ql)
+      );
+    } catch(e){
+      console.error(e); showToast('검색 오류','error');
+    } finally {
+      setLoading(false);
+    }
+    renderClientList();
   }
 
   /* ── SELECT CLIENT ── */
-  function selectClient(id){
-    selectedClient=clients.find(c=>c._id===id)||null;
+  async function selectClient(id){
+    let found=clients.find(c=>c._id===id)||null;
+    if(!found){
+      /* 현재 페이지에 없으면 DB에서 직접 1건 조회 */
+      try{
+        const snap=await getDoc(doc(db,'crm_clients',id));
+        if(snap.exists()) found={_id:snap.id,...snap.data()};
+      }catch(e){ console.error(e); }
+    }
+    selectedClient=found;
     renderClientList();
     const noView=document.getElementById('noClientView');
     const detail=document.getElementById('clientDetail');
@@ -1419,16 +1531,8 @@ function initApp(){
     } catch(e){ showToast('삭제에 실패했습니다','error'); }
   });
 
-  /* ── FIREBASE LISTENER ── */
-  setLoading(true);
-  const loadTO=setTimeout(()=>{ setLoading(false); },10000);
-  onSnapshot(query(clientsCol,orderBy('createdAt','desc')),snap=>{
-    clearTimeout(loadTO);
-    clients=snap.docs.map(d=>({_id:d.id,...d.data()}));
-    setLoading(false);
-    renderClientList();
-    if(selectedClient){ const updated=clients.find(c=>c._id===selectedClient._id); if(updated){ selectedClient=updated; if(currentTab==='info') renderInfo(updated); } }
-  },err=>{ clearTimeout(loadTO); setLoading(false); console.error(err); showToast('DB 연결 오류','error'); });
+  /* ── 초기 목록 로드 ── */
+  loadPage('first');
 
 
   /* ── textarea 자동 높이 조절 ── */
@@ -1521,9 +1625,15 @@ function initApp(){
     filteredType=btn.dataset.type;
     document.querySelectorAll('.cf-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
-    renderClientList();
+    if(isSearchMode) loadSearch(searchQuery);
+    else loadPage('first');
   }));
-  document.getElementById('searchInput').addEventListener('input',e=>{ searchQuery=e.target.value; renderClientList(); });
+
+  let _searchTimer=null;
+  document.getElementById('searchInput').addEventListener('input',e=>{
+    clearTimeout(_searchTimer);
+    _searchTimer=setTimeout(()=>loadSearch(e.target.value.trim()),350);
+  });
 
   /* ── CLIENT MODAL ── */
   function openClientModal(client=null){
@@ -1574,12 +1684,15 @@ function initApp(){
     try{
       if(editingClientId){
         await updateDoc(doc(db,'crm_clients',editingClientId),data);
+        await loadPage('first'); /* 수정 후 목록 갱신 */
+        setTimeout(()=>{ const uc=clients.find(c=>c._id===editingClientId); if(uc) selectClient(uc._id); },100);
         showToast('고객 정보가 수정되었습니다','success');
       } else {
         data.createdAt=serverTimestamp();
         const ref=await addDoc(clientsCol,data);
         showToast('고객이 등록되었습니다','success');
-        setTimeout(()=>{ const nc=clients.find(c=>c._id===ref.id); if(nc) selectClient(nc._id); },800);
+        await loadPage(currentPage>1?'first':'first');
+        setTimeout(()=>{ const nc=clients.find(c=>c._id===ref.id); if(nc) selectClient(nc._id); },100);
       }
       _crmSnapshot = null; closeClientModal(true);
     } catch(e){ console.error(e); showToast('저장에 실패했습니다','error'); }
@@ -1599,6 +1712,7 @@ function initApp(){
       document.getElementById('noClientView').style.display='flex';
       document.getElementById('clientDetail').style.display='none';
       showToast('고객이 삭제되었습니다');
+      await loadPage('first');
     } catch(e){ console.error(e); showToast('삭제에 실패했습니다','error'); }
   });
 
