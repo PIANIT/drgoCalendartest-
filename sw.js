@@ -4,8 +4,8 @@
    Firebase Firestore는 온라인 필수 (캐시 제외)
 ═══════════════════════════════════════════ */
 
-const CACHE_NAME    = 'drgo-cal-v3';
-const RUNTIME_CACHE = 'drgo-cal-runtime-v2';
+const CACHE_NAME    = 'drgo-cal-v4';
+const RUNTIME_CACHE = 'drgo-cal-runtime-v4';
 
 /* 설치 시 즉시 캐시할 핵심 파일 */
 const PRECACHE_URLS = [
@@ -70,13 +70,21 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  /* favicon.ico → 404 방지: 빈 응답 반환 */
+  if (url.pathname === '/favicon.ico') {
+    event.respondWith(new Response('', { status: 204, statusText: 'No Content' }));
+    return;
+  }
+
   /* 그 외 (로컬 파일) → Cache-first */
   event.respondWith(
     caches.match(request).then(cached => {
       if (cached) return cached;
       return fetch(request).then(res => {
         if (!res || res.status !== 200 || res.type === 'opaque') return res;
-        caches.open(RUNTIME_CACHE).then(cache => cache.put(request, res.clone()));
+        /* ★ clone() 먼저 캐시에 저장, 원본 res 반환 */
+        const resClone = res.clone();
+        caches.open(RUNTIME_CACHE).then(cache => cache.put(request, resClone));
         return res;
       });
     }).catch(() => {
