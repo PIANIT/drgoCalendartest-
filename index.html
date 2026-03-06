@@ -706,6 +706,18 @@
   .color-dot.active[data-color="teal"]   { background:rgba(232,137,74,0.35); border-color:#e8894a; }
   .color-dot:hover { filter:brightness(1.15); }
   .color-dot.locked-dot { pointer-events:none; opacity:0.5; }
+  /* 공휴일 버튼 - color-dot 스타일 공유 */
+  .holiday-btn-wrap { margin-top:4px; }
+  .holiday-dot {
+    display:inline-flex; align-items:center; gap:5px;
+    padding:4px 10px; border-radius:20px; font-size:11px; cursor:pointer;
+    border:1.5px solid var(--border); background:none; color:var(--text-muted);
+    font-family:var(--font-main); transition:all .17s; user-select:none;
+  }
+  .holiday-dot:hover { border-color:var(--red); color:var(--red); }
+  .holiday-dot.active { background:rgba(200,122,122,.25); border-color:var(--red); color:var(--red); font-weight:700; }
+  .modal-strip.color-holiday { background:var(--red); }
+  .type-badge.holiday { background:rgba(200,122,122,.18); color:var(--red); border-color:rgba(200,122,122,.4); }
 
   .img-upload-group { display:flex; flex-direction:column; gap:6px; }
   .img-upload-label { font-family:var(--font-mono); font-size:10px; letter-spacing:0.2em; color:var(--text-muted); text-transform:uppercase; }
@@ -1046,8 +1058,8 @@
   <button class="filter-btn active f-gold"   data-filter="gold">  <span class="filter-dot" id="fd-gold"></span>방문의뢰</button>
   <button class="filter-btn active f-teal"   data-filter="teal">  <span class="filter-dot" id="fd-teal"></span>원격/방송룸</button>
   <button class="filter-btn active f-blue"   data-filter="blue">  <span class="filter-dot" id="fd-blue"></span>사내업무</button>
-  <button class="filter-btn active f-red"    data-filter="red">   <span class="filter-dot" id="fd-red"></span>휴가/개인</button>
-  <button class="filter-btn active f-green"  data-filter="green"> <span class="filter-dot" id="fd-green"></span>촬영/스튜디오</button>
+  <button class="filter-btn active f-red"    data-filter="red">   <span class="filter-dot" id="fd-red"></span>휴가관련</button>
+  <button class="filter-btn active f-green"  data-filter="green"> <span class="filter-dot" id="fd-green"></span>촬영관련</button>
   <button class="filter-btn active f-purple" data-filter="purple"><span class="filter-dot" id="fd-purple"></span>미팅/내방</button>
 </div>
 
@@ -1139,13 +1151,13 @@
           </div>
         </div>
         <div class="color-setting-row">
-          <span class="color-setting-label">휴가/개인</span>
+          <span class="color-setting-label">휴가관련</span>
           <div class="color-setting-swatch" id="swatch-red">
             <input type="color" id="colorPicker-red" />
           </div>
         </div>
         <div class="color-setting-row">
-          <span class="color-setting-label">촬영/스튜디오</span>
+          <span class="color-setting-label">촬영관련</span>
           <div class="color-setting-swatch" id="swatch-green">
             <input type="color" id="colorPicker-green" />
           </div>
@@ -1309,13 +1321,16 @@
           <span class="modal-date-badge" id="modalDateBadge"></span>
           <span class="type-badge gold" id="typeBadge">● 방문의뢰</span>
         </div>
-        <div class="color-row" id="colorRow" style="margin-bottom:8px;flex-wrap:wrap;">
+        <div class="color-row" id="colorRow" style="margin-bottom:4px;flex-wrap:wrap;">
           <div class="color-dot" data-color="gold">방문의뢰</div>
           <div class="color-dot" data-color="teal">원격/방송룸</div>
           <div class="color-dot" data-color="blue">사내업무</div>
-          <div class="color-dot" data-color="red">휴가/개인</div>
-          <div class="color-dot" data-color="green">촬영/스튜디오</div>
+          <div class="color-dot" data-color="red">휴가관련</div>
+          <div class="color-dot" data-color="green">촬영관련</div>
           <div class="color-dot" data-color="purple">미팅/내방</div>
+        </div>
+        <div class="holiday-btn-wrap">
+          <span class="holiday-dot" id="holidayDot">📅 공휴일로 지정</span>
         </div>
         <input class="modal-title-input" id="modalTitle" placeholder="일정 제목을 입력하세요" />
       </div>
@@ -1379,7 +1394,6 @@
             <option value="30">30분 전</option>
             <option value="60">1시간 전</option>
             <option value="120">2시간 전</option>
-            <option value="allday">일정 당일 오전 9시</option>
             <option value="1440">하루 전 오전 9시</option>
           </select>
           <span class="notif-allday-label" id="notifAlldayLabel" style="display:none;">당일 오전 9시 발송</span>
@@ -1965,7 +1979,7 @@ else { showAuth(); updateLockUI(); setTimeout(() => document.getElementById('aut
 
 
 const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
-const TYPE_LABELS = { gold:'방문의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가/개인', green:'촬영/스튜디오', purple:'미팅/내방' };
+const TYPE_LABELS = { gold:'방문의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방', holiday:'공휴일' };
 
 const KR_HOLIDAYS = {
   '2024-01-01':'1월 1일','2024-02-09':'설날 전날','2024-02-10':'설날','2024-02-11':'설날 다음 날','2024-02-12':'대체공휴일(설날)',
@@ -1989,7 +2003,15 @@ const KR_HOLIDAYS = {
   '2027-01-01':'1월 1일','2027-03-01':'3·1절','2027-05-05':'어린이날','2027-06-06':'현충일',
   '2027-08-15':'광복절','2027-10-03':'개천절','2027-10-09':'한글날','2027-12-25':'기독탄신일',
 };
-function getHoliday(dk) { return KR_HOLIDAYS[dk] || null; }
+function getHoliday(dk) {
+  if (KR_HOLIDAYS[dk]) return KR_HOLIDAYS[dk];
+  /* Firestore에서 등록한 공휴일 이벤트 */
+  const custom = events.find(ev => ev.color==='holiday' && ev.startDate<=dk && (ev.endDate||ev.startDate)>=dk);
+  return custom ? custom.title || '공휴일' : null;
+}
+function isCustomHoliday(dk) {
+  return events.some(ev => ev.color==='holiday' && ev.startDate<=dk && (ev.endDate||ev.startDate)>=dk);
+}
 
 const IMG_MAX_PX = 800;
 const IMG_QUALITY = 0.72;
@@ -2220,7 +2242,18 @@ function render() {
       evList.className = 'events-list';
       const dayEvs = singleMap[dk]||[];
       const MAX=calcMaxChips(lanes);
-      dayEvs.slice(0,MAX).forEach(({evIdx,ev})=>{
+      /* 공휴일 이벤트: 칩 대신 holiday-label로 날짜 옆에 표시 */
+      dayEvs.filter(({ev})=>ev.color==='holiday').forEach(({evIdx,ev})=>{
+        const hl=document.createElement('span');
+        hl.className='holiday-label'; hl.textContent=ev.title||'공휴일';
+        hl.style.cursor='pointer';
+        hl.addEventListener('click',e=>{e.stopPropagation();openModal(evIdx);});
+        numRow.appendChild(hl);
+        /* 날짜 숫자도 빨간색 */
+        numSpan.classList.add('holiday');
+      });
+      const nonHolidayEvs = dayEvs.filter(({ev})=>ev.color!=='holiday');
+      nonHolidayEvs.slice(0,MAX).forEach(({evIdx,ev})=>{
         const chip=document.createElement('div');
         chip.className=`event-chip single chip-month color-${ev.color||'gold'}`;
         const time=(!ev.allDay&&ev.startTime)?`<span class="chip-time">${ev.startTime}</span>`:'';
@@ -2230,7 +2263,7 @@ function render() {
         evList.appendChild(chip);
       });
       const spanEvs = sorted
-        .filter(({ev}) => isSpanEv(ev) && ev.startDate<=dk && (ev.endDate||ev.startDate)>=dk)
+        .filter(({ev}) => isSpanEv(ev) && ev.color!=='holiday' && ev.startDate<=dk && (ev.endDate||ev.startDate)>=dk)
         .map(({ev,idx}) => ({evIdx:idx, ev}));
       const allDayEvs = [...spanEvs, ...dayEvs];
       if (allDayEvs.length>MAX) {
@@ -2322,12 +2355,11 @@ let goldImgs={quote:[],ref:[],room:[]};
 
 function setAllDay(val){
   isAllDay=val;
-  /* 알림 UI: 종일이면 select에 당일 오전 9시 자동 선택, 아니면 1시간 전 자동 선택 */
+  /* 알림 UI: 종일이면 select 숨기고 고정 레이블 표시 */
   const sel=document.getElementById('notifSelect');
   const lbl=document.getElementById('notifAlldayLabel');
-  sel.style.display=''; lbl.style.display='none';
-  if(val){ if(!sel.value || sel.value==='60') sel.value='allday'; }
-  else   { if(!sel.value || sel.value==='allday') sel.value='60'; }
+  if(val){ sel.style.display='none'; lbl.style.display=''; }
+  else   { sel.style.display=''; lbl.style.display='none'; }
   document.getElementById('alldayTrack').classList.toggle('on',val);
   /* hidden input은 disabled 불필요, trigger UI에 반영 */
   ['startTimeTrigger','endTimeTrigger'].forEach(id=>{
@@ -2348,25 +2380,29 @@ document.querySelectorAll('.dt-input').forEach(input => {
 function setColor(c){
   currentColor=c;
   document.querySelectorAll('.color-dot').forEach(d=>d.classList.toggle('active',d.dataset.color===c));
+  /* 공휴일 버튼 active 상태 */
+  const hDot = document.getElementById('holidayDot');
+  if (hDot) hDot.classList.toggle('active', c==='holiday');
   document.getElementById('modalStrip').className='modal-strip color-'+c;
   const badge=document.getElementById('typeBadge');
   badge.className='type-badge '+c;
-  badge.textContent='● '+TYPE_LABELS[c];
+  badge.textContent='● '+(TYPE_LABELS[c]||c);
 
-  const isGold   = c==='gold';
-  const isTeal   = c==='teal';
-  const isBlue   = c==='blue';
-  const isRed    = c==='red';
+  const isGold    = c==='gold';
+  const isTeal    = c==='teal';
+  const isBlue    = c==='blue';
+  const isRed     = c==='red';
+  const isHoliday = c==='holiday';
 
-  /* gold: goldTemplate, teal: tealTemplate, 나머지: commonFields */
-  document.getElementById('commonFields').style.display  = (isGold||isTeal)?'none':'flex';
+  /* 공휴일: 제목만 입력, 모든 필드 숨김 */
+  document.getElementById('commonFields').style.display  = (isGold||isTeal||isHoliday)?'none':'flex';
   document.getElementById('commonFields').style.flexDirection='column';
   document.getElementById('goldTemplate').style.display  = isGold?'flex':'none';
   document.getElementById('tealTemplate').style.display  = isTeal?'flex':'none';
-  document.getElementById('generalAttachSection').style.display = (isGold||isRed)?'none':'block';
+  document.getElementById('generalAttachSection').style.display = (isGold||isRed||isHoliday)?'none':'block';
 
-  /* 사내업무(blue), 휴가/개인(red), 원격/방송룸(teal): 일정관련옵션 + 특수옵션 + 일정옵션 숨김 */
-  const hideSchedSpecial = isBlue || isRed || isTeal;
+  /* 사내업무(blue), 휴가관련(red), 원격/방송룸(teal), 공휴일: 일정관련옵션 + 특수옵션 + 일정옵션 숨김 */
+  const hideSchedSpecial = isBlue || isRed || isTeal || isHoliday;
   const schedFg = document.getElementById('scheduleOpts')?.closest('.field-group');
   const spFg    = document.getElementById('specialOpts')?.closest('.field-group');
   const seFgColor = document.getElementById('schedEventOpts')?.closest('.field-group');
@@ -2374,31 +2410,36 @@ function setColor(c){
   if (spFg)      spFg.style.display      = hideSchedSpecial ? 'none' : '';
   if (seFgColor) seFgColor.style.display = hideSchedSpecial ? 'none' : '';
 
-  /* 사내업무(blue), 휴가/개인(red), 원격/방송룸(teal): 이름/담당자 행 숨김 */
-  const nameFg = document.getElementById('modalName')?.closest('.field-group');
-  if (nameFg) nameFg.style.display = hideSchedSpecial ? 'none' : '';
+  /* 공휴일: 이름/담당자, 알림, 날짜/시간 행 숨김 */
+  const nameFg  = document.getElementById('modalName')?.closest('.field-group');
+  const notifFg = document.getElementById('notifSelect')?.closest('.field-group');
+  if (nameFg)  nameFg.style.display  = (hideSchedSpecial||isHoliday) ? 'none' : '';
+  if (notifFg) notifFg.style.display = isHoliday ? 'none' : '';
 
   document.getElementById('generalAttachSection').style.display =
-    isGold ? 'none' : isRed ? 'none' : 'block';
+    isGold ? 'none' : isRed ? 'none' : isHoliday ? 'none' : 'block';
 
   /* 방문의뢰: 종일 숨기고 한줄 날짜+시간 레이아웃 */
   updateDateTimeLayout(c);
 }
 
 function updateDateTimeLayout(c){
-  const isGold = c==='gold';
+  const isGold    = c==='gold';
+  const isHoliday = c==='holiday';
   const alldayRow  = document.querySelector('.allday-row');
   const dtRows     = document.querySelectorAll('.dt-row');
   const goldDtRow  = document.getElementById('goldDtRow');
   if (isGold){
-    /* 종일 토글 숨기기 */
     if (alldayRow) alldayRow.style.display='none';
-    /* 기존 dt-row 숨기기 */
     dtRows.forEach(r=>r.style.display='none');
-    /* 한줄 날짜+시간 row 표시 */
     if (goldDtRow) goldDtRow.style.display='flex';
-    /* 종일 강제 해제 */
     if (isAllDay) setAllDay(false);
+  } else if (isHoliday){
+    /* 공휴일: 종일 토글 숨기고 dt-row 표시 (날짜 범위만), 종일 강제 ON */
+    if (alldayRow) alldayRow.style.display='none';
+    dtRows.forEach(r=>r.style.display='');
+    if (goldDtRow) goldDtRow.style.display='none';
+    if (!isAllDay) setAllDay(true);
   } else {
     if (alldayRow) alldayRow.style.display='';
     dtRows.forEach(r=>r.style.display='');
@@ -2407,6 +2448,11 @@ function updateDateTimeLayout(c){
 }
 document.getElementById('colorRow').addEventListener('click',e=>{
   if (e.target.dataset.color&&!isLocked) setColor(e.target.dataset.color);
+});
+document.getElementById('holidayDot').addEventListener('click',()=>{
+  if (isLocked) return;
+  if (currentColor==='holiday') setColor('gold'); /* 토글 off */
+  else setColor('holiday');
 });
 
 document.getElementById('specialOpts').addEventListener('click', e => {
@@ -3016,8 +3062,9 @@ function openNewModal(dk){
     el.textContent=def[id]||'09:00';
   });
   currentAttachments=[]; currentColor='gold'; isLocked=false;
-  document.getElementById('notifSelect').value='60';
+  document.getElementById('notifSelect').value='';
   setColor('gold'); setAllDay(false); setSpecialOpts([],null,[],0,''); if(typeof _seDeactivateAll==='function') _seDeactivateAll();
+  document.getElementById('holidayDot').classList.remove('active');
   resetGoldFields(); renderAttachments();
   document.getElementById('deleteBtn').style.display='none';
   document.getElementById('logBtn').style.display='none';
@@ -3034,7 +3081,7 @@ function openModal(evIdx){
   document.getElementById('modalDateBadge').textContent=formatDateBadge(ev.startDate);
   document.getElementById('modalTitle').value=ev.title||'';
   document.getElementById('modalLocation').value=ev.location||'';
-  const nm=ev.notifMinutes; document.getElementById('notifSelect').value=(nm&&nm!==null)?nm:'';
+  const nm=ev.notifMinutes; document.getElementById('notifSelect').value=(nm&&nm!=='allday')?nm:'';
   document.getElementById('modalName').value=ev.name||'';
   document.getElementById('modalAddress').value=ev.address||'';
   document.getElementById('modalDesc').value=ev.desc||'';
@@ -3129,12 +3176,12 @@ async function saveEvent(){
     const docId = editingId||genId();
     const isNew = !editingId;
     const evData={
-      title:document.getElementById('modalTitle').value.trim()||'(제목 없음)',
+      title:document.getElementById('modalTitle').value.trim()||(currentColor==='holiday'?'공휴일':'(제목 없음)'),
       startDate:sd, endDate:ed<sd?sd:ed,
-      startTime:document.getElementById('startTime').value,
-      endTime:document.getElementById('endTime').value,
-      allDay:isAllDay, color:currentColor,
-      notifMinutes: document.getElementById('notifSelect').value || null,
+      startTime:currentColor==='holiday'?'':document.getElementById('startTime').value,
+      endTime:currentColor==='holiday'?'':document.getElementById('endTime').value,
+      allDay:currentColor==='holiday'?true:isAllDay, color:currentColor,
+      notifMinutes: isAllDay ? 'allday' : (document.getElementById('notifSelect').value || null),
       name:document.getElementById('modalName').value.trim(),
       address:document.getElementById('modalAddress').value.trim(),
       location:document.getElementById('modalLocation').value.trim(),
@@ -3216,7 +3263,7 @@ const TEAL_FIELD_LABELS = {
   desc:'메모',
 };
 const TEAL_MODE_LABELS = { remote:'원격', studio:'방송룸 이용' };
-const COLOR_LABELS = {gold:'개인의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가/개인', green:'촬영/스튜디오', purple:'미팅/내방'};
+const COLOR_LABELS = {gold:'개인의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방', holiday:'공휴일'};
 const SPECIAL_LABELS_LOG = { car:'🚗 차량', brief:'💼 제품', return:'← 반납', group:'👥 2인', urgent:'🚨 긴급', ladder:'▤ 사다리' };
 const SCHED_LABELS_LOG   = { suggest:'💬 제안', hope:'🙏 희망', target:'🎯 목표' };
 
@@ -4876,7 +4923,9 @@ function renderPcWeek() {
     const CHIP_H_WK = 26;
     const MAX_SHOW = Math.max(2, Math.floor(availableForSingle / CHIP_H_WK));
     const dayEvs=singleMap[dk]||[];
-    dayEvs.slice(0,MAX_SHOW).forEach(({ev,idx})=>{
+    /* 공휴일 이벤트: getHoliday가 이미 반환하므로 칩 제외 */
+    const nonHolWkEvs=dayEvs.filter(({ev})=>ev.color!=='holiday');
+    nonHolWkEvs.slice(0,MAX_SHOW).forEach(({ev,idx})=>{
       const chip=document.createElement('div');
       chip.className=`event-chip single color-${ev.color||'gold'}`;
       const icons=getSpecialIconStr(ev);
@@ -4885,9 +4934,9 @@ function renderPcWeek() {
       chip.addEventListener('click',e=>{e.stopPropagation();openModal(idx);});
       cell.appendChild(chip);
     });
-    if (dayEvs.length>MAX_SHOW) {
+    if (nonHolWkEvs.length>MAX_SHOW) {
       const more=document.createElement('div'); more.className='more-badge';
-      more.textContent=`+${dayEvs.length-MAX_SHOW}`;
+      more.textContent=`+${nonHolWkEvs.length-MAX_SHOW}`;
       more.addEventListener('click',e=>{e.stopPropagation();pcDayDate=dk;switchPcView('day');});
       cell.appendChild(more);
     }
@@ -4957,10 +5006,11 @@ function renderPcDay() {
 
   const list=document.getElementById('pcDayList');
   list.innerHTML='';
-  if (evs.length===0) {
+  const nonHolDayEvs=evs.filter(ev=>ev.color!=='holiday');
+  if (nonHolDayEvs.length===0) {
     list.innerHTML='<div class="pc-day-empty">등록된 일정이 없습니다</div>';
   } else {
-    evs.forEach(ev=>{
+    nonHolDayEvs.forEach(ev=>{
       const idx=events.findIndex(e=>e._id===ev._id);
       const card=document.createElement('div');
       card.className=`pc-day-card color-${ev.color||'gold'}`;
@@ -5017,7 +5067,7 @@ document.getElementById('nextYearBtn').addEventListener('click',()=>{
 });
 
 /* ══ 검색 기능 ══ */
-const _TYPE_LBL = {gold:'방문의뢰',teal:'원격/방송룸',blue:'사내업무',red:'휴가/개인',green:'촬영/스튜디오',purple:'미팅/내방'};
+const _TYPE_LBL = {gold:'방문의뢰',teal:'원격/방송룸',blue:'사내업무',red:'휴가관련',green:'촬영관련',purple:'미팅/내방',holiday:'공휴일'};
 const _TYPE_COL = {gold:'var(--chip-gold-bg)',teal:'var(--chip-teal-bg)',blue:'var(--chip-blue-bg)',red:'var(--chip-red-bg)',green:'var(--chip-green-bg)',purple:'var(--chip-purple-bg)'};
 
 document.getElementById('searchToggleBtn').addEventListener('click',()=>{
@@ -5156,7 +5206,7 @@ let mvMonthYear  = new Date().getFullYear();
 let mvMonthMonth = new Date().getMonth(); // 0-based
 
 const DOW_KR = ['일','월','화','수','목','금','토'];
-const TYPE_LABELS_MV = { gold:'방문의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가/개인', green:'촬영/스튜디오', purple:'미팅/내방' };
+const TYPE_LABELS_MV = { gold:'방문의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방', holiday:'공휴일' };
 
 function addDays(dk, n) { const d=new Date(dk+'T00:00:00'); d.setDate(d.getDate()+n); return fmtDate(d); }
 function getWeekStart(dk) { const d=new Date(dk+'T00:00:00'); d.setDate(d.getDate()-d.getDay()); return fmtDate(d); }
@@ -5202,10 +5252,11 @@ function renderMvDayList(dk, container, hideTitle=false) {
     title.appendChild(addBtn);
     container.appendChild(title);
   }
-  if (evs.length===0) {
+  const nonHolEvs=evs.filter(ev=>ev.color!=='holiday');
+  if (nonHolEvs.length===0) {
     const empty=document.createElement('div'); empty.className='mv-empty'; empty.textContent='등록된 일정이 없습니다'; container.appendChild(empty);
   } else {
-    evs.forEach(ev=>{ const idx=events.findIndex(e=>e._id===ev._id); renderMvEventCard(ev,idx,container); });
+    nonHolEvs.forEach(ev=>{ const idx=events.findIndex(e=>e._id===ev._id); renderMvEventCard(ev,idx,container); });
   }
 }
 
@@ -5254,9 +5305,10 @@ function renderMvMonth() {
     cell.appendChild(numEl);
 
     /* dot + 건수 */
-    if (evs.length > 0) {
+    const nonHolEvsDot = evs.filter(ev=>ev.color!=='holiday');
+    if (nonHolEvsDot.length > 0) {
       const colorCount = {};
-      evs.forEach(ev => {
+      nonHolEvsDot.forEach(ev => {
         const c = ev.color||'gold';
         colorCount[c] = (colorCount[c]||0) + 1;
       });
