@@ -4,8 +4,8 @@
    Firebase Firestore는 온라인 필수 (캐시 제외)
 ═══════════════════════════════════════════ */
 
-const CACHE_NAME    = 'drgo-cal-v4';
-const RUNTIME_CACHE = 'drgo-cal-runtime-v4';
+const CACHE_NAME    = 'drgo-cal-v5';
+const RUNTIME_CACHE = 'drgo-cal-runtime-v5';
 
 /* 설치 시 즉시 캐시할 핵심 파일 */
 const PRECACHE_URLS = [
@@ -34,15 +34,11 @@ self.addEventListener('install', event => {
   );
 });
 
-/* ── Activate : 구버전 캐시 정리 ── */
+/* ── Activate : 구버전 캐시 전체 정리 ── */
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(
-        keys
-          .filter(k => k !== CACHE_NAME && k !== RUNTIME_CACHE)
-          .map(k => caches.delete(k))
-      )
+      Promise.all(keys.map(k => caches.delete(k)))  // 모든 구버전 삭제
     ).then(() => self.clients.claim())
   );
 });
@@ -54,6 +50,12 @@ self.addEventListener('fetch', event => {
 
   /* GET 요청만 처리 */
   if (request.method !== 'GET') return;
+
+  /* favicon.ico → 404 방지 */
+  if (url.pathname === '/favicon.ico') {
+    event.respondWith(new Response('', { status: 204 }));
+    return;
+  }
 
   /* Firebase / 외부 API → 네트워크 직통 (캐시 안 함) */
   if (NO_CACHE_PATTERNS.some(p => p.test(request.url))) return;
@@ -70,21 +72,14 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  /* favicon.ico → 404 방지: 빈 응답 반환 */
-  if (url.pathname === '/favicon.ico') {
-    event.respondWith(new Response('', { status: 204, statusText: 'No Content' }));
-    return;
-  }
-
   /* 그 외 (로컬 파일) → Cache-first */
   event.respondWith(
     caches.match(request).then(cached => {
       if (cached) return cached;
       return fetch(request).then(res => {
         if (!res || res.status !== 200 || res.type === 'opaque') return res;
-        /* ★ clone() 먼저 캐시에 저장, 원본 res 반환 */
-        const resClone = res.clone();
-        caches.open(RUNTIME_CACHE).then(cache => cache.put(request, resClone));
+        const clone = res.clone();
+        caches.open(RUNTIME_CACHE).then(cache => cache.put(request, clone));
         return res;
       });
     }).catch(() => {
@@ -93,5 +88,5 @@ self.addEventListener('fetch', event => {
   );
 });
 
-/* 빈 push 핸들러 (미래 확장용) */
+/* 빈 push 핸들러 */
 self.addEventListener('push', () => {});
