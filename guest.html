@@ -420,7 +420,7 @@ const eventsCol = collection(db, 'events');
 ══════════════════ */
 const MONTHS   = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
 const DOW_KOR  = ['일','월','화','수','목','금','토'];
-const TYPE_LABELS = { gold:'방문의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방' };
+const TYPE_LABELS = { gold:'방문의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가/개인', green:'촬영/스튜디오', purple:'미팅/내방' };
 const SCHED_EVENT_LABELS = { fast:'←빠른일정', urgent:'🚨긴급', after:'→N일이후' };
 
 const KR_HOLIDAYS = {
@@ -467,7 +467,7 @@ function getPcWeekStart() {
 function dateDiff(d1,d2){ return (new Date(d2+'T00:00:00')-new Date(d1+'T00:00:00'))/86400000; }
 
 /* 게스트: 모든 일정 표시 (필터 없음) */
-/* 게스트: 사내업무(blue), 휴가관련(red) 제외 */
+/* 게스트: 사내업무(blue), 휴가/개인(red) 제외 */
 function allEvents() { return events.filter(ev => ev.color !== 'blue' && ev.color !== 'red'); }
 
 /* ── 일정 표시 텍스트: 시간만 ── */

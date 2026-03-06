@@ -413,8 +413,8 @@ function makeImgSection(title, groups) {
   <div class="stat-card"><div class="stat-label">개인의뢰</div><div class="stat-value gold"   id="st-gold">—</div></div>
   <div class="stat-card"><div class="stat-label">원격/방송룸</div><div class="stat-value" style="color:var(--chip-teal-bg);" id="st-teal">—</div></div>
   <div class="stat-card"><div class="stat-label">사내업무</div><div class="stat-value blue"   id="st-blue">—</div></div>
-  <div class="stat-card"><div class="stat-label">휴가관련</div><div class="stat-value red"    id="st-red">—</div></div>
-  <div class="stat-card"><div class="stat-label">촬영관련</div><div class="stat-value green"  id="st-green">—</div></div>
+  <div class="stat-card"><div class="stat-label">휴가/개인</div><div class="stat-value red"    id="st-red">—</div></div>
+  <div class="stat-card"><div class="stat-label">촬영/스튜디오</div><div class="stat-value green"  id="st-green">—</div></div>
   <div class="stat-card"><div class="stat-label">미팅/내방</div><div class="stat-value purple" id="st-purple">—</div></div>
 </div>
 
@@ -429,8 +429,8 @@ function makeImgSection(title, groups) {
     <button class="filter-btn f-gold"   data-filter="gold">  <span class="color-dot cd-gold"></span>개인의뢰</button>
     <button class="filter-btn f-teal"   data-filter="teal">  <span class="color-dot cd-teal" style="background:var(--chip-teal-bg);"></span>원격/방송룸</button>
     <button class="filter-btn f-blue"   data-filter="blue">  <span class="color-dot cd-blue"></span>사내업무</button>
-    <button class="filter-btn f-red"    data-filter="red">   <span class="color-dot cd-red"></span>휴가관련</button>
-    <button class="filter-btn f-green"  data-filter="green"> <span class="color-dot cd-green"></span>촬영관련</button>
+    <button class="filter-btn f-red"    data-filter="red">   <span class="color-dot cd-red"></span>휴가/개인</button>
+    <button class="filter-btn f-green"  data-filter="green"> <span class="color-dot cd-green"></span>촬영/스튜디오</button>
     <button class="filter-btn f-purple" data-filter="purple"><span class="color-dot cd-purple"></span>미팅/내방</button>
   </div>
   <div class="date-range-wrap">
@@ -588,7 +588,7 @@ if (isAuth()) {
 }
 
 /* ── CONSTANTS ── */
-const TYPE_LABELS    = { gold:'개인의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방' };
+const TYPE_LABELS    = { gold:'개인의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가/개인', green:'촬영/스튜디오', purple:'미팅/내방' };
 const SPECIAL_LABELS = { car:'🚗차량', brief:'💼제품', 'return':'←당김', group:'👥2인', urgent:'🚨긴급(구)', ladder:'🪜사다리' };
 const SCHED_LABELS   = { suggest:'💬제안', hope:'🙏희망', target:'🎯목표' };
 const SCHED_EVENT_LABELS = { fast:'←빠른일정', urgent:'🚨긴급', after:'→N일이후' };

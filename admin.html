@@ -644,11 +644,11 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
     <div class="stat-value blue" id="st-blue">—</div>
   </div>
   <div class="stat-card">
-    <div class="stat-label">휴가관련</div>
+    <div class="stat-label">휴가/개인</div>
     <div class="stat-value red" id="st-red">—</div>
   </div>
   <div class="stat-card">
-    <div class="stat-label">촬영관련</div>
+    <div class="stat-label">촬영/스튜디오</div>
     <div class="stat-value green" id="st-green">—</div>
   </div>
   <div class="stat-card">
@@ -801,8 +801,8 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
     <button class="filter-btn f-gold" data-filter="gold"><span class="color-dot cd-gold"></span>방문의뢰</button>
     <button class="filter-btn f-teal" data-filter="teal"><span class="color-dot cd-teal" style="background:var(--chip-teal-bg);border-radius:50%;width:8px;height:8px;display:inline-block;"></span>원격/방송룸</button>
     <button class="filter-btn f-blue" data-filter="blue"><span class="color-dot cd-blue"></span>사내업무</button>
-    <button class="filter-btn f-red"  data-filter="red" ><span class="color-dot cd-red"></span>휴가관련</button>
-    <button class="filter-btn f-green" data-filter="green"><span class="color-dot cd-green"></span>촬영관련</button>
+    <button class="filter-btn f-red"  data-filter="red" ><span class="color-dot cd-red"></span>휴가/개인</button>
+    <button class="filter-btn f-green" data-filter="green"><span class="color-dot cd-green"></span>촬영/스튜디오</button>
     <button class="filter-btn f-purple" data-filter="purple"><span class="color-dot cd-purple"></span>미팅/내방</button>
   </div>
   <div class="filter-group" id="seOptFilterGroup" style="margin-top:6px;gap:5px;">
@@ -1075,7 +1075,7 @@ const MAX_TRIES   = 5;
 const LOCK_MS     = 120000;
 const AUTH_EXPIRE_MS = 30 * 24 * 60 * 60 * 1000; /* 30일 */
 
-const TYPE_LABELS    = { gold:'방문의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방' };
+const TYPE_LABELS    = { gold:'방문의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가/개인', green:'촬영/스튜디오', purple:'미팅/내방' };
 const SPECIAL_LABELS = { car:'🚗차량', brief:'💼제품', return:'←일정당김', group:'👥2인', urgent:'🚨긴급(구)', ladder:'🪜사다리' }; /* return/urgent는 구버전 호환 */
 const SCHED_LABELS   = { suggest:'💬제안', hope:'🙏희망', target:'🎯목표' };
 /* 일정 옵션 (신규) */
@@ -2130,7 +2130,7 @@ function renderLogModal(type) {
     <div class="log-entry-body">
       <div class="log-entry-title">${meta.title||meta.name||meta.articleTitle||log.eventId||'—'}</div>
       ${meta.startDate?`<div style="font-size:11px;color:var(--text-muted);">📅 ${meta.startDate}</div>`:''}
-      ${meta.color?`<div style="font-size:11px;color:var(--text-muted);">분류: ${({gold:'방문의뢰',blue:'사내업무',red:'휴가관련',green:'촬영관련',purple:'미팅/내방'}[meta.color])||meta.color}</div>`:''}
+      ${meta.color?`<div style="font-size:11px;color:var(--text-muted);">분류: ${({gold:'방문의뢰',blue:'사내업무',red:'휴가/개인',green:'촬영/스튜디오',purple:'미팅/내방'}[meta.color])||meta.color}</div>`:''}
       <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);margin-top:4px;">ID: ${log.eventId||'—'}</div>
     </div>`;
     body.appendChild(entry);
