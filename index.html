@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="
+const isMobile  = () => window.innerWidth <= 600;ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -5373,7 +5374,6 @@ document.querySelectorAll('.view-toggle-btn').forEach(btn=>{
 /* ══════════════════════════════════════════
    MOBILE VIEW
 ═══════════════════════════════════════════ */
-const isMobile = () => window.innerWidth <= 600;
 
 let mvMode    = 'week';
 let mvSelDate = todayStr;
@@ -5872,119 +5872,7 @@ function slideAnimate(el,toLeft,callback){
     setTimeout(()=>{el.style.transition='';el.style.transform='';},140);
   },130);
 }
-</script>
 
-<!-- ═══ PWA : Service Worker 등록 + 설치 프롬프트 ═══ -->
-<script>
-(function() {
-  /* ── 테마 색상 동기화 ── */
-  function syncThemeColor() {
-    const isLight = document.documentElement.classList.contains('light');
-    const mc = document.getElementById('metaThemeColor');
-    if (mc) mc.setAttribute('content', isLight ? '#f7f4f0' : '#1c1c1c');
-  }
-  new MutationObserver(syncThemeColor)
-    .observe(document.documentElement, { attributes:true, attributeFilter:['class'] });
-  syncThemeColor();
-
-  /* ── Service Worker 등록 ── */
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js', { scope: './' })
-        .then(reg => {
-          console.log('[PWA] SW 등록 완료:', reg.scope);
-          reg.addEventListener('updatefound', () => {
-            const nw = reg.installing;
-            if (nw) {
-              nw.addEventListener('statechange', () => {
-                if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-                  console.log('[PWA] 새 버전 감지 — 새로고침하면 업데이트됩니다');
-                }
-              });
-            }
-          });
-        })
-        .catch(err => console.warn('[PWA] SW 등록 실패:', err));
-    });
-  }
-
-  /* ── 설치 프롬프트 ── */
-  let deferredPrompt = null;
-  const banner       = document.getElementById('pwaInstallBanner');
-  const installBtn   = document.getElementById('pwaInstallBtn');
-  const dismissBtn   = document.getElementById('pwaDismissBtn');
-  const DISMISSED_KEY = 'pwa_banner_dismissed';
-
-  function isBannerSuppressed() {
-    if (window.matchMedia('(display-mode: standalone)').matches) return true;
-    if (navigator.standalone) return true;
-    const ts = parseInt(localStorage.getItem(DISMISSED_KEY) || '0');
-    return ts > 0 && Date.now() - ts < 7 * 24 * 60 * 60 * 1000; /* 7일간 재표시 안 함 */
-  }
-
-  window.addEventListener('beforeinstallprompt', e => {
-    e.preventDefault();
-    deferredPrompt = e;
-    if (!isBannerSuppressed()) {
-      setTimeout(() => banner.classList.add('show'), 2000);
-    }
-  });
-
-  installBtn?.addEventListener('click', async () => {
-    banner.classList.remove('show');
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    console.log('[PWA] 설치 결과:', outcome);
-    deferredPrompt = null;
-  });
-
-  dismissBtn?.addEventListener('click', () => {
-    banner.classList.remove('show');
-    localStorage.setItem(DISMISSED_KEY, Date.now().toString());
-  });
-
-  window.addEventListener('appinstalled', () => {
-    banner.classList.remove('show');
-    deferredPrompt = null;
-    console.log('[PWA] 설치 완료!');
-  });
-})();
-</script>
-
-<!-- □일 이후 희망 숫자 지정 모달 -->
-<div class="modal-overlay" id="afterDayModalOverlay" style="z-index:3100;">
-  <div class="modal" style="max-width:300px;padding:0;overflow:hidden;">
-    <div style="padding:20px 24px 16px;">
-      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px;">📅 며칠 이후 희망?</div>
-      <!-- 프리셋 버튼 -->
-      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;">
-        <button class="after-day-preset" data-d="3"  style="padding:5px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;">3일</button>
-        <button class="after-day-preset" data-d="5"  style="padding:5px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;">5일</button>
-        <button class="after-day-preset" data-d="7"  style="padding:5px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;">7일</button>
-        <button class="after-day-preset" data-d="14" style="padding:5px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;">14일</button>
-        <button class="after-day-preset" data-d="30" style="padding:5px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;">30일</button>
-      </div>
-      <!-- 직접 입력 + ±버튼 -->
-      <div style="display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:4px;">
-        <button id="afterDayMinus" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:18px;line-height:1;cursor:pointer;flex-shrink:0;">−</button>
-        <div style="display:flex;align-items:center;gap:4px;">
-          <input id="afterDayInput" type="number" min="1" max="999"
-            style="width:70px;text-align:center;font-size:28px;font-weight:700;color:var(--accent);font-family:var(--font-mono);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:4px 6px;outline:none;"
-            placeholder="□" />
-          <span style="font-size:15px;color:var(--text-muted);">일</span>
-        </div>
-        <button id="afterDayPlus"  style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:18px;line-height:1;cursor:pointer;flex-shrink:0;">+</button>
-      </div>
-    </div>
-    <div style="display:flex;gap:8px;padding:0 16px 16px;">
-      <button id="afterDayCancel"  style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-size:13px;">취소</button>
-      <button id="afterDayConfirm" style="flex:1;padding:10px;border-radius:8px;background:var(--accent);color:#1a1207;font-weight:700;cursor:pointer;border:none;font-size:13px;">확인</button>
-    </div>
-  </div>
-</div>
-
-<script>
 /* ══════════════════════════════════════════════
    담당자 지정 기능
    - Firestore: settings/assignee_list { names: [...] }  ← onSnapshot 실시간 동기화
@@ -6187,6 +6075,118 @@ document.getElementById('assigneeBtn').addEventListener('click', () => {
 document.getElementById('closeBtn').addEventListener('click', () => {
   document.getElementById('assigneeModalOverlay').classList.remove('open');
 }, true);
+
 </script>
+
+<!-- ═══ PWA : Service Worker 등록 + 설치 프롬프트 ═══ -->
+<script>
+(function() {
+  /* ── 테마 색상 동기화 ── */
+  function syncThemeColor() {
+    const isLight = document.documentElement.classList.contains('light');
+    const mc = document.getElementById('metaThemeColor');
+    if (mc) mc.setAttribute('content', isLight ? '#f7f4f0' : '#1c1c1c');
+  }
+  new MutationObserver(syncThemeColor)
+    .observe(document.documentElement, { attributes:true, attributeFilter:['class'] });
+  syncThemeColor();
+
+  /* ── Service Worker 등록 ── */
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js', { scope: './' })
+        .then(reg => {
+          console.log('[PWA] SW 등록 완료:', reg.scope);
+          reg.addEventListener('updatefound', () => {
+            const nw = reg.installing;
+            if (nw) {
+              nw.addEventListener('statechange', () => {
+                if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+                  console.log('[PWA] 새 버전 감지 — 새로고침하면 업데이트됩니다');
+                }
+              });
+            }
+          });
+        })
+        .catch(err => console.warn('[PWA] SW 등록 실패:', err));
+    });
+  }
+
+  /* ── 설치 프롬프트 ── */
+  let deferredPrompt = null;
+  const banner       = document.getElementById('pwaInstallBanner');
+  const installBtn   = document.getElementById('pwaInstallBtn');
+  const dismissBtn   = document.getElementById('pwaDismissBtn');
+  const DISMISSED_KEY = 'pwa_banner_dismissed';
+
+  function isBannerSuppressed() {
+    if (window.matchMedia('(display-mode: standalone)').matches) return true;
+    if (navigator.standalone) return true;
+    const ts = parseInt(localStorage.getItem(DISMISSED_KEY) || '0');
+    return ts > 0 && Date.now() - ts < 7 * 24 * 60 * 60 * 1000; /* 7일간 재표시 안 함 */
+  }
+
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (!isBannerSuppressed()) {
+      setTimeout(() => banner.classList.add('show'), 2000);
+    }
+  });
+
+  installBtn?.addEventListener('click', async () => {
+    banner.classList.remove('show');
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log('[PWA] 설치 결과:', outcome);
+    deferredPrompt = null;
+  });
+
+  dismissBtn?.addEventListener('click', () => {
+    banner.classList.remove('show');
+    localStorage.setItem(DISMISSED_KEY, Date.now().toString());
+  });
+
+  window.addEventListener('appinstalled', () => {
+    banner.classList.remove('show');
+    deferredPrompt = null;
+    console.log('[PWA] 설치 완료!');
+  });
+})();
+</script>
+
+<!-- □일 이후 희망 숫자 지정 모달 -->
+<div class="modal-overlay" id="afterDayModalOverlay" style="z-index:3100;">
+  <div class="modal" style="max-width:300px;padding:0;overflow:hidden;">
+    <div style="padding:20px 24px 16px;">
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px;">📅 며칠 이후 희망?</div>
+      <!-- 프리셋 버튼 -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;">
+        <button class="after-day-preset" data-d="3"  style="padding:5px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;">3일</button>
+        <button class="after-day-preset" data-d="5"  style="padding:5px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;">5일</button>
+        <button class="after-day-preset" data-d="7"  style="padding:5px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;">7일</button>
+        <button class="after-day-preset" data-d="14" style="padding:5px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;">14일</button>
+        <button class="after-day-preset" data-d="30" style="padding:5px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;">30일</button>
+      </div>
+      <!-- 직접 입력 + ±버튼 -->
+      <div style="display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:4px;">
+        <button id="afterDayMinus" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:18px;line-height:1;cursor:pointer;flex-shrink:0;">−</button>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <input id="afterDayInput" type="number" min="1" max="999"
+            style="width:70px;text-align:center;font-size:28px;font-weight:700;color:var(--accent);font-family:var(--font-mono);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:4px 6px;outline:none;"
+            placeholder="□" />
+          <span style="font-size:15px;color:var(--text-muted);">일</span>
+        </div>
+        <button id="afterDayPlus"  style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:18px;line-height:1;cursor:pointer;flex-shrink:0;">+</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;padding:0 16px 16px;">
+      <button id="afterDayCancel"  style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-size:13px;">취소</button>
+      <button id="afterDayConfirm" style="flex:1;padding:10px;border-radius:8px;background:var(--accent);color:#1a1207;font-weight:700;cursor:pointer;border:none;font-size:13px;">확인</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
