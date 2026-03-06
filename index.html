@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="
-const isMobile  = () => window.innerWidth <= 600;ko">
+<html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -2008,6 +2007,7 @@ const isMobile  = () => window.innerWidth <= 600;ko">
 </div>
 
 <script type="module">
+const isMobile = () => window.innerWidth <= 600;
 /* AUTH */
 const MAX_TRIES   = 5;
 const LOCK_MS     = 60000;
@@ -5879,13 +5879,14 @@ function slideAnimate(el,toLeft,callback){
    - 각 event: assignees: ['이름1','이름2',...]
 ══════════════════════════════════════════════ */
 
+
+/* ─ Firestore 실시간 구독 (앱 시작 + 모달 열 때 공통 사용) ─ */
 let _assigneePool    = [];
 let _assigneeChecked = new Set();
 let _assigneeEditMode = false;
 let _currentEventAssignees = [];
 let _assigneeUnsub   = null;   // onSnapshot 구독 해제용
 
-/* ─ Firestore 실시간 구독 (앱 시작 + 모달 열 때 공통 사용) ─ */
 function loadAssigneePool(subscribe = false) {
   if (subscribe && !_assigneeUnsub) {
     /* onSnapshot으로 변경사항 실시간 반영 */
