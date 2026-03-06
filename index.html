@@ -814,6 +814,36 @@
   }
   .assignee-confirm-btn:hover { filter:brightness(1.1); }
 
+  /* ── 캘린더 칩/카드 담당자 배지 ── */
+  .ev-assignee-badge {
+    display:inline-flex; align-items:center; gap:3px;
+    vertical-align:middle;
+    background:rgba(100,140,220,.15); border:1px solid rgba(100,140,220,.3);
+    border-radius:20px; padding:0 5px 0 0; margin-left:4px;
+    font-size:10px; color:var(--text); white-space:nowrap;
+    line-height:1; height:18px; overflow:hidden;
+    max-width:90px;
+  }
+  .ev-assignee-avatar {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:18px; height:18px; border-radius:50%;
+    background:rgba(100,140,220,.45); color:#fff;
+    font-size:10px; font-weight:700; flex-shrink:0;
+    letter-spacing:0;
+  }
+  .ev-assignee-name {
+    overflow:hidden; text-overflow:ellipsis; max-width:60px;
+    font-size:10px; color:var(--text);
+  }
+  /* 칩(월간/주간뷰)에서는 이름 숨기고 아바타만 표시 */
+  .chip-month .ev-assignee-name,
+  .chip-week .ev-assignee-name { display:none; }
+  .chip-month .ev-assignee-badge,
+  .chip-week .ev-assignee-badge { padding:0; background:none; border:none; margin-left:2px; }
+  .chip-month .ev-assignee-avatar,
+  .chip-week .ev-assignee-avatar { width:15px; height:15px; font-size:8px; }
+
+
   .img-upload-group { display:flex; flex-direction:column; gap:6px; }
 
   .img-upload-label { font-family:var(--font-mono); font-size:10px; letter-spacing:0.2em; color:var(--text-muted); text-transform:uppercase; }
@@ -2381,7 +2411,8 @@ function render() {
         chip.className=`event-chip single chip-month color-${ev.color||'gold'}`;
         const time=(!ev.allDay&&ev.startTime)?`<span class="chip-time">${ev.startTime}</span>`:'';
         const icons=getSpecialIconStr(ev);
-        chip.innerHTML=`${time}<span style="overflow:hidden;text-overflow:ellipsis;flex:1">${icons}${ev.title||'(제목 없음)'}</span>${getSchedSuffix(ev)}`;
+        const abadges=makeAssigneeBadgesHtml(ev.assignees);
+        chip.innerHTML=`${time}<span style="overflow:hidden;text-overflow:ellipsis;flex:1">${icons}${ev.title||'(제목 없음)'}</span>${getSchedSuffix(ev)}${abadges}`;
         chip.addEventListener('click',e=>{e.stopPropagation();openModal(evIdx);});
         evList.appendChild(chip);
       });
@@ -2444,7 +2475,8 @@ function render() {
 
       if (visS||colStart===0) {
         const icons=getSpecialIconStr(ev);
-        chip.innerHTML=`<span style="overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1">${icons}${ev.title||'(제목 없음)'}</span>${getSchedSuffix(ev)}`;
+        const abadges=makeAssigneeBadgesHtml(ev.assignees);
+        chip.innerHTML=`<span style="overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1">${icons}${ev.title||'(제목 없음)'}</span>${getSchedSuffix(ev)}${abadges}`;
       } else { chip.innerHTML='&nbsp;'; }
 
       chip.addEventListener('click',e=>{e.stopPropagation();openModal(idx);});
@@ -4914,7 +4946,7 @@ function openDayPopover(dk, dayEvs, anchorEl) {
     item.className=`day-popover-item color-${ev.color||'gold'}`;
     const time=(!ev.allDay&&ev.startTime)?`<span class="day-popover-item-time">${ev.startTime}</span>`:'';
     const icons=getSpecialIconStr(ev);
-    item.innerHTML=`${time}<span class="day-popover-item-title">${icons}${ev.title||'(제목 없음)'}${getSchedSuffix(ev)}</span>`;
+    item.innerHTML=`${time}<span class="day-popover-item-title">${icons}${ev.title||'(제목 없음)'}${getSchedSuffix(ev)}</span>${makeAssigneeBadgesHtml(ev.assignees)}`;
     item.addEventListener('click',()=>{closeDayPopover();openModal(evIdx);});
     dayPopoverList.appendChild(item);
   });
@@ -4939,6 +4971,8 @@ function refreshAutoResize() { document.querySelectorAll('.field-textarea').forE
 function init(){
   applyThemeBtn(); initAutoResize();
   currentYear=today.getFullYear(); currentMonth=today.getMonth();
+  /* 앱 시작 시 담당자 목록 미리 로드 + 실시간 동기화 */
+  loadAssigneePool(true);
 }
 init();
 
@@ -5153,7 +5187,7 @@ function renderPcDay() {
       card.innerHTML=`
         <div class="pc-day-time">${timeStr}</div>
         <div class="pc-day-body">
-          <div class="pc-day-card-title">${icons}${ev.title||'(제목 없음)'}${getSchedSuffix(ev)}</div>
+          <div class="pc-day-card-title">${icons}${ev.title||'(제목 없음)'}${getSchedSuffix(ev)}${makeAssigneeBadgesHtml(ev.assignees)}</div>
           <div class="pc-day-card-meta">${ev.name?`<span>👤 ${ev.name}</span>`:''} ${spanStr}</div>
         </div>`;
       card.addEventListener('click',()=>openModal(idx));
@@ -5363,7 +5397,7 @@ function renderMvEventCard(ev, evIdx, container) {
     <div class="mv-event-badge ${ev.color||'gold'}">${TYPE_LABELS_MV[ev.color||'gold']}</div>
     <div class="mv-event-card-body">
       <div class="mv-event-title">${icons}${ev.title||'(제목 없음)'}${getSchedSuffix(ev)}</div>
-      <div class="mv-event-meta"><span>${timeStr}</span>${spanStr}${ev.name?`<span>👤 ${ev.name}</span>`:''}</div>
+      <div class="mv-event-meta"><span>${timeStr}</span>${spanStr}${ev.name?`<span>👤 ${ev.name}</span>`:''}${makeAssigneeBadgesHtml(ev.assignees)}</div>
     </div>`;
   card.addEventListener('click',()=>{ const idx=events.findIndex(e=>e._id===ev._id); if(idx>=0) openModal(idx); });
   container.appendChild(card);
@@ -5944,26 +5978,46 @@ function slideAnimate(el,toLeft,callback){
 <script>
 /* ══════════════════════════════════════════════
    담당자 지정 기능
-   - Firestore: settings/assignee_list { names: [...] }
+   - Firestore: settings/assignee_list { names: [...] }  ← onSnapshot 실시간 동기화
    - 각 event: assignees: ['이름1','이름2',...]
 ══════════════════════════════════════════════ */
 
-let _assigneePool   = [];   // 전역 담당자 목록 (Firestore에서 로드)
-let _assigneeChecked= new Set(); // 현재 모달에서 체크된 담당자
+let _assigneePool    = [];
+let _assigneeChecked = new Set();
 let _assigneeEditMode = false;
-let _currentEventAssignees = []; // 현재 열린 일정의 담당자
+let _currentEventAssignees = [];
+let _assigneeUnsub   = null;   // onSnapshot 구독 해제용
 
-const ASSIGNEE_DOC = 'settings/assignee_list';
+/* ─ 담당자 이름 → 이니셜 (첫 글자) ─ */
+function _assigneeInitial(name) {
+  return name ? name.trim().charAt(0) : '?';
+}
 
-/* ─ Firestore에서 담당자 목록 로드 ─ */
-async function loadAssigneePool() {
-  try {
-    const snap = await getDoc(doc(db, 'settings', 'assignee_list'));
-    _assigneePool = snap.exists() ? (snap.data().names || []) : [];
-  } catch(e) {
-    console.warn('담당자 목록 로드 실패', e);
-    _assigneePool = [];
+/* ─ 담당자 배지 HTML 생성 (이미지 참고: 원형 이니셜 + 이름) ─ */
+function makeAssigneeBadgesHtml(assignees) {
+  if (!assignees || assignees.length === 0) return '';
+  return assignees.map(name =>
+    `<span class="ev-assignee-badge" title="${name}"><span class="ev-assignee-avatar">${_assigneeInitial(name)}</span><span class="ev-assignee-name">${name}</span></span>`
+  ).join('');
+}
+
+/* ─ Firestore 실시간 구독 (앱 시작 + 모달 열 때 공통 사용) ─ */
+function loadAssigneePool(subscribe = false) {
+  if (subscribe && !_assigneeUnsub) {
+    /* onSnapshot으로 변경사항 실시간 반영 */
+    _assigneeUnsub = onSnapshot(
+      doc(db, 'settings', 'assignee_list'),
+      snap => {
+        _assigneePool = snap.exists() ? (snap.data().names || []) : [];
+      },
+      err => { console.warn('담당자 목록 구독 오류', err); }
+    );
+    return Promise.resolve();
   }
+  /* 단순 1회 로드 (모달 열기용) */
+  return getDoc(doc(db, 'settings', 'assignee_list'))
+    .then(snap => { _assigneePool = snap.exists() ? (snap.data().names || []) : []; })
+    .catch(e => { console.warn('담당자 목록 로드 실패', e); });
 }
 
 /* ─ Firestore에 담당자 목록 저장 ─ */
@@ -5972,6 +6026,7 @@ async function saveAssigneePool() {
     await setDoc(doc(db, 'settings', 'assignee_list'), { names: _assigneePool });
   } catch(e) {
     console.error('담당자 목록 저장 실패', e);
+    alert('담당자 저장 중 오류가 발생했습니다.\n로그인 상태와 네트워크를 확인해주세요.');
   }
 }
 
@@ -5995,7 +6050,7 @@ function renderAssigneeList() {
   if (!list) return;
 
   if (_assigneePool.length === 0) {
-    list.innerHTML = '<div class="assignee-empty">등록된 담당자가 없습니다.<br>목록 편집에서 추가해 주세요.</div>';
+    list.innerHTML = '<div class="assignee-empty">등록된 담당자가 없습니다.<br>✏️ 목록 편집에서 추가해 주세요.</div>';
     return;
   }
 
@@ -6003,15 +6058,15 @@ function renderAssigneeList() {
   _assigneePool.forEach(name => {
     const isChecked = _assigneeChecked.has(name);
     const item = document.createElement('div');
-    item.className = 'assignee-item' + (isChecked ? ' checked' : '');
+    item.className = 'assignee-item' + (isChecked ? ' checked' : '') + (_assigneeEditMode ? ' edit-mode' : '');
     item.dataset.name = name;
     item.innerHTML = `
       <div class="assignee-check">${isChecked ? '✓' : ''}</div>
+      <span class="ev-assignee-avatar" style="width:28px;height:28px;font-size:13px;flex-shrink:0;">${_assigneeInitial(name)}</span>
       <span class="assignee-name">${name}</span>
       <button class="assignee-del-btn" data-del="${name}" title="삭제">✕</button>
     `;
 
-    // 체크 토글 (편집모드 아닐 때)
     item.addEventListener('click', e => {
       if (_assigneeEditMode) return;
       if (e.target.classList.contains('assignee-del-btn')) return;
@@ -6026,7 +6081,6 @@ function renderAssigneeList() {
       }
     });
 
-    // 삭제 버튼
     item.querySelector('.assignee-del-btn').addEventListener('click', async e => {
       e.stopPropagation();
       const nm = e.currentTarget.dataset.del;
@@ -6040,24 +6094,18 @@ function renderAssigneeList() {
     list.appendChild(item);
   });
 
-  // 편집모드 클래스 적용
-  const modal = document.getElementById('assigneeModal');
   if (_assigneeEditMode) {
     list.classList.add('assignee-edit-mode');
-    modal.querySelector('.assignee-list').classList.add('assignee-edit-mode');
   } else {
     list.classList.remove('assignee-edit-mode');
-    modal.querySelector('.assignee-list').classList.remove('assignee-edit-mode');
   }
 }
 
 /* ─ 담당자 모달 열기 ─ */
 async function openAssigneeModal(currentAssignees) {
-  await loadAssigneePool();
   _assigneeChecked = new Set(currentAssignees || []);
   _assigneeEditMode = false;
 
-  const overlay = document.getElementById('assigneeModalOverlay');
   const toggle  = document.getElementById('assigneeEditToggle');
   const addRow  = document.getElementById('assigneeAddRow');
   const addInput= document.getElementById('assigneeAddInput');
@@ -6068,11 +6116,10 @@ async function openAssigneeModal(currentAssignees) {
   list.classList.remove('assignee-edit-mode');
   addRow.style.display = 'none';
   addInput.value = '';
+  document.getElementById('assigneeConfirmBtn').style.display = '';
 
   renderAssigneeList();
-  overlay.classList.add('open');
-  // 확인 버튼은 편집모드 아닐 때 항상 표시
-  document.getElementById('assigneeConfirmBtn').style.display = '';
+  document.getElementById('assigneeModalOverlay').classList.add('open');
 }
 
 /* ─ 편집 모드 토글 ─ */
@@ -6103,8 +6150,8 @@ async function submitAddAssignee() {
   const name = input.value.trim();
   if (!name) return;
   if (_assigneePool.includes(name)) {
-    input.value = '';
-    input.focus();
+    input.style.borderColor = 'var(--red)';
+    setTimeout(() => { input.style.borderColor = ''; }, 1200);
     return;
   }
   _assigneePool.push(name);
@@ -6126,14 +6173,12 @@ document.getElementById('assigneeConfirmBtn').addEventListener('click', () => {
   document.getElementById('assigneeModalOverlay').classList.remove('open');
 });
 
-/* ─ 닫기 버튼 / 오버레이 클릭 ─ */
+/* ─ 닫기 / 오버레이 클릭 ─ */
 document.getElementById('assigneeModalClose').addEventListener('click', () => {
   document.getElementById('assigneeModalOverlay').classList.remove('open');
 });
 document.getElementById('assigneeModalOverlay').addEventListener('click', e => {
-  if (e.target === e.currentTarget) {
-    document.getElementById('assigneeModalOverlay').classList.remove('open');
-  }
+  if (e.target === e.currentTarget) document.getElementById('assigneeModalOverlay').classList.remove('open');
 });
 
 /* ─ 담당자 버튼 클릭 ─ */
@@ -6142,7 +6187,7 @@ document.getElementById('assigneeBtn').addEventListener('click', () => {
   openAssigneeModal(_currentEventAssignees);
 });
 
-/* ─ 모달 닫힐 때 담당자 모달도 닫기 ─ */
+/* ─ 이벤트 모달 닫힐 때 담당자 모달도 닫기 ─ */
 document.getElementById('closeBtn').addEventListener('click', () => {
   document.getElementById('assigneeModalOverlay').classList.remove('open');
 }, true);
