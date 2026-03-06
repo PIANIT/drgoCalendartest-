@@ -996,6 +996,21 @@
   .pc-day-body { flex:1; min-width:0; }
   .pc-day-card-title { font-size:15px; font-weight:600; color:var(--text); margin-bottom:4px; }
   .pc-day-card-meta { font-size:12px; color:var(--text-muted); display:flex; gap:10px; flex-wrap:wrap; }
+  .pc-day-assignees {
+    display:flex; align-items:flex-start; gap:3px; flex-shrink:0;
+    padding-top:2px; flex-wrap:wrap; justify-content:flex-end; max-width:80px;
+  }
+  .pc-day-assignees .ev-assignee-badge {
+    font-size:11px; font-weight:700; letter-spacing:-0.3px;
+    color:var(--text);
+  }
+  .pc-day-assignees {
+    display:flex; align-items:flex-start; gap:3px;
+    flex-shrink:0; padding-top:2px; flex-wrap:wrap; justify-content:flex-end; max-width:80px;
+  }
+  .pc-day-assignees .ev-assignee-badge {
+    font-size:11px; font-weight:700; letter-spacing:-0.3px; color:var(--text);
+  }
   .pc-day-empty { text-align:center; padding:60px 0; color:var(--text-muted); font-size:14px; }
 
   #mobileView { display:none; }
@@ -2452,7 +2467,7 @@ function render() {
       const visS=sd>=wStart, visE=ed<=wEnd;
 
       const chip=document.createElement('div');
-      chip.className=`span-chip color-${ev.color||'gold'}`;
+      chip.className=`span-chip chip-week color-${ev.color||'gold'}`;
       if (visS&&visE) chip.classList.add('is-solo');
       else if (visS)  chip.classList.add('is-start');
       else if (visE)  chip.classList.add('is-end');
@@ -5185,9 +5200,10 @@ function renderPcDay() {
       card.innerHTML=`
         <div class="pc-day-time">${timeStr}</div>
         <div class="pc-day-body">
-          <div class="pc-day-card-title">${icons}${ev.title||'(제목 없음)'}${getSchedSuffix(ev)}${makeAssigneeBadgesHtml(ev.assignees)}</div>
+          <div class="pc-day-card-title">${icons}${ev.title||'(제목 없음)'}${getSchedSuffix(ev)}</div>
           <div class="pc-day-card-meta">${ev.name?`<span>👤 ${ev.name}</span>`:''} ${spanStr}</div>
-        </div>`;
+        </div>
+        <div class="pc-day-assignees">${makeAssigneeBadgesHtml(ev.assignees)}</div>`;
       card.addEventListener('click',()=>openModal(idx));
       list.appendChild(card);
     });
