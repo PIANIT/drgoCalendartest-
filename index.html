@@ -719,7 +719,103 @@
   .modal-strip.color-holiday { background:var(--red); }
   .type-badge.holiday { background:rgba(200,122,122,.18); color:var(--red); border-color:rgba(200,122,122,.4); }
 
+  /* ── 담당자 버튼 & 뱃지 ── */
+  .assignee-btn {
+    display:inline-flex; align-items:center; gap:5px;
+    padding:4px 10px; border-radius:20px; border:1px solid var(--border);
+    background:none; color:var(--text-muted); font-family:var(--font-main);
+    font-size:12px; cursor:pointer; transition:all 0.15s; white-space:nowrap;
+    margin-top:5px;
+  }
+  .assignee-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .assignee-btn.has-assignee { border-color:rgba(100,160,240,.5); color:var(--accent); background:rgba(100,160,240,.08); }
+  .assignee-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+  /* ── 담당자 모달 ── */
+  .assignee-modal-overlay {
+    display:none; position:fixed; inset:0; z-index:320;
+    background:rgba(0,0,0,0.55); backdrop-filter:blur(3px);
+    align-items:center; justify-content:center;
+  }
+  .assignee-modal-overlay.open { display:flex; }
+  .assignee-modal {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:14px; width:340px; max-width:92vw;
+    box-shadow:0 12px 40px rgba(0,0,0,0.4); animation:popIn 0.18s ease;
+    display:flex; flex-direction:column; max-height:80vh;
+  }
+  .assignee-modal-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 18px 12px; border-bottom:1px solid var(--border);
+    flex-shrink:0;
+  }
+  .assignee-modal-title { font-size:14px; font-weight:700; color:var(--text); }
+  .assignee-modal-body { padding:12px 18px; overflow-y:auto; flex:1; min-height:0; }
+  .assignee-list { display:flex; flex-direction:column; gap:4px; min-height:40px; }
+  .assignee-item {
+    display:flex; align-items:center; gap:10px;
+    padding:9px 10px; border-radius:8px; cursor:pointer;
+    transition:background 0.12s; user-select:none;
+  }
+  .assignee-item:hover { background:var(--surface2); }
+  .assignee-item.checked { background:rgba(100,160,240,.1); }
+  .assignee-check {
+    width:18px; height:18px; border-radius:5px; border:1.5px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0; transition:all 0.12s; font-size:11px;
+  }
+  .assignee-item.checked .assignee-check { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .assignee-name { font-size:13px; color:var(--text); flex:1; }
+  .assignee-del-btn {
+    display:none; background:none; border:none; color:var(--text-muted);
+    cursor:pointer; font-size:15px; padding:2px 4px; border-radius:4px;
+    transition:all 0.12s; line-height:1;
+  }
+  .assignee-del-btn:hover { color:var(--red); background:rgba(200,80,80,.12); }
+  .assignee-edit-mode .assignee-del-btn { display:flex; align-items:center; }
+  .assignee-edit-mode .assignee-item { cursor:default; }
+  .assignee-edit-mode .assignee-item:hover { background:none; }
+  .assignee-add-row {
+    display:none; align-items:center; gap:8px; margin-top:8px;
+    padding-top:8px; border-top:1px solid var(--border);
+  }
+  .assignee-edit-mode .assignee-add-row { display:flex; }
+  .assignee-add-input {
+    flex:1; background:var(--surface2); border:1px solid var(--border);
+    border-radius:7px; color:var(--text); font-family:var(--font-main);
+    font-size:13px; padding:7px 10px; outline:none;
+    transition:border-color 0.15s;
+  }
+  .assignee-add-input:focus { border-color:var(--accent); }
+  .assignee-add-submit {
+    padding:7px 12px; border-radius:7px; border:none;
+    background:var(--accent); color:#06151e; font-family:var(--font-main);
+    font-size:12px; font-weight:700; cursor:pointer; transition:filter 0.15s;
+    white-space:nowrap;
+  }
+  .assignee-add-submit:hover { filter:brightness(1.1); }
+  .assignee-empty { font-size:12px; color:var(--text-muted); padding:10px 4px; }
+  .assignee-modal-footer {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 18px; border-top:1px solid var(--border); gap:8px; flex-shrink:0;
+  }
+  .assignee-edit-toggle {
+    font-size:12px; padding:6px 12px; border-radius:7px;
+    border:1px solid var(--border); background:none;
+    color:var(--text-muted); cursor:pointer; font-family:var(--font-main);
+    transition:all 0.15s;
+  }
+  .assignee-edit-toggle:hover { border-color:var(--accent); color:var(--accent); }
+  .assignee-edit-toggle.active { border-color:var(--accent); color:var(--accent); background:rgba(100,160,240,.08); }
+  .assignee-confirm-btn {
+    padding:7px 18px; border-radius:8px; border:none;
+    background:var(--accent2); color:#06151e; font-family:var(--font-main);
+    font-size:13px; font-weight:700; cursor:pointer; transition:filter 0.15s;
+  }
+  .assignee-confirm-btn:hover { filter:brightness(1.1); }
+
   .img-upload-group { display:flex; flex-direction:column; gap:6px; }
+
   .img-upload-label { font-family:var(--font-mono); font-size:10px; letter-spacing:0.2em; color:var(--text-muted); text-transform:uppercase; }
   .img-upload-zone {
     border:1px dashed var(--border); border-radius:8px; padding:12px; text-align:center;
@@ -1058,8 +1154,8 @@
   <button class="filter-btn active f-gold"   data-filter="gold">  <span class="filter-dot" id="fd-gold"></span>방문의뢰</button>
   <button class="filter-btn active f-teal"   data-filter="teal">  <span class="filter-dot" id="fd-teal"></span>원격/방송룸</button>
   <button class="filter-btn active f-blue"   data-filter="blue">  <span class="filter-dot" id="fd-blue"></span>사내업무</button>
-  <button class="filter-btn active f-red"    data-filter="red">   <span class="filter-dot" id="fd-red"></span>휴가관련</button>
-  <button class="filter-btn active f-green"  data-filter="green"> <span class="filter-dot" id="fd-green"></span>촬영관련</button>
+  <button class="filter-btn active f-red"    data-filter="red">   <span class="filter-dot" id="fd-red"></span>휴가/개인</button>
+  <button class="filter-btn active f-green"  data-filter="green"> <span class="filter-dot" id="fd-green"></span>촬영/스튜디오</button>
   <button class="filter-btn active f-purple" data-filter="purple"><span class="filter-dot" id="fd-purple"></span>미팅/내방</button>
 </div>
 
@@ -1151,13 +1247,13 @@
           </div>
         </div>
         <div class="color-setting-row">
-          <span class="color-setting-label">휴가관련</span>
+          <span class="color-setting-label">휴가/개인</span>
           <div class="color-setting-swatch" id="swatch-red">
             <input type="color" id="colorPicker-red" />
           </div>
         </div>
         <div class="color-setting-row">
-          <span class="color-setting-label">촬영관련</span>
+          <span class="color-setting-label">촬영/스튜디오</span>
           <div class="color-setting-swatch" id="swatch-green">
             <input type="color" id="colorPicker-green" />
           </div>
@@ -1325,14 +1421,18 @@
           <div class="color-dot" data-color="gold">방문의뢰</div>
           <div class="color-dot" data-color="teal">원격/방송룸</div>
           <div class="color-dot" data-color="blue">사내업무</div>
-          <div class="color-dot" data-color="red">휴가관련</div>
-          <div class="color-dot" data-color="green">촬영관련</div>
+          <div class="color-dot" data-color="red">휴가/개인</div>
+          <div class="color-dot" data-color="green">촬영/스튜디오</div>
           <div class="color-dot" data-color="purple">미팅/내방</div>
         </div>
         <div class="holiday-btn-wrap">
           <span class="holiday-dot" id="holidayDot">📅 공휴일로 지정</span>
         </div>
         <input class="modal-title-input" id="modalTitle" placeholder="일정 제목을 입력하세요" />
+        <button class="assignee-btn" id="assigneeBtn" title="담당자 지정">
+          <span id="assigneeBtnIcon">👤</span>
+          <span id="assigneeBtnLabel">담당자 지정</span>
+        </button>
       </div>
       <div class="modal-header-btns">
         <button class="icon-btn" id="lockBtn" title="내용 고정">🔓</button>
@@ -1716,6 +1816,29 @@
   </div>
 </div>
 
+<!-- ═══ 담당자 지정 모달 ═══ -->
+<div class="assignee-modal-overlay" id="assigneeModalOverlay">
+  <div class="assignee-modal" id="assigneeModal">
+    <div class="assignee-modal-header">
+      <span class="assignee-modal-title">👤 담당자 지정</span>
+      <button class="icon-btn close-btn" id="assigneeModalClose" style="font-size:14px;">✕</button>
+    </div>
+    <div class="assignee-modal-body">
+      <div class="assignee-list" id="assigneeList">
+        <!-- 동적 렌더링 -->
+      </div>
+      <div class="assignee-add-row" id="assigneeAddRow">
+        <input class="assignee-add-input" id="assigneeAddInput" placeholder="담당자 이름 입력" maxlength="30" />
+        <button class="assignee-add-submit" id="assigneeAddSubmit">추가</button>
+      </div>
+    </div>
+    <div class="assignee-modal-footer">
+      <button class="assignee-edit-toggle" id="assigneeEditToggle">✏️ 목록 편집</button>
+      <button class="assignee-confirm-btn" id="assigneeConfirmBtn">확인</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ 변경 로그 오버레이 ═══ -->
 <div id="logOverlay">
   <div class="log-modal">
@@ -1979,7 +2102,7 @@ else { showAuth(); updateLockUI(); setTimeout(() => document.getElementById('aut
 
 
 const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
-const TYPE_LABELS = { gold:'방문의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방', holiday:'공휴일' };
+const TYPE_LABELS = { gold:'방문의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가/개인', green:'촬영/스튜디오', purple:'미팅/내방', holiday:'공휴일' };
 
 const KR_HOLIDAYS = {
   '2024-01-01':'1월 1일','2024-02-09':'설날 전날','2024-02-10':'설날','2024-02-11':'설날 다음 날','2024-02-12':'대체공휴일(설날)',
@@ -2401,7 +2524,7 @@ function setColor(c){
   document.getElementById('tealTemplate').style.display  = isTeal?'flex':'none';
   document.getElementById('generalAttachSection').style.display = (isGold||isRed||isHoliday)?'none':'block';
 
-  /* 사내업무(blue), 휴가관련(red), 원격/방송룸(teal), 공휴일: 일정관련옵션 + 특수옵션 + 일정옵션 숨김 */
+  /* 사내업무(blue), 휴가/개인(red), 원격/방송룸(teal), 공휴일: 일정관련옵션 + 특수옵션 + 일정옵션 숨김 */
   const hideSchedSpecial = isBlue || isRed || isTeal || isHoliday;
   const schedFg = document.getElementById('scheduleOpts')?.closest('.field-group');
   const spFg    = document.getElementById('specialOpts')?.closest('.field-group');
@@ -2415,6 +2538,9 @@ function setColor(c){
   const notifFg = document.getElementById('notifSelect')?.closest('.field-group');
   if (nameFg)  nameFg.style.display  = (hideSchedSpecial||isHoliday) ? 'none' : '';
   if (notifFg) notifFg.style.display = isHoliday ? 'none' : '';
+  /* 공휴일: 담당자 버튼 숨김 */
+  const aBtn = document.getElementById('assigneeBtn');
+  if (aBtn) aBtn.style.display = isHoliday ? 'none' : '';
 
   document.getElementById('generalAttachSection').style.display =
     isGold ? 'none' : isRed ? 'none' : isHoliday ? 'none' : 'block';
@@ -3062,7 +3188,8 @@ function openNewModal(dk){
     el.textContent=def[id]||'09:00';
   });
   currentAttachments=[]; currentColor='gold'; isLocked=false;
-  document.getElementById('notifSelect').value='';
+  document.getElementById('notifSelect').value='60';
+  _currentEventAssignees = []; updateAssigneeBtn([]);
   setColor('gold'); setAllDay(false); setSpecialOpts([],null,[],0,''); if(typeof _seDeactivateAll==='function') _seDeactivateAll();
   document.getElementById('holidayDot').classList.remove('active');
   resetGoldFields(); renderAttachments();
@@ -3101,6 +3228,8 @@ function openModal(evIdx){
   });
   currentAttachments=ev.attachments?JSON.parse(JSON.stringify(ev.attachments)):[];
   currentColor=ev.color||'gold'; isLocked=ev.locked||false;
+  _currentEventAssignees = ev.assignees ? [...ev.assignees] : [];
+  updateAssigneeBtn(_currentEventAssignees);
   /* setColor 전에 goldTemplate/commonFields/tealTemplate 초기화 */
   resetTealFields();
   document.getElementById('goldTemplate').style.display='none';
@@ -3187,6 +3316,7 @@ async function saveEvent(){
       location:document.getElementById('modalLocation').value.trim(),
       desc:document.getElementById('modalDesc').value.trim(),
       attachments:currentAttachments, locked:isLocked,
+      assignees: _currentEventAssignees || [],
       specialOpts:[...specialOpts], schedOpt:schedOpt,
       schedEventOpts:[...schedEventOpts],
       schedAfterDays: schedEventOpts.has('after') ? schedAfterDays : null,
@@ -3244,7 +3374,7 @@ const LOG_FIELD_LABELS = {
   startTime:'시작시간', endTime:'종료시간', allDay:'종일여부',
   location:'장소', name:'담당자', desc:'내용',
   schedOpt:'일정유형', specialOpts:'특수옵션', schedEventOpts:'일정옵션',
-  notifMinutes:'알림', locked:'잠금',
+  notifMinutes:'알림', locked:'잠금', assignees:'담당자 지정',
 };
 const GOLD_FIELD_LABELS = {
   name:'의뢰자 이름', phone:'전화번호', platform:'플랫폼', budget:'예산 성향',
@@ -3263,7 +3393,7 @@ const TEAL_FIELD_LABELS = {
   desc:'메모',
 };
 const TEAL_MODE_LABELS = { remote:'원격', studio:'방송룸 이용' };
-const COLOR_LABELS = {gold:'개인의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방', holiday:'공휴일'};
+const COLOR_LABELS = {gold:'개인의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가/개인', green:'촬영/스튜디오', purple:'미팅/내방', holiday:'공휴일'};
 const SPECIAL_LABELS_LOG = { car:'🚗 차량', brief:'💼 제품', return:'← 반납', group:'👥 2인', urgent:'🚨 긴급', ladder:'▤ 사다리' };
 const SCHED_LABELS_LOG   = { suggest:'💬 제안', hope:'🙏 희망', target:'🎯 목표' };
 
@@ -3764,6 +3894,7 @@ function applyLockState(){
     lockBtn.textContent='🔒'; lockBtn.classList.add('locked'); lockBtn.title='고정 해제';
     banner.classList.add('visible'); modal.style.borderColor='rgba(200,176,138,0.35)';
     inputs.forEach(el=>el.disabled=true);
+    const aBtn=document.getElementById('assigneeBtn'); if(aBtn) aBtn.disabled=true;
     /* time trigger도 disabled */
     document.querySelectorAll('.time-picker-trigger').forEach(t=>t.classList.add('disabled'));
     if(window.closeTimePicker) window.closeTimePicker();
@@ -3785,6 +3916,7 @@ function applyLockState(){
     lockBtn.textContent='🔓'; lockBtn.classList.remove('locked'); lockBtn.title='내용 고정';
     banner.classList.remove('visible'); modal.style.borderColor='';
     inputs.forEach(el=>el.disabled=false); setAllDay(isAllDay);
+    const aBtn=document.getElementById('assigneeBtn'); if(aBtn) aBtn.disabled=false;
     /* time trigger disabled 해제 */
     document.querySelectorAll('.time-picker-trigger').forEach(t=>t.classList.remove('disabled'));
     document.getElementById('uploadZone').classList.remove('locked-zone');
@@ -3824,6 +3956,7 @@ document.getElementById('lockBtn').addEventListener('click', async ()=>{
         location:document.getElementById('modalLocation').value.trim(),
         desc:document.getElementById('modalDesc').value.trim(),
         attachments:currentAttachments, locked:true,
+        assignees: _currentEventAssignees || [],
         specialOpts:[...specialOpts],
         schedEventOpts:[...schedEventOpts],
         schedAfterDays: schedEventOpts.has('after') ? schedAfterDays : null,
@@ -5067,7 +5200,7 @@ document.getElementById('nextYearBtn').addEventListener('click',()=>{
 });
 
 /* ══ 검색 기능 ══ */
-const _TYPE_LBL = {gold:'방문의뢰',teal:'원격/방송룸',blue:'사내업무',red:'휴가관련',green:'촬영관련',purple:'미팅/내방',holiday:'공휴일'};
+const _TYPE_LBL = {gold:'방문의뢰',teal:'원격/방송룸',blue:'사내업무',red:'휴가/개인',green:'촬영/스튜디오',purple:'미팅/내방',holiday:'공휴일'};
 const _TYPE_COL = {gold:'var(--chip-gold-bg)',teal:'var(--chip-teal-bg)',blue:'var(--chip-blue-bg)',red:'var(--chip-red-bg)',green:'var(--chip-green-bg)',purple:'var(--chip-purple-bg)'};
 
 document.getElementById('searchToggleBtn').addEventListener('click',()=>{
@@ -5206,7 +5339,7 @@ let mvMonthYear  = new Date().getFullYear();
 let mvMonthMonth = new Date().getMonth(); // 0-based
 
 const DOW_KR = ['일','월','화','수','목','금','토'];
-const TYPE_LABELS_MV = { gold:'방문의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가관련', green:'촬영관련', purple:'미팅/내방', holiday:'공휴일' };
+const TYPE_LABELS_MV = { gold:'방문의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가/개인', green:'촬영/스튜디오', purple:'미팅/내방', holiday:'공휴일' };
 
 function addDays(dk, n) { const d=new Date(dk+'T00:00:00'); d.setDate(d.getDate()+n); return fmtDate(d); }
 function getWeekStart(dk) { const d=new Date(dk+'T00:00:00'); d.setDate(d.getDate()-d.getDay()); return fmtDate(d); }
@@ -5807,5 +5940,212 @@ function slideAnimate(el,toLeft,callback){
     </div>
   </div>
 </div>
+
+<script>
+/* ══════════════════════════════════════════════
+   담당자 지정 기능
+   - Firestore: settings/assignee_list { names: [...] }
+   - 각 event: assignees: ['이름1','이름2',...]
+══════════════════════════════════════════════ */
+
+let _assigneePool   = [];   // 전역 담당자 목록 (Firestore에서 로드)
+let _assigneeChecked= new Set(); // 현재 모달에서 체크된 담당자
+let _assigneeEditMode = false;
+let _currentEventAssignees = []; // 현재 열린 일정의 담당자
+
+const ASSIGNEE_DOC = 'settings/assignee_list';
+
+/* ─ Firestore에서 담당자 목록 로드 ─ */
+async function loadAssigneePool() {
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'assignee_list'));
+    _assigneePool = snap.exists() ? (snap.data().names || []) : [];
+  } catch(e) {
+    console.warn('담당자 목록 로드 실패', e);
+    _assigneePool = [];
+  }
+}
+
+/* ─ Firestore에 담당자 목록 저장 ─ */
+async function saveAssigneePool() {
+  try {
+    await setDoc(doc(db, 'settings', 'assignee_list'), { names: _assigneePool });
+  } catch(e) {
+    console.error('담당자 목록 저장 실패', e);
+  }
+}
+
+/* ─ 담당자 버튼 라벨 업데이트 ─ */
+function updateAssigneeBtn(assignees) {
+  const btn = document.getElementById('assigneeBtn');
+  const lbl = document.getElementById('assigneeBtnLabel');
+  if (!btn || !lbl) return;
+  if (assignees && assignees.length > 0) {
+    lbl.textContent = assignees.join(', ');
+    btn.classList.add('has-assignee');
+  } else {
+    lbl.textContent = '담당자 지정';
+    btn.classList.remove('has-assignee');
+  }
+}
+
+/* ─ 담당자 리스트 렌더링 ─ */
+function renderAssigneeList() {
+  const list = document.getElementById('assigneeList');
+  if (!list) return;
+
+  if (_assigneePool.length === 0) {
+    list.innerHTML = '<div class="assignee-empty">등록된 담당자가 없습니다.<br>목록 편집에서 추가해 주세요.</div>';
+    return;
+  }
+
+  list.innerHTML = '';
+  _assigneePool.forEach(name => {
+    const isChecked = _assigneeChecked.has(name);
+    const item = document.createElement('div');
+    item.className = 'assignee-item' + (isChecked ? ' checked' : '');
+    item.dataset.name = name;
+    item.innerHTML = `
+      <div class="assignee-check">${isChecked ? '✓' : ''}</div>
+      <span class="assignee-name">${name}</span>
+      <button class="assignee-del-btn" data-del="${name}" title="삭제">✕</button>
+    `;
+
+    // 체크 토글 (편집모드 아닐 때)
+    item.addEventListener('click', e => {
+      if (_assigneeEditMode) return;
+      if (e.target.classList.contains('assignee-del-btn')) return;
+      if (_assigneeChecked.has(name)) {
+        _assigneeChecked.delete(name);
+        item.classList.remove('checked');
+        item.querySelector('.assignee-check').textContent = '';
+      } else {
+        _assigneeChecked.add(name);
+        item.classList.add('checked');
+        item.querySelector('.assignee-check').textContent = '✓';
+      }
+    });
+
+    // 삭제 버튼
+    item.querySelector('.assignee-del-btn').addEventListener('click', async e => {
+      e.stopPropagation();
+      const nm = e.currentTarget.dataset.del;
+      if (!confirm(`'${nm}' 담당자를 목록에서 삭제할까요?`)) return;
+      _assigneePool = _assigneePool.filter(n => n !== nm);
+      _assigneeChecked.delete(nm);
+      await saveAssigneePool();
+      renderAssigneeList();
+    });
+
+    list.appendChild(item);
+  });
+
+  // 편집모드 클래스 적용
+  const modal = document.getElementById('assigneeModal');
+  if (_assigneeEditMode) {
+    list.classList.add('assignee-edit-mode');
+    modal.querySelector('.assignee-list').classList.add('assignee-edit-mode');
+  } else {
+    list.classList.remove('assignee-edit-mode');
+    modal.querySelector('.assignee-list').classList.remove('assignee-edit-mode');
+  }
+}
+
+/* ─ 담당자 모달 열기 ─ */
+async function openAssigneeModal(currentAssignees) {
+  await loadAssigneePool();
+  _assigneeChecked = new Set(currentAssignees || []);
+  _assigneeEditMode = false;
+
+  const overlay = document.getElementById('assigneeModalOverlay');
+  const toggle  = document.getElementById('assigneeEditToggle');
+  const addRow  = document.getElementById('assigneeAddRow');
+  const addInput= document.getElementById('assigneeAddInput');
+  const list    = document.getElementById('assigneeList');
+
+  toggle.classList.remove('active');
+  toggle.textContent = '✏️ 목록 편집';
+  list.classList.remove('assignee-edit-mode');
+  addRow.style.display = 'none';
+  addInput.value = '';
+
+  renderAssigneeList();
+  overlay.classList.add('open');
+  // 확인 버튼은 편집모드 아닐 때 항상 표시
+  document.getElementById('assigneeConfirmBtn').style.display = '';
+}
+
+/* ─ 편집 모드 토글 ─ */
+document.getElementById('assigneeEditToggle').addEventListener('click', () => {
+  _assigneeEditMode = !_assigneeEditMode;
+  const toggle = document.getElementById('assigneeEditToggle');
+  const addRow = document.getElementById('assigneeAddRow');
+  const confirmBtn = document.getElementById('assigneeConfirmBtn');
+
+  if (_assigneeEditMode) {
+    toggle.classList.add('active');
+    toggle.textContent = '✅ 편집 완료';
+    addRow.style.display = 'flex';
+    confirmBtn.style.display = 'none';
+    document.getElementById('assigneeAddInput').focus();
+  } else {
+    toggle.classList.remove('active');
+    toggle.textContent = '✏️ 목록 편집';
+    addRow.style.display = 'none';
+    confirmBtn.style.display = '';
+  }
+  renderAssigneeList();
+});
+
+/* ─ 담당자 추가 ─ */
+async function submitAddAssignee() {
+  const input = document.getElementById('assigneeAddInput');
+  const name = input.value.trim();
+  if (!name) return;
+  if (_assigneePool.includes(name)) {
+    input.value = '';
+    input.focus();
+    return;
+  }
+  _assigneePool.push(name);
+  await saveAssigneePool();
+  input.value = '';
+  input.focus();
+  renderAssigneeList();
+}
+
+document.getElementById('assigneeAddSubmit').addEventListener('click', submitAddAssignee);
+document.getElementById('assigneeAddInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); submitAddAssignee(); }
+});
+
+/* ─ 확인 버튼 ─ */
+document.getElementById('assigneeConfirmBtn').addEventListener('click', () => {
+  _currentEventAssignees = [..._assigneeChecked];
+  updateAssigneeBtn(_currentEventAssignees);
+  document.getElementById('assigneeModalOverlay').classList.remove('open');
+});
+
+/* ─ 닫기 버튼 / 오버레이 클릭 ─ */
+document.getElementById('assigneeModalClose').addEventListener('click', () => {
+  document.getElementById('assigneeModalOverlay').classList.remove('open');
+});
+document.getElementById('assigneeModalOverlay').addEventListener('click', e => {
+  if (e.target === e.currentTarget) {
+    document.getElementById('assigneeModalOverlay').classList.remove('open');
+  }
+});
+
+/* ─ 담당자 버튼 클릭 ─ */
+document.getElementById('assigneeBtn').addEventListener('click', () => {
+  if (document.getElementById('assigneeBtn').disabled) return;
+  openAssigneeModal(_currentEventAssignees);
+});
+
+/* ─ 모달 닫힐 때 담당자 모달도 닫기 ─ */
+document.getElementById('closeBtn').addEventListener('click', () => {
+  document.getElementById('assigneeModalOverlay').classList.remove('open');
+}, true);
+</script>
 </body>
 </html>
