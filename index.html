@@ -815,52 +815,16 @@
   .assignee-confirm-btn:hover { filter:brightness(1.1); }
 
   /* ── 캘린더 칩/카드 담당자 배지 ── */
+  /* ── 담당자 이름 뱃지 (칩용) ── */
   .ev-assignee-badge {
-    display:inline-flex; align-items:center; gap:3px;
-    vertical-align:middle;
-    background:rgba(100,140,220,.15); border:1px solid rgba(100,140,220,.3);
-    border-radius:20px; padding:0 6px 0 0; margin-left:4px;
-    font-size:10px; color:var(--text); white-space:nowrap;
-    line-height:1; height:20px; overflow:hidden; max-width:120px;
-  }
-  .ev-assignee-avatar {
     display:inline-flex; align-items:center; justify-content:center;
-    width:20px; height:20px; border-radius:50%;
-    background:rgba(80,120,200,.55); color:#fff;
-    font-size:9px; font-weight:800; flex-shrink:0; letter-spacing:-0.5px;
+    font-size:10px; font-weight:700; letter-spacing:-0.3px;
+    color:var(--text); white-space:nowrap; flex-shrink:0;
+    margin-left:3px; line-height:1;
   }
-  .ev-assignee-name {
-    overflow:hidden; text-overflow:ellipsis; max-width:64px;
-    font-size:10px; color:var(--text);
-  }
-  /* 칩(월간/주간뷰): 아바타만, 이름 숨김 */
-  .chip-month .ev-assignee-name,
-  .chip-week .ev-assignee-name { display:none; }
-  .chip-month .ev-assignee-badge,
-  .chip-week .ev-assignee-badge {
-    padding:0; background:none; border:none;
-    margin-left:2px; flex-shrink:0; height:auto;
-  }
-  .chip-month .ev-assignee-avatar,
-  .chip-week .ev-assignee-avatar {
-    width:14px; height:14px; font-size:7px; font-weight:900;
-    letter-spacing:-0.5px;
-    background:rgba(255,255,255,.28);
-    box-shadow:0 0 0 1.5px rgba(255,255,255,.55);
-    color:#fff;
-  }
-  /* 타입별 아바타 색상 */
-  .color-gold .ev-assignee-avatar   { background:rgba(180,140,60,.75);  box-shadow:0 0 0 1.5px rgba(200,176,138,.7); }
-  .color-blue .ev-assignee-avatar   { background:rgba(80,140,190,.75);  box-shadow:0 0 0 1.5px rgba(138,180,200,.7); }
-  .color-red .ev-assignee-avatar    { background:rgba(190,80,80,.75);   box-shadow:0 0 0 1.5px rgba(200,122,122,.7); }
-  .color-green .ev-assignee-avatar  { background:rgba(80,170,100,.75);  box-shadow:0 0 0 1.5px rgba(122,200,122,.7); }
-  .color-purple .ev-assignee-avatar { background:rgba(140,90,190,.75);  box-shadow:0 0 0 1.5px rgba(155,112,200,.7); }
-  .color-teal .ev-assignee-avatar   { background:rgba(200,120,50,.75);  box-shadow:0 0 0 1.5px rgba(232,137,74,.7);  }
   /* 칩 레이아웃: 제목 축소, 배지 고정 */
-  .event-chip.chip-month,
-  .event-chip.chip-week { overflow:hidden; }
   .chip-title { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; flex:1; }
-  .chip-badges { display:flex; align-items:center; flex-shrink:0; gap:1px; margin-left:1px; }
+  .chip-badges { display:flex; align-items:center; flex-shrink:0; gap:2px; margin-left:2px; }
 
 
   .img-upload-group { display:flex; flex-direction:column; gap:6px; }
@@ -2289,7 +2253,7 @@ function _assigneeInitial(name) { if (!name) return '?'; const n = name.trim(); 
 function makeAssigneeBadgesHtml(assignees) {
   if (!assignees || assignees.length === 0) return '';
   return assignees.map(name =>
-    `<span class="ev-assignee-badge" title="${name}"><span class="ev-assignee-avatar">${_assigneeInitial(name)}</span><span class="ev-assignee-name">${name}</span></span>`
+    `<span class="ev-assignee-badge" title="${name}">${_assigneeInitial(name)}</span>`
   ).join('');
 }
 
