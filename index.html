@@ -2008,6 +2008,11 @@
 
 <script type="module">
 const isMobile = () => window.innerWidth <= 600;
+let _assigneePool    = [];
+let _assigneeChecked = new Set();
+let _assigneeEditMode = false;
+let _currentEventAssignees = [];
+let _assigneeUnsub   = null;   // onSnapshot 구독 해제용
 /* AUTH */
 const MAX_TRIES   = 5;
 const LOCK_MS     = 60000;
@@ -5881,11 +5886,6 @@ function slideAnimate(el,toLeft,callback){
 
 
 /* ─ Firestore 실시간 구독 (앱 시작 + 모달 열 때 공통 사용) ─ */
-let _assigneePool    = [];
-let _assigneeChecked = new Set();
-let _assigneeEditMode = false;
-let _currentEventAssignees = [];
-let _assigneeUnsub   = null;   // onSnapshot 구독 해제용
 
 function loadAssigneePool(subscribe = false) {
   if (subscribe && !_assigneeUnsub) {
