@@ -5107,10 +5107,11 @@ function renderPcWeek() {
     const nonHolWkEvs=dayEvs.filter(({ev})=>ev.color!=='holiday');
     nonHolWkEvs.slice(0,MAX_SHOW).forEach(({ev,idx})=>{
       const chip=document.createElement('div');
-      chip.className=`event-chip single color-${ev.color||'gold'}`;
+      chip.className=`event-chip single chip-week color-${ev.color||'gold'}`;
       const icons=getSpecialIconStr(ev);
       const timeStr=ev.startTime?ev.startTime+' ':'';
-      chip.innerHTML=`<span class="chip-time">${timeStr}</span><span style="overflow:hidden;text-overflow:ellipsis;flex:1">${icons}${ev.title||''}</span>${getSchedSuffix(ev)}`;
+      const abadges=makeAssigneeBadgesHtml(ev.assignees);
+      chip.innerHTML=`<span class="chip-time">${timeStr}</span><span class="chip-title">${icons}${ev.title||''}</span>${getSchedSuffix(ev)}<span class="chip-badges">${abadges}</span>`;
       chip.addEventListener('click',e=>{e.stopPropagation();openModal(idx);});
       cell.appendChild(chip);
     });
