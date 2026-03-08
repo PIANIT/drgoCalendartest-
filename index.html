@@ -2041,6 +2041,16 @@ function _isModalOpen() {
   return ov && ov.classList.contains('open');
 }
 
+/* ── 모달 열릴 때 pull-to-refresh 차단 ── */
+function _blockPullToRefresh() {
+  document.body.style.overscrollBehavior = 'none';
+  document.documentElement.style.overscrollBehavior = 'none';
+}
+function _unblockPullToRefresh() {
+  document.body.style.overscrollBehavior = '';
+  document.documentElement.style.overscrollBehavior = '';
+}
+
 /* 앱 시작 시 base state 심기 */
 history.replaceState({ page: 'main' }, '');
 
@@ -3281,6 +3291,7 @@ function _forceRestoreGoldFields(){
 
 function openNewModal(dk){
   history.pushState({ page: 'modal' }, '');
+  _blockPullToRefresh();
   _forceRestoreGoldFields();
   editingId=null;
   document.getElementById('modalDateBadge').textContent=formatDateBadge(dk);
@@ -3316,6 +3327,7 @@ function openNewModal(dk){
 
 function openModal(evIdx){
   history.pushState({ page: 'modal' }, '');
+  _blockPullToRefresh();
   _forceRestoreGoldFields();
   const ev=events[evIdx];
   editingId=ev._id;
@@ -3381,6 +3393,7 @@ function closeModal(skipHistory=false){
   document.getElementById('fileInput').value='';
   document.getElementById('modal').style.borderColor='';
   editingId=null; isLocked=false;
+  _unblockPullToRefresh();
 }
 
 document.getElementById('startDate').addEventListener('change',()=>{
