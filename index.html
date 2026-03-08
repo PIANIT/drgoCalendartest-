@@ -890,6 +890,8 @@
   .btn-save:hover { background:#d4c09a; }
 
   .field-input:disabled, .field-textarea:disabled, .dt-input:disabled, .field-select:disabled { opacity:0.55; cursor:not-allowed; background:var(--surface); border-color:transparent; }
+  /* 잠금 시 장소 등 텍스트 필드 줄바꿈 허용 */
+  .field-input:disabled { white-space:normal; word-break:break-word; height:auto; overflow:visible; }
   .modal-title-input:disabled { opacity:0.75; cursor:not-allowed; }
 
   .divider { height:1px; background:var(--border); margin:2px 0; }
@@ -1022,7 +1024,7 @@
     #mobileView { display:block; }
     header { padding:0 10px; height:48px; flex-wrap:nowrap; gap:4px; overflow:hidden; }
     .header-left { gap:4px; flex:1; min-width:0; overflow:hidden; }
-    .month-label { font-size:13px; min-width:0; flex:1; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .month-label { font-size:13px; min-width:0; flex:1; text-align:center; white-space:normal; overflow:visible; line-height:1.3; }
     .app-title { display:none; }
     .year-nav-btn { display:none !important; }
     .add-btn { font-size:11px; padding:5px 10px; white-space:nowrap; flex-shrink:0; }
@@ -3961,6 +3963,11 @@ function applyLockState(){
     document.getElementById('schedEventOpts').style.opacity='0.4';
     /* 컴팩트 뷰 */
     _showLockedCompact();
+    /* 잠금 시: 선택된 유형만 표시, 나머지 숨김 */
+    document.querySelectorAll('#colorRow .color-dot').forEach(dot => {
+      dot.style.display = (dot.dataset.color === currentColor) ? '' : 'none';
+    });
+    document.getElementById('holidayDot').style.display = (currentColor === 'holiday') ? '' : 'none';
   } else {
     lockBtn.textContent='🔓'; lockBtn.classList.remove('locked'); lockBtn.title='내용 고정';
     banner.classList.remove('visible'); modal.style.borderColor='';
@@ -3983,6 +3990,11 @@ function applyLockState(){
     document.getElementById('schedEventOpts').style.opacity='';
     /* 컴팩트 뷰 해제 */
     _hideLockedCompact();
+    /* 잠금 해제 시: 모든 유형 버튼 다시 표시 */
+    document.querySelectorAll('#colorRow .color-dot').forEach(dot => {
+      dot.style.display = '';
+    });
+    document.getElementById('holidayDot').style.display = '';
   }
 }
 
@@ -5594,15 +5606,22 @@ function renderMvDay() {
 }
 
 function updateMvNav() {
+  const lbl = document.getElementById('monthLabel');
   if (mvMode==='month') {
-    document.getElementById('monthLabel').textContent=`${mvMonthYear}년 ${MONTHS[mvMonthMonth]}`;
+    /* 월간: YYYY년 MM월 한 줄 */
+    lbl.innerHTML = `${mvMonthYear}년 ${String(mvMonthMonth+1).padStart(2,'0')}월`;
+    lbl.style.lineHeight = '';
   } else if (mvMode==='week') {
+    /* 주간: 시작~종료 두 줄 (yy-mm-dd 형식) */
     const ws=mvWeekStart, we=addDays(ws,6);
-    const [y1,m1,d1]=ws.split('-').map(Number), [y2,m2,d2]=we.split('-').map(Number);
-    document.getElementById('monthLabel').textContent=y1===y2?`${y1}년 ${m1}월 ${d1}일 — ${m2}월 ${d2}일`:`${y1}년 ${m1}월 ${d1}일 — ${y2}년 ${m2}월 ${d2}일`;
+    const fmt = dk => dk.slice(2); /* 2026-03-09 → 26-03-09 */
+    lbl.innerHTML = `<span style="display:block;font-size:11px;line-height:1.4;">${fmt(ws)}</span><span style="display:block;font-size:11px;line-height:1.4;">${fmt(we)}</span>`;
+    lbl.style.lineHeight = '1';
   } else {
-    const [y,m]=mvSelDate.split('-').map(Number);
-    document.getElementById('monthLabel').textContent=`${y}년 ${m}월`;
+    /* 일간: YYYY년 MM월 DD일 */
+    const [y,m,d]=mvSelDate.split('-').map(Number);
+    lbl.innerHTML = `${y}년 ${String(m).padStart(2,'0')}월 ${String(d).padStart(2,'0')}일`;
+    lbl.style.lineHeight = '';
   }
 }
 
