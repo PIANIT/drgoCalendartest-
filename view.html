@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>일정 뷰어 — DRGO Calendar</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -45,7 +45,7 @@ html.light {
     --chip-teal-bg: #c96a20; --chip-teal-text: #ffffff;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
-body { background:var(--bg); color:var(--text); font-family:var(--font-main); min-height:100vh; }
+body { background:var(--bg); color:var(--text); font-family:var(--font-main); min-height:100vh;  padding-top:env(safe-area-inset-top);}
 
 /* ── AUTH ── */
 #authOverlay {
@@ -366,12 +366,15 @@ function makeImgSection(title, groups) {
   .hide-m    { display:none; }
   .toolbar   { padding:10px 14px; gap:8px; }
   .events-container { padding:0 12px 100px; }
-  header     { padding:10px 14px; }
+  header     { padding:0 10px; height:44px; }
 }
 @media (max-width:600px) {
   .date-range-wrap { display:none; }
   .filter-group { display:none; }
   .stats-bar { grid-template-columns:repeat(2,1fr); }
+  header { padding:0 10px; height:44px; }
+  .app-title { font-size:11px; }
+  .header-left { gap:6px; }
 }
 .img-preview-grid { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
 .img-thumb { width:80px; height:80px; object-fit:cover; border-radius:6px; border:1px solid var(--border); cursor:pointer; transition:transform .15s, box-shadow .15s; }

@@ -35,7 +35,7 @@
   .csr-title { font-size:13px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .csr-meta  { font-size:11px; color:var(--text-muted); margin-top:3px; display:flex; gap:10px; flex-wrap:wrap; }
   .csr-empty { text-align:center; padding:18px; color:var(--text-muted); font-size:13px; }
-  @media(max-width:640px){ #searchPanel{ padding:8px 12px 10px; top:49px; } }
+  @media(max-width:600px){ #searchPanel{ padding:8px 12px 10px; top:48px; left:0; right:0; z-index:20; } }
 </style>
 <style>
   /* ── PWA 설치 배너 ── */
@@ -195,7 +195,7 @@
     --chip-single-bg: #e6e6e6;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font-family:var(--font-main); min-height:100vh; overflow-x:hidden; transition:background 0.25s, color 0.25s; }
+  body { background:var(--bg); color:var(--text); font-family:var(--font-main); min-height:100vh; overflow-x:hidden; transition:background 0.25s, color 0.25s; padding-top:env(safe-area-inset-top); }
 
   header { display:flex; align-items:center; justify-content:space-between; padding:20px 32px; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:10; background:var(--bg); }
   .header-left { display:flex; align-items:center; gap:16px; }
@@ -1017,20 +1017,24 @@
 
   @media (max-width:600px) {
     .calendar-wrap { display:none !important; }
-    .legend { padding:8px 10px; gap:6px; overflow-x:auto; flex-wrap:nowrap; -webkit-overflow-scrolling:touch; }
-    .filter-btn { font-size:11px; padding:4px 10px; white-space:nowrap; }
+    .legend { padding:5px 10px; gap:5px; overflow-x:auto; flex-wrap:nowrap; -webkit-overflow-scrolling:touch; min-height:unset; }
+    .filter-btn { font-size:10px; padding:3px 8px; height:26px; }
     #mobileView { display:block; }
-    header { padding:10px 14px; flex-wrap:wrap; gap:8px; }
-    .month-label { font-size:14px; min-width:120px; }
-    .app-title { font-size:11px; }
-    .add-btn { font-size:12px; padding:7px 14px; }
+    header { padding:0 10px; height:48px; flex-wrap:nowrap; gap:4px; overflow:hidden; }
+    .header-left { gap:4px; flex:1; min-width:0; overflow:hidden; }
+    .month-label { font-size:13px; min-width:0; flex:1; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .app-title { display:none; }
+    .year-nav-btn { display:none !important; }
+    .add-btn { font-size:11px; padding:5px 10px; white-space:nowrap; flex-shrink:0; }
     .view-toggle-group { display:none; }
-    .mv-wrap { padding:0 0 80px; }
-    .mv-nav { display:flex; align-items:center; justify-content:space-between; padding:8px 14px 6px; gap:8px; }
+    .nav-btn { width:28px; height:28px; font-size:15px; flex-shrink:0; }
+    .icon-btn, .settings-btn, .theme-btn { width:28px; height:28px; font-size:14px; flex-shrink:0; }
+    .mv-wrap { padding:0 0 60px; }
+    .mv-nav { display:flex; align-items:center; justify-content:space-between; padding:5px 14px 4px; gap:8px; }
     .mv-nav-label { font-size:13px; font-weight:600; color:var(--text); text-align:center; flex:1; }
     .mv-nav-btn { background:var(--surface2); border:1px solid var(--border); color:var(--text); width:34px; height:34px; border-radius:8px; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.15s; }
     .mv-nav-btn:hover { border-color:var(--accent); color:var(--accent); }
-    .mv-view-toggle { display:flex; gap:6px; padding:0 14px 8px; }
+    .mv-view-toggle { display:flex; gap:6px; padding:4px 14px 6px; }
     .mv-view-btn { flex:1; padding:6px; border-radius:8px; font-size:12px; border:1px solid var(--border); background:var(--surface2); color:var(--text-muted); cursor:pointer; transition:all 0.15s; font-family:var(--font-main); }
     .mv-view-btn.active { background:rgba(200,176,138,0.2); border-color:var(--accent); color:var(--accent); font-weight:600; }
     .mv-week-header { display:grid; grid-template-columns:repeat(7,1fr); padding:0 8px; gap:3px; margin-bottom:4px; }
