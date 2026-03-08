@@ -4,8 +4,8 @@
    Firebase Firestore는 온라인 필수 (캐시 제외)
 ═══════════════════════════════════════════ */
 
-const CACHE_NAME    = 'drgo-cal-v10';
-const RUNTIME_CACHE = 'drgo-cal-runtime-v10';
+const CACHE_NAME    = 'drgo-cal-v11';
+const RUNTIME_CACHE = 'drgo-cal-runtime-v11';
 
 /* 설치 시 즉시 캐시할 핵심 파일 */
 const PRECACHE_URLS = [

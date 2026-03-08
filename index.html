@@ -2031,13 +2031,45 @@
 const isMobile = () => window.innerWidth <= 600;
 
 /* ── 모바일 뒤로가기: 모달 닫기 ── */
+/* ── 뒤로가기 처리 ──
+   state.page === "modal" → 모달 닫기
+   state.page === "main"  → 종료 확인 팝업
+   state 없음             → 종료 확인 팝업
+*/
+function _isModalOpen() {
+  const ov = document.getElementById('modalOverlay');
+  return ov && ov.classList.contains('open');
+}
+
+/* 앱 시작 시 base state 심기 */
+history.replaceState({ page: 'main' }, '');
+
 window.addEventListener('popstate', (e) => {
-  if (e.state && e.state.modalOpen) {
-    // 모달이 열린 상태에서 뒤로가기 → 모달 닫기
-    const overlay = document.getElementById('modalOverlay');
-    if (overlay && overlay.style.display !== 'none' && overlay.classList.contains('open')) {
-      if (typeof closeModal === 'function') closeModal();
-      else overlay.classList.remove('open');
+  const state = e.state || {};
+  if (state.page === 'modal') {
+    /* 모달 state로 뒤로간 경우 → 모달 닫고 main state로 복귀 */
+    if (_isModalOpen() && typeof closeModal === 'function') {
+      closeModal(true); /* skipHistory: history 조작 생략 */
+    }
+    /* main state가 없을 수 있으니 보정 */
+    if (!history.state || history.state.page !== 'main') {
+      history.replaceState({ page: 'main' }, '');
+    }
+  } else {
+    /* main 또는 state 없음: 종료 확인 */
+    if (_isModalOpen()) {
+      /* 혹시 모달 열려있으면 먼저 닫기 */
+      if (typeof closeModal === 'function') closeModal(true);
+      history.replaceState({ page: 'main' }, '');
+    } else {
+      /* 캘린더 메인 → 종료 확인 */
+      const confirmExit = window.confirm('캘린더를 종료하시겠습니까?');
+      if (confirmExit) {
+        history.back(); /* 실제 뒤로 (앱 종료) */
+      } else {
+        /* 취소: main state 다시 심기 */
+        history.pushState({ page: 'main' }, '');
+      }
     }
   }
 });
@@ -3248,7 +3280,7 @@ function _forceRestoreGoldFields(){
 }
 
 function openNewModal(dk){
-  history.pushState({ modalOpen: true }, '', location.href);
+  history.pushState({ page: 'modal' }, '');
   _forceRestoreGoldFields();
   editingId=null;
   document.getElementById('modalDateBadge').textContent=formatDateBadge(dk);
@@ -3283,7 +3315,7 @@ function openNewModal(dk){
 }
 
 function openModal(evIdx){
-  history.pushState({ modalOpen: true }, '', location.href);
+  history.pushState({ page: 'modal' }, '');
   _forceRestoreGoldFields();
   const ev=events[evIdx];
   editingId=ev._id;
@@ -3339,8 +3371,11 @@ function formatDateBadge(dk){
   return `${y}년 ${m}월 ${d}일 (${dow})`;
 }
 
-function closeModal(){
-  if (history.state && history.state.modalOpen) { history.replaceState(null,'',location.href); }
+function closeModal(skipHistory=false){
+  if (!skipHistory && history.state && history.state.page === 'modal') {
+    history.back(); /* popstate가 실제 닫기 처리 */
+    return;
+  }
   _modalSnapshot = null;
   document.getElementById('modalOverlay').classList.remove('open');
   document.getElementById('fileInput').value='';
