@@ -1131,6 +1131,23 @@
 <body>
 
 <!-- ═══ AUTH OVERLAY ═══ -->
+<!-- ═══ SW 업데이트 배너 ═══ -->
+<div id="swUpdateBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;
+  background:linear-gradient(135deg,#2a2a1a,#1a1a0a);border-top:2px solid var(--accent);
+  padding:14px 20px;display:none;align-items:center;justify-content:space-between;gap:12px;
+  box-shadow:0 -4px 20px rgba(0,0,0,0.5);">
+  <div style="flex:1;min-width:0;">
+    <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:3px;">🔄 업데이트 알림</div>
+    <div style="font-size:11px;color:var(--text-muted);line-height:1.4;">업데이트 내용이 있습니다.<br>새로고침 후 사용 부탁드립니다.</div>
+  </div>
+  <div style="display:flex;gap:8px;flex-shrink:0;">
+    <button id="swUpdateDismiss" style="background:none;border:1px solid var(--border);color:var(--text-muted);
+      border-radius:7px;padding:6px 12px;cursor:pointer;font-size:11px;white-space:nowrap;">나중에</button>
+    <button id="swUpdateReload" style="background:var(--accent);border:none;color:#1a1207;
+      border-radius:7px;padding:6px 14px;cursor:pointer;font-size:12px;font-weight:700;white-space:nowrap;">새로고침</button>
+  </div>
+</div>
+
 <div id="authOverlay">
   <div class="auth-box">
     <div class="auth-logo">📅 Calendar</div>
@@ -1483,7 +1500,7 @@
     <div class="modal-body">
       <div class="field-group">
         <label class="field-label" for="modalLocation">장소</label>
-        <input class="field-input" id="modalLocation" placeholder="장소를 입력하세요" autocomplete="off" />
+        <textarea class="field-input field-textarea" id="modalLocation" placeholder="장소를 입력하세요" autocomplete="off" rows="2" style="min-height:40px;resize:none;"></textarea>
       </div>
       <div class="datetime-section">
         <div class="allday-row">
@@ -2012,6 +2029,18 @@
 
 <script type="module">
 const isMobile = () => window.innerWidth <= 600;
+
+/* ── 모바일 뒤로가기: 모달 닫기 ── */
+window.addEventListener('popstate', (e) => {
+  if (e.state && e.state.modalOpen) {
+    // 모달이 열린 상태에서 뒤로가기 → 모달 닫기
+    const overlay = document.getElementById('modalOverlay');
+    if (overlay && overlay.style.display !== 'none' && overlay.classList.contains('open')) {
+      if (typeof closeModal === 'function') closeModal();
+      else overlay.classList.remove('open');
+    }
+  }
+});
 let _assigneePool    = [];
 let _assigneeChecked = new Set();
 let _assigneeEditMode = false;
@@ -3219,6 +3248,7 @@ function _forceRestoreGoldFields(){
 }
 
 function openNewModal(dk){
+  history.pushState({ modalOpen: true }, '', location.href);
   _forceRestoreGoldFields();
   editingId=null;
   document.getElementById('modalDateBadge').textContent=formatDateBadge(dk);
@@ -3253,6 +3283,7 @@ function openNewModal(dk){
 }
 
 function openModal(evIdx){
+  history.pushState({ modalOpen: true }, '', location.href);
   _forceRestoreGoldFields();
   const ev=events[evIdx];
   editingId=ev._id;
@@ -3309,6 +3340,7 @@ function formatDateBadge(dk){
 }
 
 function closeModal(){
+  if (history.state && history.state.modalOpen) { history.replaceState(null,'',location.href); }
   _modalSnapshot = null;
   document.getElementById('modalOverlay').classList.remove('open');
   document.getElementById('fileInput').value='';
@@ -5424,7 +5456,7 @@ function renderMvEventCard(ev, evIdx, container) {
   const timeStr=ev.allDay!==false?'종일':`${ev.startTime||''}${ev.endTime?'~'+ev.endTime:''}`;
   const spanStr=(ev.endDate&&ev.endDate!==ev.startDate)?`<span>${ev.startDate} ~ ${ev.endDate}</span>`:'';
   card.innerHTML=`
-    <div class="mv-event-badge ${ev.color||'gold'}">${TYPE_LABELS_MV[ev.color||'gold']}</div>
+
     <div class="mv-event-card-body">
       <div class="mv-event-title">${icons}${ev.title||'(제목 없음)'}${getSchedSuffix(ev)}</div>
       <div class="mv-event-meta"><span>${timeStr}</span>${spanStr}${ev.name?`<span>👤 ${ev.name}</span>`:''}${makeAssigneeBadgesHtml(ev.assignees)}</div>
@@ -5612,10 +5644,15 @@ function updateMvNav() {
     lbl.innerHTML = `${mvMonthYear}년 ${String(mvMonthMonth+1).padStart(2,'0')}월`;
     lbl.style.lineHeight = '';
   } else if (mvMode==='week') {
-    /* 주간: 시작~종료 두 줄 (yy-mm-dd 형식) */
+    /* 주간: YYYY년 / M월D일~M월D일 두 줄 */
     const ws=mvWeekStart, we=addDays(ws,6);
-    const fmt = dk => dk.slice(2); /* 2026-03-09 → 26-03-09 */
-    lbl.innerHTML = `<span style="display:block;font-size:11px;line-height:1.4;">${fmt(ws)}</span><span style="display:block;font-size:11px;line-height:1.4;">${fmt(we)}</span>`;
+    const [y1,m1,d1]=ws.split('-').map(Number);
+    const [y2,m2,d2]=we.split('-').map(Number);
+    const yearStr = y1===y2 ? `${y1}년` : `${y1}~${y2}년`;
+    const rangeStr = m1===m2
+      ? `${m1}월${d1}일~${d2}일`
+      : `${m1}월${d1}일~${m2}월${d2}일`;
+    lbl.innerHTML = `<span style="display:block;font-size:10px;line-height:1.4;opacity:0.7;">${yearStr}</span><span style="display:block;font-size:11px;line-height:1.4;font-weight:600;">${rangeStr}</span>`;
     lbl.style.lineHeight = '1';
   } else {
     /* 일간: YYYY년 MM월 DD일 */
@@ -6126,15 +6163,33 @@ document.getElementById('closeBtn').addEventListener('click', () => {
             if (nw) {
               nw.addEventListener('statechange', () => {
                 if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-                  console.log('[PWA] 새 버전 감지 — 새로고침하면 업데이트됩니다');
+                  console.log('[PWA] 새 버전 감지 → 업데이트 배너 표시');
+                  const banner = document.getElementById('swUpdateBanner');
+                  if (banner) banner.style.display = 'flex';
+                  /* 새 SW에 skipWaiting 신호 */
+                  nw.postMessage({ type: 'SKIP_WAITING' });
                 }
               });
             }
+          });
+          /* 컨트롤러 교체 시 자동 새로고침 준비 */
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            const banner = document.getElementById('swUpdateBanner');
+            if (banner) banner.style.display = 'flex';
           });
         })
         .catch(err => console.warn('[PWA] SW 등록 실패:', err));
     });
   }
+
+  /* ── SW 업데이트 배너 버튼 ── */
+  document.getElementById('swUpdateReload')?.addEventListener('click', () => {
+    location.reload(true);
+  });
+  document.getElementById('swUpdateDismiss')?.addEventListener('click', () => {
+    const b = document.getElementById('swUpdateBanner');
+    if (b) b.style.display = 'none';
+  });
 
   /* ── 설치 프롬프트 ── */
   let deferredPrompt = null;

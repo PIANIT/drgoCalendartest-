@@ -4,8 +4,8 @@
    Firebase Firestore는 온라인 필수 (캐시 제외)
 ═══════════════════════════════════════════ */
 
-const CACHE_NAME    = 'drgo-cal-v9';
-const RUNTIME_CACHE = 'drgo-cal-runtime-v9';
+const CACHE_NAME    = 'drgo-cal-v10';
+const RUNTIME_CACHE = 'drgo-cal-runtime-v10';
 
 /* 설치 시 즉시 캐시할 핵심 파일 */
 const PRECACHE_URLS = [
@@ -90,3 +90,10 @@ self.addEventListener('fetch', event => {
 
 /* 빈 push 핸들러 */
 self.addEventListener('push', () => {});
+
+/* 페이지에서 SKIP_WAITING 메시지 받으면 즉시 활성화 */
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
