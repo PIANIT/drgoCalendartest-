@@ -653,15 +653,16 @@ function render() {
 
       const evList=document.createElement('div'); evList.className='events-list';
       const dayEvs=(singleMap[dk]||[]).slice().sort((a,b)=>(a.ev.startTime||'00:00').localeCompare(b.ev.startTime||'00:00'));
-      dayEvs.slice(0,3).forEach(({ev})=>{
+      const MAX_MO=calcMaxChips(lanes);
+      dayEvs.slice(0,MAX_MO).forEach(({ev})=>{
         const chip=document.createElement('div');
         chip.className=`event-chip single color-${ev.color||'gold'}`;
         chip.innerHTML=`<span class="chip-time">${guestChipText(ev)}</span>`;
         evList.appendChild(chip);
       });
-      if(dayEvs.length>3){
+      if(dayEvs.length>MAX_MO){
         const more=document.createElement('div'); more.className='more-badge';
-        more.textContent=`+${dayEvs.length-3}`;
+        more.textContent=`+${dayEvs.length-MAX_MO}`;
         more.dataset.date=dk; more.dataset.evids=JSON.stringify(dayEvs.map(e=>e.idx));
         more.addEventListener('click',e=>{ e.stopPropagation(); openMorePopover(dk, dayEvs.map(e=>e.ev), e); });
         evList.appendChild(more);
@@ -778,7 +779,10 @@ function renderPcWeek() {
     if(holiday){ const hl=document.createElement('div'); hl.className='pc-week-holiday'; hl.textContent=holiday; cell.appendChild(hl); }
     if(maxLane>0){ const sp=document.createElement('div'); sp.style.height=(maxLane*LANE_H)+'px'; sp.style.flexShrink='0'; cell.appendChild(sp); }
 
-    const MAX_SHOW=4;
+    const wkCellH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--week-cell-h')||'220',10);
+    const SINGLE_OFFSET_WK = 32; /* day-num-row */
+    const CHIP_H_WK = 26;
+    const MAX_SHOW = Math.max(2, Math.floor((wkCellH - SINGLE_OFFSET_WK - 24) / CHIP_H_WK));
     const dayEvs=(singleMap[dk]||[]).slice().sort((a,b)=>(a.ev.startTime||'00:00').localeCompare(b.ev.startTime||'00:00'));
     dayEvs.slice(0,MAX_SHOW).forEach(({ev})=>{
       const chip=document.createElement('div');
@@ -1074,6 +1078,19 @@ function renderAll(){
   }
 }
 /* ── 더보기 팝오버 ── */
+/* ── 행 높이에서 표시 가능한 최대 칩 수 계산 ── */
+function calcMaxChips(lanes) {
+  const rowH      = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--row-h')||'110', 10);
+  const PAD_V     = 6;
+  const NUM_ROW_H = 26;
+  const LANE_H    = 26;
+  const CHIP_H    = 24;
+  const MORE_H    = 22;
+  const usedByLanes = lanes * LANE_H;
+  const available = rowH - PAD_V - NUM_ROW_H - usedByLanes - MORE_H;
+  return Math.max(1, Math.floor(available / CHIP_H));
+}
+
 function openMorePopover(dk, evs, e) {
   const popover = document.getElementById('moreDayPopover');
   const bg      = document.getElementById('moreDayPopoverBg');
