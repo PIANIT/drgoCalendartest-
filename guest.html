@@ -88,6 +88,26 @@
 
   /* ── CALENDAR ── */
   .calendar-wrap { padding:20px 32px; }
+  .filter-bar {
+    display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+    padding:8px 32px; border-bottom:1px solid var(--border);
+    background:var(--bg);
+  }
+  .filter-bar-label { font-size:11px; color:var(--text-muted); font-family:var(--font-mono); margin-right:2px; flex-shrink:0; }
+  .g-filter-btn {
+    display:inline-flex; align-items:center; gap:5px;
+    padding:4px 10px; border-radius:20px; font-size:11px; font-weight:600;
+    cursor:pointer; border:1.5px solid var(--border); background:none;
+    color:var(--text-muted); transition:all 0.15s; white-space:nowrap;
+  }
+  .g-filter-btn .dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .g-filter-btn.active { color:var(--text); border-color:currentColor; background:rgba(255,255,255,0.06); }
+  .g-filter-btn[data-f="all"].active { border-color:var(--accent); color:var(--accent); }
+  .g-filter-btn[data-f="gold"].active  { border-color:#c8a870; color:#c8a870; }
+  .g-filter-btn[data-f="teal"].active  { border-color:#e8894a; color:#e8894a; }
+  .g-filter-btn[data-f="green"].active { border-color:#70c870; color:#70c870; }
+  .g-filter-btn[data-f="purple"].active{ border-color:#9b70c8; color:#9b70c8; }
+  html.light .g-filter-btn.active { background:rgba(0,0,0,0.04); }
   .weekdays { display:grid; grid-template-columns:repeat(7,1fr); gap:1px; margin-bottom:4px; }
   .weekday { text-align:center; font-family:var(--font-mono); font-size:13px; letter-spacing:0.12em; color:var(--text-muted); padding:8px 0; }
   .weekday:first-child { color:var(--red); }
@@ -362,6 +382,16 @@
   </div>
 </header>
 
+<!-- 필터바 -->
+<div class="filter-bar" id="gFilterBar">
+  <span class="filter-bar-label">필터</span>
+  <button class="g-filter-btn active" data-f="all">전체</button>
+  <button class="g-filter-btn" data-f="gold"><span class="dot" style="background:#c8a870;"></span>방문의뢰</button>
+  <button class="g-filter-btn" data-f="teal"><span class="dot" style="background:#e8894a;"></span>원격/방송룸</button>
+  <button class="g-filter-btn" data-f="green"><span class="dot" style="background:#70c870;"></span>촬영/스튜디오</button>
+  <button class="g-filter-btn" data-f="purple"><span class="dot" style="background:#9b70c8;"></span>미팅/내방</button>
+</div>
+
 <!-- PC 월간 -->
 <div class="calendar-wrap" id="pcMonthWrap">
   <div class="weekdays">
@@ -494,9 +524,13 @@ function getPcWeekStart() {
 }
 function dateDiff(d1,d2){ return (new Date(d2+'T00:00:00')-new Date(d1+'T00:00:00'))/86400000; }
 
-/* 게스트: 모든 일정 표시 (필터 없음) */
-/* 게스트: 사내업무(blue), 휴가관련(red) 제외 */
-function allEvents() { return events.filter(ev => ev.color !== 'blue' && ev.color !== 'red'); }
+/* 게스트: 사내업무(blue), 휴가관련(red) 제외 + 유형 필터 */
+let gActiveFilter = 'all';
+function allEvents() {
+  return events.filter(ev => ev.color !== 'blue' && ev.color !== 'red'
+    && (gActiveFilter === 'all' || (ev.color||'gold') === gActiveFilter)
+  );
+}
 
 /* ── 일정 표시 텍스트: 시간만 ── */
 function guestChipText(ev) {
@@ -617,7 +651,7 @@ function render() {
       for(let l=0;l<lanes;l++){ const sp=document.createElement('div'); sp.className='lane-spacer'; div.appendChild(sp); }
 
       const evList=document.createElement('div'); evList.className='events-list';
-      const dayEvs=singleMap[dk]||[];
+      const dayEvs=(singleMap[dk]||[]).slice().sort((a,b)=>(a.ev.startTime||'00:00').localeCompare(b.ev.startTime||'00:00'));
       dayEvs.slice(0,3).forEach(({ev})=>{
         const chip=document.createElement('div');
         chip.className=`event-chip single color-${ev.color||'gold'}`;
@@ -744,7 +778,7 @@ function renderPcWeek() {
     if(maxLane>0){ const sp=document.createElement('div'); sp.style.height=(maxLane*LANE_H)+'px'; sp.style.flexShrink='0'; cell.appendChild(sp); }
 
     const MAX_SHOW=4;
-    const dayEvs=singleMap[dk]||[];
+    const dayEvs=(singleMap[dk]||[]).slice().sort((a,b)=>(a.ev.startTime||'00:00').localeCompare(b.ev.startTime||'00:00'));
     dayEvs.slice(0,MAX_SHOW).forEach(({ev})=>{
       const chip=document.createElement('div');
       chip.className=`event-chip single color-${ev.color||'gold'}`;
@@ -1146,6 +1180,16 @@ document.getElementById('moreDayPopoverBg').addEventListener('click', closeMoreP
   document.addEventListener('mouseup', stopWeekDrag);
   document.addEventListener('touchend', stopWeekDrag);
 })();
+
+/* ── 유형 필터 버튼 ── */
+document.querySelectorAll('.g-filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    gActiveFilter = btn.dataset.f;
+    document.querySelectorAll('.g-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderAll();
+  });
+});
 
 window.addEventListener('resize',renderAll);
 
