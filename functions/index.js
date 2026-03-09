@@ -71,8 +71,8 @@ const EMBED_COLORS = {
 const TYPE_LABELS = {
   gold:   '개인의뢰',
   blue:   '사내업무',
-  red:    '휴가관련',
-  green:  '촬영관련',
+  red:    '휴가/개인',
+  green:  '촬영/스튜디오',
   purple: '미팅/내방',
 };
 
@@ -113,7 +113,11 @@ function buildMessage(ev) {
 
   /* content용 변수는 이미 위에서 계산된 timeStr, typeLabel 재사용 */
   return {
-    content: `@everyone\n📅 **${ev.title || '(제목 없음)'}** | ${timeStr} | ${typeLabel}`,
+    /* 담당자: 이름 끝 두 글자 */
+    const assigneeStr = (ev.assignees && ev.assignees.length > 0)
+      ? ' | ' + ev.assignees.map(n => n.trim().slice(-2)).join(' ')
+      : '';
+    content: `@everyone\n📅 **${ev.title || '(제목 없음)'}** | ${timeStr} | ${typeLabel}${assigneeStr}`,
     username:   '📅 캘린더 알림',
     avatar_url: 'https://cdn.discordapp.com/embed/avatars/0.png',
     embeds: [{
@@ -132,7 +136,7 @@ function buildMessage(ev) {
 /* ── 메인 스케줄 함수 ── */
 exports.sendScheduledNotifications = onSchedule(
   {
-    schedule:  'every 1 minutes',
+    schedule:  'every 5 minutes',
     timeZone:  'Asia/Seoul',
     region:    'asia-northeast3',
     memory:    '256MiB',
@@ -220,8 +224,7 @@ exports.extractEstimate = onRequest(
             { text: '이 이미지에서 총 견적 금액(최종 합계 금액)만 숫자와 "원" 단위로 추출해줘. 예: 2,966,100원. 금액만 답해줘. 견적서가 아니거나 금액이 없으면 "없음"이라고만 답해.' }
           ]
         }],
-        generationConfig: { maxOutputTokens: 256, temperature: 0 },
-        thinkingConfig: { thinkingBudget: 0 }
+        generationConfig: { maxOutputTokens: 256, temperature: 0 }
       });
 
       const apiPath = `/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
@@ -255,7 +258,11 @@ exports.extractEstimate = onRequest(
       }
 
       const result = JSON.parse(response.body);
-      const text = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '없음';
+      /* thinking 모델은 parts에 thinking/text 혼재 - text 타입만 추출 */
+    const parts = result.candidates?.[0]?.content?.parts || [];
+    const textPart = parts.find(p => p.text && !p.thought) || parts.find(p => p.text) || {};
+    const text = textPart.text?.trim() || '없음';
+    console.log('전체 parts 수:', parts.length, '| 추출 텍스트:', text);
       console.log('추출 결과:', text);
       res.json({ amount: text });
 
