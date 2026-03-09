@@ -413,7 +413,7 @@ function makeImgSection(title, groups) {
 <!-- ═══ STATS ═══ -->
 <div class="stats-bar">
   <div class="stat-card"><div class="stat-label">전체</div><div class="stat-value" id="st-total">—</div></div>
-  <div class="stat-card"><div class="stat-label">개인의뢰</div><div class="stat-value gold"   id="st-gold">—</div></div>
+  <div class="stat-card"><div class="stat-label">방문의뢰</div><div class="stat-value gold"   id="st-gold">—</div></div>
   <div class="stat-card"><div class="stat-label">원격/방송룸</div><div class="stat-value" style="color:var(--chip-teal-bg);" id="st-teal">—</div></div>
   <div class="stat-card"><div class="stat-label">사내업무</div><div class="stat-value blue"   id="st-blue">—</div></div>
   <div class="stat-card"><div class="stat-label">휴가/개인</div><div class="stat-value red"    id="st-red">—</div></div>
@@ -429,7 +429,7 @@ function makeImgSection(title, groups) {
   </div>
   <div class="filter-group" id="filterGroup">
     <button class="filter-btn active" data-filter="all">전체</button>
-    <button class="filter-btn f-gold"   data-filter="gold">  <span class="color-dot cd-gold"></span>개인의뢰</button>
+    <button class="filter-btn f-gold"   data-filter="gold">  <span class="color-dot cd-gold"></span>방문의뢰</button>
     <button class="filter-btn f-teal"   data-filter="teal">  <span class="color-dot cd-teal" style="background:var(--chip-teal-bg);"></span>원격/방송룸</button>
     <button class="filter-btn f-blue"   data-filter="blue">  <span class="color-dot cd-blue"></span>사내업무</button>
     <button class="filter-btn f-red"    data-filter="red">   <span class="color-dot cd-red"></span>휴가/개인</button>
@@ -591,7 +591,7 @@ if (isAuth()) {
 }
 
 /* ── CONSTANTS ── */
-const TYPE_LABELS    = { gold:'개인의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가/개인', green:'촬영/스튜디오', purple:'미팅/내방' };
+const TYPE_LABELS    = { gold:'방문의뢰', teal:'원격/방송룸', blue:'사내업무', red:'휴가/개인', green:'촬영/스튜디오', purple:'미팅/내방' };
 const SPECIAL_LABELS = { car:'🚗차량', brief:'💼제품', 'return':'←당김', group:'👥2인', urgent:'🚨긴급(구)', ladder:'🪜사다리' };
 const SCHED_LABELS   = { suggest:'💬제안', hope:'🙏희망', target:'🎯목표' };
 const SCHED_EVENT_LABELS = { fast:'←빠른일정', urgent:'🚨긴급', after:'→N일이후' };
@@ -846,28 +846,41 @@ function openDetail(ev) {
 
   if (ev.desc) body.appendChild(makeSection('상세 설명', [['내용', ev.desc]]));
 
-  /* 개인의뢰(gold) 전용 */
-  if (c === 'gold' && ev.gold) {
-    const g = ev.gold;
-    body.appendChild(makeSection('의뢰자 정보', [
-      ['의뢰자',   g.name||'—'],
-      ['전화번호', g.phone||'—'],
-      ['유입 경로', g.source||'—'],
-      ['플랫폼',   g.platform||'—'],
-      ['방송주제', g.topic||'—'],
-      ['예산 성향', g.budget||'—'],
-      ['경력',     g.career||'—'],
-      ['결제',     g.paid||'—'],
-      ['주문제품', g.order||'—'],
-      ['잔금',     g.balance||'—'],
-      ['잔금금액', g.balance_amount||'—'],
-    ]));
-    if (g.equipment)              body.appendChild(makeSection('장비 목록',  [['장비', g.equipment]]));
-    if (g.req_topic||g.req_detail||g.specialReason) body.appendChild(makeSection('의뢰 내용', [
-      ...(g.req_topic||g.req_detail ? [['주제',g.req_topic||'—'],['세부',g.req_detail||'—']] : []),
-      ...(g.specialReason ? [['특수옵션 사유', g.specialReason]] : []),
-    ]));
-    if (g.special)                 body.appendChild(makeSection('특이사항',  [['내용', g.special]]));
+  /* 방문의뢰(gold) 전용 */
+  if (c === 'gold') {
+    const g = ev.gold || {};
+
+    /* 의뢰자 정보 */
+    const clientRows = [];
+    if (g.name||ev.name)     clientRows.push(['의뢰자',      g.name||ev.name]);
+    if (g.phone||ev.phone)   clientRows.push(['전화번호',    g.phone||ev.phone]);
+    if (g.source)            clientRows.push(['유입 경로',   g.source]);
+    if (g.platform)          clientRows.push(['방송 플랫폼', g.platform]);
+    if (g.topic)             clientRows.push(['방송 주제',   g.topic]);
+    if (g.budget)            clientRows.push(['예산 성향',   g.budget]);
+    if (g.career)            clientRows.push(['경력',        g.career]);
+    if (clientRows.length)   body.appendChild(makeSection('의뢰자 정보', clientRows));
+
+    /* 의뢰 내용 */
+    const reqRows = [];
+    if (g.req_topic)         reqRows.push(['요청 주제',      g.req_topic]);
+    if (g.req_detail)        reqRows.push(['세부 내용',      g.req_detail]);
+    if (g.equipment)         reqRows.push(['장비 목록',      g.equipment]);
+    if (g.specialReason)     reqRows.push(['특이사항 사유',  g.specialReason]);
+    if (g.special)           reqRows.push(['특이사항',       g.special]);
+    if (reqRows.length)      body.appendChild(makeSection('의뢰 내용', reqRows));
+
+    /* 결제/정산 */
+    const payRows = [];
+    if (g.estimate_amount)   payRows.push(['견적 금액',      g.estimate_amount]);
+    if (g.paid)              payRows.push(['결제 여부',      g.paid]);
+    if (g.order)             payRows.push(['주문 제품',      g.order]);
+    if (g.delivery)          payRows.push(['배송',           g.delivery]);
+    if (g.balance)           payRows.push(['잔금',           g.balance]);
+    if (g.balance_amount)    payRows.push(['잔금 금액',      g.balance_amount]);
+    if (payRows.length)      body.appendChild(makeSection('결제/정산', payRows));
+
+    /* 이미지 */
     const imgSec = makeImgSection('첨부 이미지', [
       { label:'견적서 이미지', images: g.quoteImgs||[] },
       { label:'참고 이미지',   images: g.refImgs  ||[] },
