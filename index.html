@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark" id="metaColorScheme">
 <title>DRGO Calendar</title>
 
 <!-- ── PWA ── -->
@@ -144,6 +145,7 @@
 <style>
   /* ── DARK theme (default) ── */
   :root {
+    color-scheme: dark;
     --bg: #111111;
     --surface: #1c1c1c;
     --surface2: #272727;
@@ -170,6 +172,7 @@
   }
   /* ── LIGHT theme ── */
   html.light {
+    color-scheme: light;
     --bg: #ffffff;
     --surface: #ffffff;
     --surface2: #f0f0f0;
@@ -4561,13 +4564,17 @@ document.addEventListener('keydown',e=>{
 
 (function(){
   const saved=localStorage.getItem('cal_theme');
-  if (saved==='light') document.documentElement.classList.add('light');
+  if (saved==='light') {
+    document.documentElement.classList.add('light');
+    const m=document.getElementById('metaColorScheme'); if(m) m.content='light';
+  }
 })();
 function applyThemeBtn(){
   document.getElementById('themeBtn').textContent=document.documentElement.classList.contains('light')?'☀️':'🌙';
 }
 document.getElementById('themeBtn').addEventListener('click',()=>{
   const isLight=document.documentElement.classList.toggle('light');
+  document.getElementById('metaColorScheme').content = document.documentElement.classList.contains('light') ? 'light' : 'dark';
   localStorage.setItem('cal_theme',isLight?'light':'dark');
   applyThemeBtn();
 });
