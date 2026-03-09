@@ -849,36 +849,37 @@ function openDetail(ev) {
   /* 방문의뢰(gold) 전용 */
   if (c === 'gold') {
     const g = ev.gold || {};
+    const val = v => (v && String(v).trim()) ? String(v).trim() : null;
 
-    /* 의뢰자 정보 */
-    const clientRows = [];
-    if (g.name||ev.name)     clientRows.push(['의뢰자',      g.name||ev.name]);
-    if (g.phone||ev.phone)   clientRows.push(['전화번호',    g.phone||ev.phone]);
-    if (g.source)            clientRows.push(['유입 경로',   g.source]);
-    if (g.platform)          clientRows.push(['방송 플랫폼', g.platform]);
-    if (g.topic)             clientRows.push(['방송 주제',   g.topic]);
-    if (g.budget)            clientRows.push(['예산 성향',   g.budget]);
-    if (g.career)            clientRows.push(['경력',        g.career]);
-    if (clientRows.length)   body.appendChild(makeSection('의뢰자 정보', clientRows));
+    /* 의뢰자 정보 - 항상 표시 (빈 값은 '—') */
+    body.appendChild(makeSection('의뢰자 정보', [
+      ['의뢰자',      val(g.name) || val(ev.name)  || '—'],
+      ['전화번호',    val(g.phone)|| val(ev.phone) || '—'],
+      ['유입 경로',   val(g.source)   || '—'],
+      ['방송 플랫폼', val(g.platform) || '—'],
+      ['방송 주제',   val(g.topic)    || '—'],
+      ['예산 성향',   val(g.budget)   || '—'],
+      ['경력',        val(g.career)   || '—'],
+    ]));
 
-    /* 의뢰 내용 */
+    /* 의뢰 내용 - 값이 있는 것만 */
     const reqRows = [];
-    if (g.req_topic)         reqRows.push(['요청 주제',      g.req_topic]);
-    if (g.req_detail)        reqRows.push(['세부 내용',      g.req_detail]);
-    if (g.equipment)         reqRows.push(['장비 목록',      g.equipment]);
-    if (g.specialReason)     reqRows.push(['특이사항 사유',  g.specialReason]);
-    if (g.special)           reqRows.push(['특이사항',       g.special]);
-    if (reqRows.length)      body.appendChild(makeSection('의뢰 내용', reqRows));
+    if (val(g.req_topic))      reqRows.push(['요청 주제',     g.req_topic]);
+    if (val(g.req_detail))     reqRows.push(['세부 내용',     g.req_detail]);
+    if (val(g.equipment))      reqRows.push(['장비 목록',     g.equipment]);
+    if (val(g.specialReason))  reqRows.push(['특이사항 사유', g.specialReason]);
+    if (val(g.special))        reqRows.push(['특이사항',      g.special]);
+    if (reqRows.length) body.appendChild(makeSection('의뢰 내용', reqRows));
 
-    /* 결제/정산 */
-    const payRows = [];
-    if (g.estimate_amount)   payRows.push(['견적 금액',      g.estimate_amount]);
-    if (g.paid)              payRows.push(['결제 여부',      g.paid]);
-    if (g.order)             payRows.push(['주문 제품',      g.order]);
-    if (g.delivery)          payRows.push(['배송',           g.delivery]);
-    if (g.balance)           payRows.push(['잔금',           g.balance]);
-    if (g.balance_amount)    payRows.push(['잔금 금액',      g.balance_amount]);
-    if (payRows.length)      body.appendChild(makeSection('결제/정산', payRows));
+    /* 결제/정산 - 항상 표시 */
+    body.appendChild(makeSection('결제/정산', [
+      ['견적 금액',  val(g.estimate_amount) || '—'],
+      ['결제 여부',  val(g.paid)            || '—'],
+      ['주문 제품',  val(g.order)           || '—'],
+      ['배송',       val(g.delivery)        || '—'],
+      ['잔금',       val(g.balance)         || '—'],
+      ['잔금 금액',  val(g.balance_amount)  || '—'],
+    ]));
 
     /* 이미지 */
     const imgSec = makeImgSection('첨부 이미지', [
