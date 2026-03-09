@@ -303,37 +303,6 @@ document.addEventListener('keydown', e => {
   }
 });
 
-function makeImgSection(title, groups) {
-  /* groups: [{label, images:[{name,data}]}] */
-  const allImgs = groups.flatMap(g => g.images);
-  if (!allImgs.length) return null;
-  const sec = document.createElement('div'); sec.className='detail-section';
-  const t   = document.createElement('div'); t.className='detail-section-title'; t.textContent=title;
-  sec.appendChild(t);
-  let offset = 0;
-  groups.forEach(g => {
-    if (!g.images.length) return;
-    const lbl = document.createElement('div'); lbl.className='img-group-label'; lbl.textContent=g.label;
-    const grid= document.createElement('div'); grid.className='img-preview-grid';
-    const startOffset = offset;
-    g.images.forEach((img, i) => {
-      const el = document.createElement('img');
-      el.className='img-thumb';
-      el.src = img.data;
-      el.alt = img.name||'이미지';
-      el.title = img.name||'이미지';
-      const captureIdx = startOffset + i;
-      el.addEventListener('click', () => openLightbox(allImgs, captureIdx));
-      grid.appendChild(el);
-    });
-    offset += g.images.length;
-    sec.appendChild(lbl);
-    sec.appendChild(grid);
-  });
-  return sec;
-}
-
-
 /* ── TOAST ── */
 .toast {
   position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px);
@@ -506,6 +475,36 @@ function makeImgSection(title, groups) {
 <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 
 <script type="module">
+function makeImgSection(title, groups) {
+  /* groups: [{label, images:[{name,data}]}] */
+  const allImgs = groups.flatMap(g => g.images);
+  if (!allImgs.length) return null;
+  const sec = document.createElement('div'); sec.className='detail-section';
+  const t   = document.createElement('div'); t.className='detail-section-title'; t.textContent=title;
+  sec.appendChild(t);
+  let offset = 0;
+  groups.forEach(g => {
+    if (!g.images.length) return;
+    const lbl = document.createElement('div'); lbl.className='img-group-label'; lbl.textContent=g.label;
+    const grid= document.createElement('div'); grid.className='img-preview-grid';
+    const startOffset = offset;
+    g.images.forEach((img, i) => {
+      const el = document.createElement('img');
+      el.className='img-thumb';
+      el.src = img.data;
+      el.alt = img.name||'이미지';
+      el.title = img.name||'이미지';
+      const captureIdx = startOffset + i;
+      el.addEventListener('click', () => openLightbox(allImgs, captureIdx));
+      grid.appendChild(el);
+    });
+    offset += g.images.length;
+    sec.appendChild(lbl);
+    sec.appendChild(grid);
+  });
+  return sec;
+}
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 import { getFirestore, collection, onSnapshot }
   from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
