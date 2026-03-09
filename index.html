@@ -2019,6 +2019,17 @@
 </div>
 
 <!-- ═══ 나가기 확인 팝업 ═══ -->
+<!-- 삭제 확인 다이얼로그 -->
+<div class="confirm-overlay" id="deleteConfirmOverlay" style="z-index:4100;">
+  <div class="confirm-box">
+    <div id="deleteConfirmMsg" class="confirm-msg" style="white-space:pre-line;"></div>
+    <div class="confirm-btns">
+      <button class="confirm-btn-cancel" id="deleteConfirmCancel">취소</button>
+      <button class="confirm-btn-leave" id="deleteConfirmOk" style="background:var(--red);border-color:var(--red);">삭제</button>
+    </div>
+  </div>
+</div>
+
 <div class="confirm-overlay" id="confirmOverlay">
   <div class="confirm-box">
     <div class="confirm-title">⚠️ 저장하지 않은 변경사항</div>
@@ -3638,6 +3649,11 @@ function calcChanges(prev, next) {
 
 async function deleteEvent(){
   if (!editingId) { closeModal(); return; }
+  const title = document.getElementById('modalTitle').value.trim() || '이 일정';
+  const ok = await new Promise(resolve => {
+    showConfirm(`"${title}"을(를) 삭제할까요?\n삭제 후 복구할 수 없습니다.`, () => resolve(true), () => resolve(false));
+  });
+  if (!ok) return;
   try { await deleteDoc(doc(db,'events',editingId)); }
   catch(e){ alert('삭제 중 오류: '+e.message); }
   closeModal();
@@ -4419,6 +4435,31 @@ function _isDirty() {
   snap._balance = getRadio('g_balance_group');
   return JSON.stringify(snap) !== _modalSnapshot;
 }
+
+/* ── 삭제 확인 다이얼로그 ── */
+let _deleteConfirmResolve = null;
+function showConfirm(msg, onOk, onCancel) {
+  document.getElementById('deleteConfirmMsg').textContent = msg;
+  document.getElementById('deleteConfirmOverlay').classList.add('open');
+  _deleteConfirmResolve = { ok: onOk, cancel: onCancel };
+}
+document.getElementById('deleteConfirmOk').addEventListener('click', () => {
+  document.getElementById('deleteConfirmOverlay').classList.remove('open');
+  if (_deleteConfirmResolve?.ok) _deleteConfirmResolve.ok();
+  _deleteConfirmResolve = null;
+});
+document.getElementById('deleteConfirmCancel').addEventListener('click', () => {
+  document.getElementById('deleteConfirmOverlay').classList.remove('open');
+  if (_deleteConfirmResolve?.cancel) _deleteConfirmResolve.cancel();
+  _deleteConfirmResolve = null;
+});
+document.getElementById('deleteConfirmOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('deleteConfirmOverlay')) {
+    document.getElementById('deleteConfirmOverlay').classList.remove('open');
+    if (_deleteConfirmResolve?.cancel) _deleteConfirmResolve.cancel();
+    _deleteConfirmResolve = null;
+  }
+});
 
 function _showConfirm(onLeave) {
   _confirmCallback = onLeave;
