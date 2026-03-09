@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>주문 관리 시스템 — 닥터고블린</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0b0d11; --s1:#131620; --s2:#181c28; --s3:#1e2335;
+  --b1:#232840; --b2:#2d3454;
+  --accent:#4f7fff; --a2:#6b8fff;
+  --green:#22c55e; --yellow:#f59e0b; --red:#ef4444; --purple:#a855f7;
+  --t1:#e2e8f0; --t2:#94a3b8; --t3:#475569;
+  --mono:'JetBrains Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;}
+.hd{position:sticky;top:0;z-index:200;background:rgba(11,13,17,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:14px;padding:0 24px;height:56px;}
+.hd-logo{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#4f7fff,#a855f7);display:flex;align-items:center;justify-content:center;font-size:16px;}
+.hd h1{font-size:15px;font-weight:700;}
+.hd-sub{font-size:11px;color:var(--t3);font-family:var(--mono);margin-left:auto;}
+.layout{display:grid;grid-template-columns:340px 1fr;height:calc(100vh - 56px);}
+.sb{background:var(--s1);border-right:1px solid var(--b1);display:flex;flex-direction:column;overflow:hidden;}
+.sb-scroll{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px;}
+.sb-scroll::-webkit-scrollbar{width:4px;}
+.sb-scroll::-webkit-scrollbar-thumb{background:var(--b2);border-radius:4px;}
+.lbl{font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1.8px;padding-bottom:8px;border-bottom:1px solid var(--b1);}
+.card{background:var(--s2);border:1px solid var(--b1);border-radius:10px;padding:14px;}
+input,select{background:var(--s3);border:1px solid var(--b1);border-radius:6px;padding:8px 11px;color:var(--t1);font-size:12px;font-family:inherit;width:100%;outline:none;transition:border-color .15s;}
+input:focus,select:focus{border-color:var(--accent);}
+input::placeholder{color:var(--t3);}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit;white-space:nowrap;}
+.btn-p{background:var(--accent);color:#fff;}
+.btn-p:hover{background:#3b6ef5;}
+.btn-g{background:var(--green);color:#fff;}
+.btn-g:hover{background:#16a34a;}
+.btn-ghost{background:transparent;color:var(--t2);border:1px solid var(--b1);}
+.btn-ghost:hover{background:var(--s3);color:var(--t1);}
+.btn-sm{padding:5px 10px;font-size:11px;}
+.btn-xs{padding:3px 8px;font-size:10px;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn-full{width:100%;justify-content:center;}
+.ig{display:flex;flex-direction:column;gap:5px;}
+.ig label{font-size:11px;color:var(--t2);}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.main{overflow-y:auto;padding:20px;}
+.main::-webkit-scrollbar{width:4px;}
+.main::-webkit-scrollbar-thumb{background:var(--b2);border-radius:4px;}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+.stat{background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:14px 16px;}
+.stat-lbl{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:1.2px;}
+.stat-val{font-size:24px;font-weight:700;font-family:var(--mono);margin-top:3px;}
+.c-blue{color:var(--accent);} .c-yellow{color:var(--yellow);} .c-green{color:var(--green);} .c-purple{color:var(--purple);}
+.fbar{display:flex;gap:8px;margin-bottom:14px;}
+.fbar input{flex:1;}
+.fbar select{width:130px;}
+.ocard{background:var(--s1);border:1px solid var(--b1);border-radius:12px;margin-bottom:10px;overflow:hidden;transition:border-color .15s;}
+.ocard:hover{border-color:var(--b2);}
+.ocard.paid{border-left:3px solid var(--green);}
+.ocard.unpaid{border-left:3px solid var(--yellow);}
+.ocard-hd{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;}
+.ocard-hd:hover{background:var(--s2);}
+.oid{font-family:var(--mono);font-size:11px;color:var(--accent);font-weight:600;}
+.oname{font-size:13px;font-weight:600;flex:1;}
+.oprice{font-size:11px;color:var(--t2);font-family:var(--mono);}
+.badge{padding:2px 7px;border-radius:100px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
+.b-paid{background:rgba(34,197,94,.15);color:var(--green);}
+.b-unpaid{background:rgba(245,158,11,.15);color:var(--yellow);}
+.b-delivered{background:rgba(34,197,94,.2);color:var(--green);}
+.b-transit{background:rgba(245,158,11,.15);color:var(--yellow);}
+.b-link{background:rgba(79,127,255,.15);color:var(--accent);}
+.b-none{background:rgba(71,85,105,.2);color:var(--t3);}
+.b-err{background:rgba(239,68,68,.15);color:var(--red);}
+.chev{color:var(--t3);font-size:9px;transition:transform .2s;margin-left:4px;}
+.ocard-body{padding:14px 16px;border-top:1px solid var(--b1);}
+.ocard-body.collapsed{display:none;}
+.ptbl{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:12px;}
+.ptbl th{text-align:left;padding:5px 8px;color:var(--t3);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--b1);}
+.ptbl td{padding:6px 8px;border-bottom:1px solid var(--b1);color:var(--t2);}
+.ptbl tr:last-child td{border-bottom:none;}
+.ptbl .cat{color:var(--t3);font-size:10px;font-style:italic;}
+.ptbl .qty{color:var(--accent);font-family:var(--mono);font-weight:600;}
+.ptbl .price{color:var(--t1);font-family:var(--mono);font-size:11px;}
+.type-badge{background:var(--s3);color:var(--t3);padding:1px 5px;border-radius:4px;font-size:9px;}
+.total-row{text-align:right;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--t1);padding:6px 8px;border-top:1px solid var(--b2);}
+.act-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--b1);}
+.trk-row{display:flex;gap:6px;align-items:center;margin-top:10px;flex-wrap:wrap;}
+.trk-res{margin-top:8px;background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:10px 12px;font-size:11px;}
+.trk-step{display:flex;gap:10px;padding:4px 0;border-bottom:1px solid var(--b1);}
+.trk-step:last-child{border-bottom:none;}
+.trk-time{color:var(--t3);font-family:var(--mono);font-size:10px;min-width:95px;}
+.trk-status{color:var(--t2);}
+.trk-status.done{color:var(--green);font-weight:600;}
+.prog-bar{height:3px;background:var(--b1);border-radius:100px;overflow:hidden;margin-top:6px;}
+.prog-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--accent),var(--purple));transition:width .3s;}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:280px;gap:10px;color:var(--t3);}
+.empty-icon{font-size:44px;opacity:.25;}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--s2);border:1px solid var(--b2);border-radius:8px;padding:10px 16px;font-size:12px;z-index:999;animation:fadeup .2s ease;max-width:300px;line-height:1.5;}
+@keyframes fadeup{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid var(--b2);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.item-row{display:grid;grid-template-columns:1fr 50px 85px 22px;gap:4px;margin-bottom:4px;align-items:center;}
+.item-row input{padding:5px 7px;font-size:11px;}
+.del-btn{width:22px;height:22px;background:rgba(239,68,68,.2);color:var(--red);border:none;border-radius:4px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;}
+.carrier-sel{width:auto;padding:6px 8px;font-size:11px;}
+.hint{font-size:10px;color:var(--t3);padding:6px 8px;background:rgba(79,127,255,.07);border-radius:4px;border-left:2px solid rgba(79,127,255,.4);line-height:1.5;margin-top:6px;}
+@media(max-width:860px){.layout{grid-template-columns:1fr}.sb{border-right:none;border-bottom:1px solid var(--b1);max-height:50vh}.stats{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<div class="hd">
+  <div class="hd-logo">📦</div>
+  <h1>주문 관리 시스템</h1>
+  <span class="hd-sub" id="lastUpd">—</span>
+</div>
+
+<div class="layout">
+<div class="sb">
+<div class="sb-scroll">
+
+  <div class="lbl">견적서 불러오기</div>
+  <div class="card">
+    <div class="ig">
+      <label>견적서 URL</label>
+      <input id="urlInput" type="url" placeholder="https://drgo.pro/orderpageSingle.php?order_id=2456" />
+      <div class="hint">💡 이 앱과 같은 브라우저에서 견적서 페이지를 열어 두면 자동으로 읽어옵니다.</div>
+    </div>
+    <button class="btn btn-p btn-full" onclick="fetchOrder()" id="fetchBtn" style="margin-top:10px;">
+      🔍 견적서 불러오기
+    </button>
+  </div>
+
+  <div class="lbl">수동 주문 입력</div>
+  <div class="card" style="border-style:dashed;border-color:var(--b2);">
+    <div class="row2">
+      <div class="ig"><label>주문 ID</label><input id="mId" placeholder="2456" /></div>
+      <div class="ig"><label>닉네임</label><input id="mNick" placeholder="데디베어" /></div>
+    </div>
+    <div class="row2" style="margin-top:8px;">
+      <div class="ig"><label>이름</label><input id="mName" placeholder="최서호" /></div>
+      <div class="ig"><label>연락처</label><input id="mPhone" placeholder="01028217654" /></div>
+    </div>
+    <div style="margin-top:10px;">
+      <div style="font-size:10px;color:var(--t2);margin-bottom:4px;">제품 목록 <span style="color:var(--t3);">(제품명 / 수량 / 단가)</span></div>
+      <div id="mItems"></div>
+      <button class="btn btn-ghost btn-xs" onclick="addItem()" style="margin-top:4px;">+ 제품 추가</button>
+    </div>
+    <div class="ig" style="margin-top:8px;"><label>총 금액 (원)</label><input id="mTotal" placeholder="5,975,700" /></div>
+    <div class="ig" style="margin-top:8px;"><label>원본 URL (선택)</label><input id="mUrl" type="url" placeholder="https://drgo.pro/..." /></div>
+    <button class="btn btn-g btn-full" onclick="addManual()" style="margin-top:10px;">✅ 주문 등록</button>
+  </div>
+
+  <div class="lbl">일괄 작업</div>
+  <button class="btn btn-p btn-full" onclick="trackAll()" id="trkAllBtn">🚚 전체 송장 일괄 조회</button>
+  <div id="trkProg" style="display:none;">
+    <div style="font-size:11px;color:var(--t2);" id="trkLbl">조회 중...</div>
+    <div class="prog-bar"><div class="prog-fill" id="trkFill" style="width:0%"></div></div>
+  </div>
+
+  <div class="lbl">데이터 관리</div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;">
+    <button class="btn btn-ghost btn-sm" onclick="doExport()">📥 내보내기</button>
+    <button class="btn btn-ghost btn-sm" onclick="doImport()">📤 불러오기</button>
+    <button class="btn btn-ghost btn-sm" onclick="clearAll()" style="color:var(--red);">🗑️ 전체삭제</button>
+  </div>
+
+</div>
+</div>
+
+<div class="main">
+  <div class="stats">
+    <div class="stat"><div class="stat-lbl">전체 주문</div><div class="stat-val c-blue" id="st0">0</div></div>
+    <div class="stat"><div class="stat-lbl">결제 대기</div><div class="stat-val c-yellow" id="st1">0</div></div>
+    <div class="stat"><div class="stat-lbl">배송 완료</div><div class="stat-val c-green" id="st2">0</div></div>
+    <div class="stat"><div class="stat-lbl">배송 중</div><div class="stat-val c-purple" id="st3">0</div></div>
+  </div>
+  <div class="fbar">
+    <input id="srch" placeholder="🔍 주문 ID, 닉네임, 제품명 검색..." oninput="render()" />
+    <select id="flt" onchange="render()">
+      <option value="">전체</option>
+      <option value="unpaid">결제 대기</option>
+      <option value="paid">결제 완료</option>
+      <option value="delivered">배송 완료</option>
+      <option value="transit">배송 중</option>
+    </select>
+  </div>
+  <div id="list"></div>
+</div>
+</div>
+
+<input type="file" id="importFile" accept=".json" style="display:none" onchange="onImport(event)" />
+
+<script>
+// ── DATA ──
+let orders = JSON.parse(localStorage.getItem('dg_orders') || '[]');
+const CARRIERS = {'CJ대한통운':'04','한진택배':'05','로젠택배':'06','우체국택배':'01','GS택배':'15','롯데택배':'08'};
+const CARRIER_LINKS = {
+  'CJ대한통운': n=>`https://www.cjlogistics.com/ko/tool/parcel/tracking?gnbInvcNo=${n}`,
+  '한진택배': n=>`https://www.hanjin.com/kor/CMS/DeliveryMgnt/WaybillResult.do?mCode=MN038&schLang=KOR&wblnumText2=${n}`,
+  '로젠택배': n=>`https://www.ilogen.com/m/personal/trace/${n}`,
+  '우체국택배': n=>`https://service.epost.go.kr/trace.RetrieveEmsRigiTraceList.comm?POST_CODE=${n}`,
+  '롯데택배': n=>`https://www.lotteglogis.com/home/reservation/tracking/linkView?InvNo=${n}`,
+  'GS택배': n=>`https://www.gse.co.kr/kor/delivery/delivery.jsp?trackingNo=${n}`,
+};
+
+function save() {
+  localStorage.setItem('dg_orders', JSON.stringify(orders));
+  document.getElementById('lastUpd').textContent = new Date().toLocaleTimeString('ko-KR');
+}
+
+// ── 파싱 (실제 drgo.pro DOM 구조) ──
+function parseDoc(doc, orderId, url) {
+  const items = [];
+  let currentCat = '';
+
+  const nick = doc.querySelector('#mb_nick,[name="mb_nick"]')?.value || '';
+  const name = doc.querySelector('#mb_name,[name="mb_name"]')?.value || '';
+  const phone = doc.querySelector('#mb_hp,[name="mb_hp"]')?.value || '';
+
+  const bodyText = doc.body?.innerText || '';
+  const totalMatch = bodyText.match(/총 견적 금액\s*([\d,]+)원/);
+  const totalPrice = totalMatch ? parseInt(totalMatch[1].replace(/,/g,'')) : 0;
+
+  doc.querySelectorAll('table tr').forEach(row => {
+    const cells = Array.from(row.querySelectorAll('td'));
+    if (cells.length === 1) return;
+    if (cells.length >= 7) {
+      let off = 0;
+      if (cells[0].getAttribute('rowspan')) {
+        currentCat = cells[0].textContent.trim(); off = 1;
+      }
+      const type = cells[off+1]?.textContent.trim();
+      const pname = cells[off+2]?.textContent.trim();
+      const price = parseInt(cells[off+4]?.textContent.replace(/[^0-9\-]/g,'')) || 0;
+      const qty = parseInt(cells[off+5]?.textContent.trim());
+      const total = parseInt(cells[off+6]?.textContent.replace(/[^0-9\-]/g,'')) || 0;
+      if (pname && !isNaN(qty)) {
+        items.push({category:currentCat, type:type||'', name:pname, price, qty, total});
+      }
+    }
+  });
+
+  return { id:orderId, url, customerNick:nick, customerName:name, phone,
+           items, totalPrice, paid:false, trackingNumber:'', carrier:'CJ대한통운',
+           trackingResult:null, createdAt:new Date().toISOString() };
+}
+
+// ── URL → iframe 로드 ──
+async function fetchOrder() {
+  const urlVal = document.getElementById('urlInput').value.trim();
+  const btn = document.getElementById('fetchBtn');
+  if (!urlVal) { showToast('❌ URL을 입력하세요'); return; }
+
+  let orderId;
+  try { orderId = new URL(urlVal).searchParams.get('order_id') || urlVal; }
+  catch { orderId = 'ORD-'+Date.now(); }
+
+  if (orders.find(o=>o.id===orderId)) { showToast(`⚠️ 이미 등록된 주문입니다 (ID: ${orderId})`); return; }
+
+  btn.innerHTML='<span class="spin"></span> 불러오는 중...'; btn.disabled=true;
+
+  // iframe 로드
+  const old = document.getElementById('_pf'); if (old) old.remove();
+  const iframe = document.createElement('iframe');
+  iframe.id='_pf';
+  iframe.style.cssText='position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;';
+  iframe.src = urlVal;
+
+  const timer = setTimeout(() => {
+    iframe.remove();
+    // CORS 차단 → 수동 입력 안내
+    document.getElementById('mId').value = orderId;
+    document.getElementById('mUrl').value = urlVal;
+    showToast('⚠️ 자동 파싱 불가 (CORS)\n수동 입력폼에 order_id를 채웠어요.');
+    btn.innerHTML='🔍 견적서 불러오기'; btn.disabled=false;
+  }, 8000);
+
+  iframe.onload = () => {
+    clearTimeout(timer);
+    try {
+      const doc2 = iframe.contentDocument || iframe.contentWindow.document;
+      const parsed = parseDoc(doc2, orderId, urlVal);
+      iframe.remove();
+      if (parsed.items.length > 0) {
+        orders.unshift(parsed); save(); render();
+        showToast(`✅ 불러오기 완료! ${parsed.customerNick} — ${parsed.items.length}개 제품`);
+      } else {
+        document.getElementById('mId').value = orderId;
+        document.getElementById('mUrl').value = urlVal;
+        showToast('⚠️ 파싱 실패. 수동 입력폼을 이용해주세요.');
+      }
+    } catch(e) {
+      iframe.remove();
+      document.getElementById('mId').value = orderId;
+      document.getElementById('mUrl').value = urlVal;
+      showToast('⚠️ CORS 차단으로 자동 파싱 불가\n수동 입력폼을 이용해주세요.');
+    }
+    btn.innerHTML='🔍 견적서 불러오기'; btn.disabled=false;
+  };
+
+  document.body.appendChild(iframe);
+}
+
+// ── 수동 입력 ──
+let iCnt=0;
+function addItem() {
+  const list=document.getElementById('mItems');
+  const div=document.createElement('div');
+  div.className='item-row';
+  div.innerHTML=`
+    <input placeholder="제품명" />
+    <input type="number" value="1" min="1" />
+    <input placeholder="단가" />
+    <button class="del-btn" onclick="this.parentElement.remove()">×</button>`;
+  list.appendChild(div); iCnt++;
+}
+addItem();
+
+function addManual() {
+  const id=document.getElementById('mId').value.trim();
+  const nick=document.getElementById('mNick').value.trim();
+  const name=document.getElementById('mName').value.trim();
+  const phone=document.getElementById('mPhone').value.trim();
+  const totalStr=document.getElementById('mTotal').value.replace(/[^0-9]/g,'');
+  const url=document.getElementById('mUrl').value.trim();
+  if (!id||!nick){showToast('❌ 주문 ID와 닉네임을 입력하세요');return;}
+  if (orders.find(o=>o.id===id)){showToast('⚠️ 이미 존재하는 주문 ID');return;}
+  const items=[];
+  document.querySelectorAll('#mItems .item-row').forEach(row=>{
+    const ins=row.querySelectorAll('input');
+    const n=ins[0]?.value?.trim(), q=parseInt(ins[1]?.value)||1;
+    const p=parseInt((ins[2]?.value||'0').replace(/[^0-9]/g,''))||0;
+    if(n) items.push({category:'',type:'',name:n,price:p,qty:q,total:p*q});
+  });
+  if(!items.length){showToast('❌ 제품을 입력하세요');return;}
+  orders.unshift({id,url,customerNick:nick,customerName:name,phone,items,
+    totalPrice:parseInt(totalStr)||0,paid:false,trackingNumber:'',carrier:'CJ대한통운',
+    trackingResult:null,createdAt:new Date().toISOString()});
+  save();render();showToast('✅ 주문 등록 완료');
+  ['mId','mNick','mName','mPhone','mTotal','mUrl'].forEach(k=>document.getElementById(k).value='');
+  document.getElementById('mItems').innerHTML=''; addItem();
+}
+
+// ── 결제 토글 ──
+function togglePaid(id) {
+  const o=orders.find(x=>x.id===id); if(!o) return;
+  o.paid=!o.paid;
+  if(!o.paid){o.trackingNumber='';o.trackingResult=null;}
+  save();render();
+  showToast(o.paid?'💳 결제 완료 처리됨':'⚠️ 결제 미완료로 변경');
+}
+
+// ── 송장 저장 ──
+function saveTrk(id) {
+  const o=orders.find(x=>x.id===id); if(!o) return;
+  const tn=document.getElementById('tn_'+id)?.value?.trim().replace(/[^0-9]/g,'');
+  const c=document.getElementById('c_'+id)?.value;
+  if(!tn){showToast('❌ 송장번호를 입력하세요');return;}
+  o.trackingNumber=tn; o.carrier=c; o.trackingResult=null;
+  save();render();showToast('📋 저장됨: '+tn);
+  trackOrder(id);
+}
+
+// ── 배송 조회 ──
+async function trackOrder(id) {
+  const o=orders.find(x=>x.id===id); if(!o||!o.trackingNumber) return;
+  const el=document.getElementById('trk_'+id);
+  if(el) el.innerHTML='<span class="spin"></span> 조회 중...';
+  try {
+    const code=CARRIERS[o.carrier]||'04';
+    const res=await fetch(
+      `https://info.sweettracker.co.kr/api/v1/trackingInfo?t_key=demo&t_code=${code}&t_invoice=${o.trackingNumber}`,
+      {signal:AbortSignal.timeout(6000)}
+    );
+    const data=await res.json();
+    if(data.status===false||!data.trackingDetails) throw new Error(data.msg||'조회 실패');
+    const steps=(data.trackingDetails||[]).map(s=>({
+      time:s.timeString||'', status:(s.where||'')+' '+(s.kind||''), done:true
+    }));
+    const last=steps[steps.length-1]?.status||'';
+    const delivered=last.includes('배달완료')||last.includes('배송완료');
+    o.trackingResult={status:delivered?'delivered':'transit',lastStatus:last,steps,carrier:o.carrier};
+  } catch(e) {
+    const lf=CARRIER_LINKS[o.carrier];
+    o.trackingResult={
+      status:'link',
+      trackingUrl:lf?lf(o.trackingNumber):'#',
+      lastStatus:'직접 확인 필요',steps:[],carrier:o.carrier
+    };
+  }
+  save();render();
+}
+
+async function trackAll() {
+  const btn=document.getElementById('trkAllBtn');
+  const prog=document.getElementById('trkProg');
+  const lbl=document.getElementById('trkLbl');
+  const fill=document.getElementById('trkFill');
+  const todo=orders.filter(o=>o.paid&&o.trackingNumber);
+  if(!todo.length){showToast('📭 조회할 송장이 없습니다');return;}
+  btn.disabled=true; prog.style.display='block';
+  for(let i=0;i<todo.length;i++){
+    lbl.textContent=`(${i+1}/${todo.length}) ${todo[i].customerNick} 조회 중...`;
+    fill.style.width=((i+1)/todo.length*100)+'%';
+    await trackOrder(todo[i].id);
+    await new Promise(r=>setTimeout(r,600));
+  }
+  lbl.textContent=`✅ 완료 (${todo.length}건)`;
+  btn.disabled=false; render(); showToast('✅ 전체 배송 조회 완료');
+}
+
+// ── 렌더 ──
+const dstat=o=>o.trackingResult?.status||'none';
+
+function render() {
+  const q=document.getElementById('srch').value.toLowerCase();
+  const f=document.getElementById('flt').value;
+  const list=orders.filter(o=>{
+    const m=!q||o.id.toLowerCase().includes(q)||(o.customerNick||'').toLowerCase().includes(q)||(o.customerName||'').toLowerCase().includes(q)||o.items.some(i=>i.name.toLowerCase().includes(q));
+    const ds=dstat(o);
+    const sf=!f||(f==='unpaid'&&!o.paid)||(f==='paid'&&o.paid)||(f==='delivered'&&ds==='delivered')||(f==='transit'&&ds==='transit');
+    return m&&sf;
+  });
+  document.getElementById('st0').textContent=orders.length;
+  document.getElementById('st1').textContent=orders.filter(o=>!o.paid).length;
+  document.getElementById('st2').textContent=orders.filter(o=>dstat(o)==='delivered').length;
+  document.getElementById('st3').textContent=orders.filter(o=>dstat(o)==='transit').length;
+  const el=document.getElementById('list');
+  if(!list.length){
+    el.innerHTML=`<div class="empty"><div class="empty-icon">📦</div><span>${orders.length?'검색 결과 없음':'왼쪽에서 견적서를 불러오거나 수동으로 입력하세요.'}</span></div>`;
+    return;
+  }
+  el.innerHTML=list.map(oCard).join('');
+}
+
+function oCard(o) {
+  const ds=dstat(o);
+  const totFmt=o.totalPrice?o.totalPrice.toLocaleString()+'원':'—';
+  const dsBadge={
+    delivered:'<span class="badge b-delivered">✅ 배송완료</span>',
+    transit:'<span class="badge b-transit">🚚 배송중</span>',
+    link:'<span class="badge b-link">🔗 확인필요</span>',
+    none:o.trackingNumber?'<span class="badge b-link">📋 미조회</span>':'<span class="badge b-none">— 송장없음</span>',
+  }[ds]||'';
+  const tblRows=o.items.map(i=>`<tr>
+    <td class="cat">${h(i.category)}</td>
+    <td><span class="type-badge">${h(i.type)}</span></td>
+    <td>${h(i.name)}</td>
+    <td class="qty">${i.qty}</td>
+    <td class="price">${i.price?i.price.toLocaleString()+'원':'—'}</td>
+    <td class="price">${i.total?i.total.toLocaleString()+'원':'—'}</td>
+  </tr>`).join('');
+  const trkArea=o.paid?`
+    <div class="trk-row">
+      <select class="carrier-sel" id="c_${o.id}">${Object.keys(CARRIERS).map(c=>`<option ${o.carrier===c?'selected':''}>${c}</option>`).join('')}</select>
+      <input id="tn_${o.id}" value="${o.trackingNumber||''}" placeholder="송장번호 (숫자)"
+        style="font-size:11px;padding:6px 9px;font-family:var(--mono);flex:1;min-width:140px;"
+        onkeydown="if(event.key==='Enter')saveTrk('${o.id}')" />
+      <button class="btn btn-p btn-sm" onclick="saveTrk('${o.id}')">저장+조회</button>
+      ${o.trackingNumber?`<button class="btn btn-ghost btn-sm" onclick="trackOrder('${o.id}')">🔄 재조회</button>`:''}
+    </div>
+    <div id="trk_${o.id}">${renderTrk(o)}</div>`
+    :`<div style="font-size:11px;color:var(--t3);padding:6px 0;">💡 결제 완료 후 송장 입력 가능</div>`;
+  return `
+  <div class="ocard ${o.paid?'paid':'unpaid'}">
+    <div class="ocard-hd" onclick="toggleCard('${o.id}')">
+      <span class="oid">#${o.id}</span>
+      <span class="oname">${h(o.customerNick||o.customerName||'—')}</span>
+      ${o.customerName&&o.customerNick?`<span style="font-size:11px;color:var(--t3);">${h(o.customerName)}</span>`:''}
+      <span class="oprice">${totFmt}</span>
+      <span class="badge ${o.paid?'b-paid':'b-unpaid'}">${o.paid?'💳 결제완료':'⏳ 대기중'}</span>
+      ${dsBadge}
+      <span class="chev" id="chev_${o.id}">▼</span>
+    </div>
+    <div class="ocard-body" id="body_${o.id}">
+      <table class="ptbl">
+        <tr><th>카테고리</th><th>분류</th><th>제품명</th><th>수량</th><th>단가</th><th>합계</th></tr>
+        ${tblRows}
+      </table>
+      ${o.totalPrice?`<div class="total-row">합계 ${o.totalPrice.toLocaleString()}원</div>`:''}
+      <div class="act-row">
+        <button class="btn ${o.paid?'btn-ghost':'btn-g'} btn-sm" onclick="togglePaid('${o.id}')">
+          ${o.paid?'❌ 결제 취소':'✅ 결제완료 처리'}
+        </button>
+        ${o.url?`<a href="${o.url}" target="_blank" class="btn btn-ghost btn-sm">🔗 원본 견적서</a>`:''}
+        ${o.phone?`<span style="font-size:11px;color:var(--t3);font-family:var(--mono);">${h(o.phone)}</span>`:''}
+        <button class="btn btn-ghost btn-sm" onclick="delOrder('${o.id}')" style="color:var(--red);margin-left:auto;">🗑️</button>
+      </div>
+      ${trkArea}
+    </div>
+  </div>`;
+}
+
+function renderTrk(o) {
+  const r=o.trackingResult; if(!r) return '';
+  if(r.status==='link') return `<div class="trk-res">
+    <span style="color:var(--t2);">📦 ${h(r.carrier)} — 직접 조회 필요</span>
+    <a href="${r.trackingUrl}" target="_blank" class="btn btn-p btn-sm" style="margin-left:8px;margin-top:4px;">택배사 사이트 조회 →</a>
+  </div>`;
+  if(r.steps?.length) return `<div class="trk-res">
+    <div style="font-size:10px;color:var(--t3);margin-bottom:6px;">배송 추적 (최근 5건)</div>
+    ${r.steps.slice(-5).map(s=>`<div class="trk-step">
+      <span class="trk-time">${s.time}</span>
+      <span class="trk-status ${r.status==='delivered'?'done':''}">${h(s.status)}</span>
+    </div>`).join('')}
+  </div>`;
+  return `<div class="trk-res"><span style="color:var(--t2);">현황: ${h(r.lastStatus||'정보 없음')}</span></div>`;
+}
+
+function toggleCard(id) {
+  const b=document.getElementById('body_'+id), c=document.getElementById('chev_'+id);
+  if(!b) return;
+  b.classList.toggle('collapsed');
+  if(c) c.style.transform=b.classList.contains('collapsed')?'rotate(-90deg)':'';
+}
+function delOrder(id) {
+  if(!confirm(`주문 #${id}을 삭제하시겠습니까?`)) return;
+  orders=orders.filter(o=>o.id!==id); save(); render();
+}
+
+function h(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function showToast(msg,dur=4000){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),dur);}
+function doExport(){const b=new Blob([JSON.stringify(orders,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='orders_'+new Date().toISOString().slice(0,10)+'.json';a.click();}
+function doImport(){document.getElementById('importFile').click();}
+function onImport(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(!Array.isArray(d))throw new Error('형식 오류');orders=[...d,...orders.filter(o=>!d.find(i=>i.id===o.id))];save();render();showToast(`✅ ${d.length}건 가져오기 완료`);}catch(err){showToast('❌ '+err.message);}};r.readAsText(f);}
+function clearAll(){if(!confirm('모든 데이터를 삭제하시겠습니까?'))return;orders=[];save();render();}
+
+render();
+if(orders.length) document.getElementById('lastUpd').textContent=new Date().toLocaleTimeString('ko-KR');
+</script>
+</body>
+</html>
