@@ -197,7 +197,8 @@
   .more-popover-item {
     display:flex; align-items:center; gap:6px; padding:5px 8px;
     border-radius:6px; font-size:11px; background:var(--surface);
-    border-left:3px solid var(--accent); color:var(--text-muted);
+    border-left:3px solid var(--border); color:var(--text-muted);
+    white-space:nowrap;
   }
 
   /* ── PC WEEK VIEW ── */
@@ -355,7 +356,7 @@
 
 <!-- 헤더 -->
 <!-- 더보기 팝오버 -->
-<div id="moreDayPopover" style="display:none;position:fixed;z-index:200;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px;min-width:180px;max-width:240px;box-shadow:0 8px 32px rgba(0,0,0,0.45);">
+<div id="moreDayPopover" style="display:none;position:fixed;z-index:200;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px;min-width:160px;width:max-content;max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,0.45);">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
     <div id="moreDayPopoverDate" style="font-size:12px;font-weight:700;color:var(--accent);font-family:var(--font-mono);"></div>
     <button id="moreDayPopoverClose" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px;line-height:1;padding:0;">×</button>
@@ -1082,29 +1083,38 @@ function openMorePopover(dk, evs, e) {
   const [y,m,d] = dk.split('-').map(Number);
   dateEl.textContent = `${m}월 ${d}일`;
 
+  const COLOR_HEX = { gold:'#c8a870', teal:'#e8894a', green:'#70c870', purple:'#9b70c8', blue:'#7aaec8', red:'#c87070' };
+  const TYPE_LABEL_MAP = { gold:'방문의뢰', teal:'원격/방송룸', green:'촬영/스튜디오', purple:'미팅/내방', blue:'사내업무', red:'휴가/개인' };
   list.innerHTML = '';
   evs.forEach(ev => {
     const item = document.createElement('div');
     item.className = 'more-popover-item';
+    const c = ev.color || 'gold';
+    const hex = COLOR_HEX[c] || '#c8a870';
+    const typeLabel = TYPE_LABEL_MAP[c] || '일정';
+    item.style.borderLeftColor = hex;
     const timeStr = ev.allDay !== false ? '종일'
       : `${ev.startTime||''}${ev.endTime ? '~'+ev.endTime : ''}`;
-    /* 게스트: 내용 노출 없이 시간 + "일정 있음"만 표시 */
-    item.innerHTML = `<span style="color:var(--accent);font-family:var(--font-mono);font-size:10px;flex-shrink:0;">${timeStr}</span><span>일정 있음</span>`;
+    item.innerHTML = `<span style="color:${hex};font-family:var(--font-mono);font-size:10px;flex-shrink:0;">${timeStr}</span><span style="color:var(--text);">${typeLabel} 일정 있음</span>`;
     list.appendChild(item);
   });
 
-  /* 위치 계산 */
+  /* 위치 계산: visibility:hidden으로 먼저 렌더 후 크기 측정 */
+  popover.style.visibility = 'hidden';
   popover.style.display = 'block';
   bg.style.display = 'block';
   const rect = e.target.getBoundingClientRect();
-  const pw = popover.offsetWidth || 200;
-  const ph = popover.offsetHeight || 200;
-  let left = rect.left + window.scrollX;
-  let top  = rect.bottom + window.scrollY + 4;
+  const pw = popover.offsetWidth;
+  const ph = popover.offsetHeight;
+  let left = rect.left;
+  let top  = rect.bottom + 4;
   if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
-  if (top + ph > window.innerHeight + window.scrollY - 8) top = rect.top + window.scrollY - ph - 4;
+  if (left < 4) left = 4;
+  if (top + ph > window.innerHeight - 8) top = rect.top - ph - 4;
+  if (top < 4) top = 4;
   popover.style.left = left + 'px';
   popover.style.top  = top + 'px';
+  popover.style.visibility = 'visible';
 }
 
 function closeMorePopover() {
