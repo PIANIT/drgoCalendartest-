@@ -772,7 +772,7 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
 <!-- ═══ USER MANAGEMENT ═══ -->
 <div class="user-mgmt-wrap" id="userMgmtWrap" style="display:none;">
   <div class="user-mgmt-header">
-    <div class="user-mgmt-title">👤 캘린더 접속 계정 관리</div>
+    <div class="user-mgmt-title">👤 접속 계정 관리</div>
     <button class="user-mgmt-toggle" id="userMgmtToggle">펼치기 ▾</button>
   </div>
   <div class="user-mgmt-body" id="userMgmtBody">
@@ -1202,6 +1202,7 @@ function initApp() {
 
   /* -- 계정 관리 초기화 -- */
   initUserMgmt(db);
+  migrateAdminLevels(db);
 
   /* -- Theme -- */
   const saved = localStorage.getItem('cal_theme');
@@ -2415,9 +2416,12 @@ async function loadUserList(db) {
       const row  = document.createElement('div');
       row.className = 'user-row';
       const createdAt = data.createdAt?.toDate ? data.createdAt.toDate().toLocaleDateString('ko-KR') : '—';
+      const grade = data.adminLevel ?? 0;
       row.innerHTML = `
         <span class="user-row-id">🔑 ${d.id}${data.displayName ? ` <span style="color:var(--accent);font-weight:600;">(${data.displayName})</span>` : ''}</span>
         <span class="user-row-meta">생성: ${createdAt}</span>
+        <span class="user-row-meta" style="color:var(--accent2);">🛡️ Lv.${grade}</span>
+        <button class="user-row-grade" data-uid="${d.id}" data-name="${data.displayName||d.id}" data-grade="${grade}" style="background:none;border:1px solid var(--border);color:var(--text-muted);padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer;white-space:nowrap;">관리자 등급</button>
         <button class="user-row-del" data-uid="${d.id}">삭제</button>`;
       row.querySelector('.user-row-del').addEventListener('click', () => {
         showConfirm(
@@ -2429,6 +2433,9 @@ async function loadUserList(db) {
             loadUserList(db);
           }, '삭제', 'delete'
         );
+      });
+      row.querySelector('.user-row-grade').addEventListener('click', () => {
+        openAdminGradePopup(d.id, data.displayName||d.id, data.adminLevel??0, db);
       });
       listEl.appendChild(row);
     });
@@ -2467,6 +2474,7 @@ async function createUser(db) {
     await setDoc(doc(db, 'users', userId), {
       passwordHash: pwHash,
       displayName: userName,
+      adminLevel: 0,
       createdAt: serverTimestamp()
     });
     idEl.value = ''; nameEl.value = ''; pwEl.value = '';
@@ -2784,7 +2792,51 @@ function renderWiki() {
   document.getElementById('cnt-wiki').textContent=_wikiAll.length;
 }
 
-/* ── 이미지 라이트박스 ── */
+/* ── 관리자 등급 팝업 ── */
+let _gradeDb=null, _gradeUid='';
+function openAdminGradePopup(uid, name, currentGrade, db){
+  _gradeDb=db; _gradeUid=uid;
+  document.getElementById('gradeTargetName').textContent=name;
+  document.getElementById('adminGradeSlider').value=currentGrade;
+  document.getElementById('gradeValueDisplay').textContent=currentGrade;
+  document.getElementById('adminGradeOverlay').style.display='flex';
+}
+document.getElementById('adminGradeSlider').addEventListener('input', function(){
+  document.getElementById('gradeValueDisplay').textContent=this.value;
+});
+document.getElementById('adminGradeCancelBtn').addEventListener('click',()=>{
+  document.getElementById('adminGradeOverlay').style.display='none';
+});
+document.getElementById('adminGradeOverlay').addEventListener('click', e=>{
+  if(e.target===document.getElementById('adminGradeOverlay'))
+    document.getElementById('adminGradeOverlay').style.display='none';
+});
+document.getElementById('adminGradeSaveBtn').addEventListener('click', async()=>{
+  const level=parseInt(document.getElementById('adminGradeSlider').value);
+  const btn=document.getElementById('adminGradeSaveBtn');
+  btn.disabled=true; btn.textContent='저장 중…';
+  try{
+    await updateDoc(doc(_gradeDb,'users',_gradeUid),{ adminLevel: level });
+    showToast(`등급이 Lv.${level}로 변경되었습니다`,'success');
+    document.getElementById('adminGradeOverlay').style.display='none';
+    loadUserList(_gradeDb);
+  } catch(e){
+    showToast('저장 실패: '+e.message,'error');
+  } finally{
+    btn.disabled=false; btn.textContent='저장';
+  }
+});
+
+/* 기존 계정 adminLevel 미설정 시 0으로 마이그레이션 */
+async function migrateAdminLevels(db){
+  try{
+    const snap=await getDocs(collection(db,'users'));
+    const jobs=snap.docs.filter(d=>d.data().adminLevel===undefined)
+      .map(d=>updateDoc(doc(db,'users',d.id),{adminLevel:0}));
+    if(jobs.length){ await Promise.all(jobs); console.log(`adminLevel 마이그레이션: ${jobs.length}개 계정`); }
+  } catch(e){ console.warn('마이그레이션 오류:',e); }
+}
+
 let _adminLbImgs=[], _adminLbIdx=0;
 function adminOpenLightbox(imgs, idx){
   _adminLbImgs=imgs; _adminLbIdx=idx;
@@ -2816,6 +2868,28 @@ document.addEventListener('keydown',e=>{ if(document.getElementById('adminLightb
   </div>
 </div>
 
+<!-- 관리자 등급 조정 팝업 -->
+<div id="adminGradeOverlay" style="display:none;position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 32px;min-width:320px;max-width:400px;width:90%;box-shadow:0 16px 48px rgba(0,0,0,0.5);">
+    <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px;">🛡️ 관리자 등급 조정</div>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:20px;">관리자 등급을 조정합니다.</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px;">대상: <span id="gradeTargetName" style="color:var(--accent);font-weight:600;"></span></div>
+    <div style="display:flex;align-items:center;gap:12px;margin:18px 0 10px;">
+      <span style="font-size:12px;color:var(--text-muted);min-width:24px;">0</span>
+      <input type="range" id="adminGradeSlider" min="0" max="5" step="1" value="0"
+        style="flex:1;accent-color:var(--accent);cursor:pointer;height:6px;">
+      <span style="font-size:12px;color:var(--text-muted);min-width:24px;text-align:right;">5</span>
+    </div>
+    <div style="text-align:center;margin-bottom:20px;">
+      <span style="font-size:28px;font-weight:800;color:var(--accent);" id="gradeValueDisplay">0</span>
+      <span style="font-size:13px;color:var(--text-muted);margin-left:6px;">등급</span>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button id="adminGradeCancelBtn" style="background:none;border:1px solid var(--border);color:var(--text-muted);padding:8px 18px;border-radius:8px;font-size:13px;cursor:pointer;">취소</button>
+      <button id="adminGradeSaveBtn" style="background:var(--accent);border:none;color:#fff;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">저장</button>
+    </div>
+  </div>
+</div>
 <!-- 이미지 라이트박스 -->
 <div id="adminLightbox" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.92);align-items:center;justify-content:center;backdrop-filter:blur(6px);">
   <button id="adminLbClose" style="position:absolute;top:16px;right:20px;background:none;border:none;color:#fff;font-size:28px;cursor:pointer;line-height:1;">✕</button>
