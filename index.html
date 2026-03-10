@@ -2578,10 +2578,10 @@ function makeAssigneeBadgesHtml(assignees) {
 
 function getSpecialIconStr(ev) {
   const sp = (ev.specialOpts||[]).map(k => SPECIAL_ICONS[k]||'').join('');
-  const se = (ev.schedEventOpts||[]).map(k => SCHED_EVENT_ICONS[k]||'').join('');
+  const se = (ev.schedEventOpts||[]).filter(k => k !== 'after').map(k => SCHED_EVENT_ICONS[k]||'').join('');
   const afterStr = (ev.schedEventOpts||[]).includes('after') && ev.schedAfterDays
     ? `<span title="${ev.schedAfterDays}일 이후 희망${ev.schedAfterReason?' - '+ev.schedAfterReason:''}" style="font-size:10px;color:var(--text-muted);">→</span>` : '';
-  return (sp||se) ? sp+se+afterStr+' ' : '';
+  return (sp||se||afterStr) ? sp+se+afterStr+' ' : '';
 }
 function getSchedSuffix(ev) {
   if (!ev.schedOpt || !SCHED_OPTS[ev.schedOpt]) return '';
