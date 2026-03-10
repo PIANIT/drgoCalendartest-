@@ -286,7 +286,8 @@ function closeLightbox() {
 }
 function showLbImage() {
   const img = _lbImages[_lbIdx];
-  document.getElementById('lbImg').src = img.data;
+  /* fullUrl(원본) 우선, 없으면 data(구버전 base64) fallback */
+  document.getElementById('lbImg').src = img.fullUrl || img.data || img.url || '';
   document.getElementById('lbCaption').textContent = `${img.name||'이미지'} (${_lbIdx+1}/${_lbImages.length})`;
   document.getElementById('lbPrev').style.display = _lbImages.length > 1 ? '' : 'none';
   document.getElementById('lbNext').style.display = _lbImages.length > 1 ? '' : 'none';
@@ -476,7 +477,7 @@ document.addEventListener('keydown', e => {
 
 <script type="module">
 function makeImgSection(title, groups) {
-  /* groups: [{label, images:[{name,data}]}] */
+  /* groups: [{label, images:[{name, thumbUrl, fullUrl, data}]}] */
   const allImgs = groups.flatMap(g => g.images);
   if (!allImgs.length) return null;
   const sec = document.createElement('div'); sec.className='detail-section';
@@ -491,7 +492,8 @@ function makeImgSection(title, groups) {
     g.images.forEach((img, i) => {
       const el = document.createElement('img');
       el.className='img-thumb';
-      el.src = img.data;
+      /* 썸네일 표시 (빠른 로딩), 없으면 fullUrl, 없으면 구버전 data fallback */
+      el.src = img.thumbUrl || img.fullUrl || img.data || img.url || '';
       el.alt = img.name||'이미지';
       el.title = img.name||'이미지';
       const captureIdx = startOffset + i;

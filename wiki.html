@@ -536,6 +536,8 @@ body { background:var(--bg); color:var(--text); font-family:var(--font-main); he
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 import { getFirestore, collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, query, orderBy, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL }
+  from "https://www.gstatic.com/firebasejs/12.9.0/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey:"AIzaSyDnEOATYmwq0WJr6pCl-86-Q3ZEQjrrfeY",
@@ -545,6 +547,7 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
+const storage = getStorage(app, 'gs://drgo-calender-seoul');
 const COL = 'wiki_articles';
 
 /* ══ 헬퍼 ══ */
@@ -879,26 +882,49 @@ editorEl.addEventListener('drop',async e=>{e.preventDefault();const files=Array.
 editorEl.addEventListener('paste',async e=>{const items=Array.from(e.clipboardData?.items||[]).filter(i=>i.type.startsWith('image/'));if(!items.length)return;e.preventDefault();for(const item of items){const f=item.getAsFile();if(f)await insertImgFile(f);}});
 
 async function insertImgFile(file){
-  return new Promise(resolve=>{
-    const img0=new Image(),url0=URL.createObjectURL(file);
-    img0.onload=()=>{
-      const MAX=1600,Q=0.82;let w=img0.width,h=img0.height;
-      if(w>MAX||h>MAX){if(w>=h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
-      const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
-      canvas.getContext('2d').drawImage(img0,0,0,w,h);URL.revokeObjectURL(url0);
-      const src=canvas.toDataURL('image/jpeg',Q);
-      const id='imgw_'+Date.now();
-      const html=`<div class="img-resize-wrapper" id="${id}" contenteditable="false" style="width:100%;display:block;">
-        <img src="${src}" style="width:100%;height:auto;display:block;border-radius:6px;border:2px solid transparent;" data-origw="${w}">
+  /* 업로드 중 placeholder 삽입 */
+  const placeholderId = 'imgw_'+Date.now();
+  const placeholderHtml = `<div class="img-resize-wrapper" id="${placeholderId}" contenteditable="false" style="width:100%;display:block;text-align:center;padding:16px;color:#aaa;font-size:13px;">⏳ 업로드 중…</div><p><br></p>`;
+  document.execCommand('insertHTML', false, placeholderHtml);
+
+  try {
+    /* 원본 리사이즈 (에디터 삽입용, 최대 1600px) */
+    const blob = await new Promise((res, rej) => {
+      const img0 = new Image(), url0 = URL.createObjectURL(file);
+      img0.onload = () => {
+        const MAX=1600, Q=0.88; let w=img0.width, h=img0.height;
+        if(w>MAX||h>MAX){if(w>=h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
+        const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
+        canvas.getContext('2d').drawImage(img0,0,0,w,h); URL.revokeObjectURL(url0);
+        canvas.toBlob(b=>b?res(b):rej(new Error('toBlob 실패')), 'image/jpeg', Q);
+      };
+      img0.onerror=rej; img0.src=url0;
+    });
+
+    /* Storage 업로드 */
+    const ts   = Date.now();
+    const base = file.name.replace(/\.[^.]+$/,'').replace(/[^a-zA-Z0-9가-힣_-]/g,'_');
+    const ref  = storageRef(storage, `wiki/imgs/${ts}_${base}.jpg`);
+    const snap = await uploadBytes(ref, blob, { contentType:'image/jpeg' });
+    const url  = await getDownloadURL(snap.ref);
+
+    /* placeholder 교체 */
+    const ph = document.getElementById(placeholderId);
+    if (ph) {
+      const html = `<div class="img-resize-wrapper" id="${placeholderId}" contenteditable="false" style="width:100%;display:block;">
+        <img src="${url}" style="width:100%;height:auto;display:block;border-radius:6px;border:2px solid transparent;" data-origw="${blob.size}">
         <div class="resize-handle nw"></div><div class="resize-handle ne"></div>
         <div class="resize-handle sw"></div><div class="resize-handle se"></div>
-      </div><p><br></p>`;
-      document.execCommand('insertHTML',false,html);
-      setTimeout(()=>{const w2=document.getElementById(id);if(w2)bindResizeHandles(w2);},50);
-      resolve();
-    };
-    img0.src=url0;
-  });
+      </div>`;
+      ph.outerHTML = html;
+      setTimeout(()=>{ const w2=document.getElementById(placeholderId); if(w2)bindResizeHandles(w2); },50);
+    }
+  } catch(e) {
+    console.error('이미지 업로드 실패:', e);
+    const ph = document.getElementById(placeholderId);
+    if (ph) ph.outerHTML = '';
+    alert(`이미지 업로드 실패: ${e.message}`);
+  }
 }
 
 function bindResizeHandles(wrapper){

@@ -2019,9 +2019,12 @@ async function runBackup(dbArg) {
         if (Array.isArray(obj)) { obj.forEach((v,i)=>walk(v,path+'_'+i)); return; }
         for (const [k,v] of Object.entries(obj)) {
           if (typeof v === 'string' && v.startsWith('data:image/')) {
+            /* 구버전 base64 이미지 → 파일로 추출 */
             const ext = v.split(';')[0].split('/')[1]||'jpg';
             zip.file(`images/${prefix}_${imgCount++}.${ext}`, v.split(',')[1], {base64:true});
             obj[k] = `images/${prefix}_${imgCount-1}.${ext}`;
+          } else if (typeof v === 'string' && (v.startsWith('https://firebasestorage') || v.startsWith('https://storage.googleapis'))) {
+            /* 신규 Storage URL → URL 그대로 유지 (백업 JSON에 URL 포함) */
           } else walk(v, path+'_'+k);
         }
       };
