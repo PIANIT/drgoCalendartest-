@@ -1260,6 +1260,25 @@
     .assignee-btn {
       margin-top: 8px;
     }
+
+    /* gold 섹션 모바일 — 버튼 그룹 wrap 허용 */
+    #g_platform_group,
+    #g_topic_group,
+    #g_source_group {
+      flex-wrap: wrap !important;
+    }
+    /* 경력+유입경로 행: 모바일에서 세로 스택 */
+    #g_career_group {
+      flex-wrap: wrap;
+    }
+    /* conditional-field 인라인 입력칸 모바일 너비 */
+    #g_platform_etc_wrap,
+    #g_topic_etc_wrap,
+    #g_source_ref_wrap {
+      min-width: 0 !important;
+      width: 100%;
+      margin-top: 4px !important;
+    }
   }
 </style>
 </head>
@@ -1802,6 +1821,10 @@
       <div id="goldTemplate" style="display:none; flex-direction:column; gap:14px;">
         <div class="section-heading">의뢰자 정보</div>
         <div class="field-row">
+          <div class="field-group">
+            <label class="field-label" for="g_nickname">의뢰자 닉네임</label>
+            <input class="field-input" id="g_nickname" placeholder="닉네임" />
+          </div>
           <div class="field-group">
             <label class="field-label" for="g_name">의뢰자 이름</label>
             <input class="field-input" id="g_name" placeholder="이름" />
@@ -2817,7 +2840,7 @@ let schedEventOpts = new Set(); // 'fast', 'urgent', 'after'
 let schedAfterDays = 0;
 let schedAfterDate = ''; // 선택한 날짜 'YYYY-MM-DD'
 const SCHED_EVENT_ICONS = { fast:'←', urgent:'🚨', after:'→' };
-const SCHED_EVENT_LABELS_LOG = { fast:'← 빠른 일정 희망', urgent:'🚨 긴급 일정', after:'→ {n}일 이후 희망' };
+const SCHED_EVENT_LABELS_LOG = { fast:'← 빠른 일정 희망', urgent:'🚨 긴급 일정', after:'→ 이후 희망' };
 const SCHED_OPTS = {
   suggest: { icon:'💬', label:'제안', desc:'상대방에게 일정 제안중' },
   hope:    { icon:'🙏', label:'희망', desc:'상대방이 일정 희망' },
@@ -3394,7 +3417,7 @@ function loadTealFields(ev) {
 }
 
 function resetGoldFields(){
-  ['g_name','g_phone','g_platform','g_equipment','g_req_topic','g_req_detail','g_special','g_balance_amount','g_estimate_amount'].forEach(id=>{
+  ['g_nickname','g_name','g_phone','g_platform','g_equipment','g_req_topic','g_req_detail','g_special','g_balance_amount','g_estimate_amount'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
   const esEl=document.getElementById('g_estimate_status'); if(esEl) esEl.textContent='';
@@ -3428,7 +3451,7 @@ function resetGoldFields(){
 
 function loadGoldFields(ev){
   const g=ev.gold||{};
-  const MAP={g_name:'name',g_phone:'phone',
+  const MAP={g_nickname:'nickname',g_name:'name',g_phone:'phone',
     g_equipment:'equipment',g_req_detail:'req_detail',
     g_special:'special',g_balance_amount:'balance_amount',
     g_estimate_amount:'estimate_amount'};
@@ -3589,6 +3612,7 @@ function collectGoldTextFields(){
   const specialReason = document.getElementById('specialReason')?.value.trim()||'';
   return {
     name:document.getElementById('g_name').value.trim(), phone:document.getElementById('g_phone').value.trim(),
+    nickname:document.getElementById('g_nickname')?.value.trim()||'',
     platform, topic, budget, source,
     equipment:document.getElementById('g_equipment').value.trim(), req_topic,
     estimate_amount:document.getElementById('g_estimate_amount')?.value.trim()||'',
@@ -3829,12 +3853,13 @@ const LOG_FIELD_LABELS = {
   title:'제목', color:'분류',
   startDate:'시작일', endDate:'종료일',
   startTime:'시작시간', endTime:'종료시간', allDay:'종일여부',
-  location:'장소', name:'담당자', desc:'내용',
+  location:'장소', address:'주소', name:'담당자', desc:'내용',
   schedOpt:'일정유형', specialOpts:'특수옵션', schedEventOpts:'일정옵션',
+  schedAfterDays:'이후희망(일수)', schedAfterDate:'이후희망(날짜)', schedAfterReason:'이후희망(사유)',
   notifMinutes:'알림', locked:'잠금', assignees:'담당자 지정',
 };
 const GOLD_FIELD_LABELS = {
-  name:'의뢰자 이름', phone:'전화번호', platform:'플랫폼', budget:'예산 성향',
+  name:'의뢰자 이름', nickname:'의뢰자 닉네임', phone:'전화번호', platform:'플랫폼', budget:'예산 성향',
   career:'경력 여부', topic:'방송 주제',
   equipment:'장비 목록', req_topic:'의뢰 주제', req_detail:'의뢰 세부항목',
   special:'특이사항', specialReason:'특수옵션 사유', source:'유입 경로',
@@ -3881,6 +3906,41 @@ function calcChanges(prev, next) {
         ? arr.map(k=>SCHED_EVENT_LABELS_LOG[k]||k).join(', ') : '(없음)';
       changes.push({ field: LOG_FIELD_LABELS[f], before: fmtSe(pv), after: fmtSe(nv) });
       continue;
+    }
+    if (f === 'assignees') {
+      const pa = [...(Array.isArray(pv)?pv:[])].sort();
+      const na = [...(Array.isArray(nv)?nv:[])].sort();
+      if (JSON.stringify(pa) === JSON.stringify(na)) continue;
+      changes.push({ field: LOG_FIELD_LABELS[f],
+        before: pa.length ? pa.join(', ') : '(없음)',
+        after:  na.length ? na.join(', ') : '(없음)' });
+      continue;
+    }
+    if (f === 'schedAfterDays') {
+      /* after 옵션이 둘 다 없으면 skip */
+      const pHas = (prev.schedEventOpts||[]).includes('after');
+      const nHas = (next.schedEventOpts||[]).includes('after');
+      if (!pHas && !nHas) continue;
+      pv = pHas ? (pv != null ? `+${pv}일` : '(없음)') : '(없음)';
+      nv = nHas ? (nv != null ? `+${nv}일` : '(없음)') : '(없음)';
+      if (pv === nv) continue;
+      changes.push({ field: LOG_FIELD_LABELS[f], before: pv, after: nv });
+      continue;
+    }
+    if (f === 'schedAfterDate') {
+      const pHas = (prev.schedEventOpts||[]).includes('after');
+      const nHas = (next.schedEventOpts||[]).includes('after');
+      if (!pHas && !nHas) continue;
+      pv = pHas ? (pv||'(없음)') : '(없음)';
+      nv = nHas ? (nv||'(없음)') : '(없음)';
+      if (pv === nv) continue;
+      changes.push({ field: LOG_FIELD_LABELS[f], before: pv, after: nv });
+      continue;
+    }
+    if (f === 'schedAfterReason') {
+      const pHas = (prev.schedEventOpts||[]).includes('after');
+      const nHas = (next.schedEventOpts||[]).includes('after');
+      if (!pHas && !nHas) continue;
     }
 
     pv = (pv===undefined||pv===null) ? '' : String(pv);
@@ -4730,7 +4790,7 @@ let _confirmCallback = null; // 확인 후 실행할 함수
 function _takeSnapshot() {
   const ids = ['modalTitle','modalLocation','modalName','modalAddress','modalDesc','t_remote_name','t_remote_platform','t_remote_content','t_studio_name','t_studio_platform','t_studio_content','t_desc',
     'startDate','endDate','startTime','endTime',
-    'g_name','g_phone','g_platform_etc','g_budget_etc','g_topic_etc','g_equipment',
+    'g_nickname','g_name','g_phone','g_platform_etc','g_budget_etc','g_topic_etc','g_equipment',
     'g_req_topic_etc','g_req_detail','g_special','g_balance_amount',
     'g_source_ref','specialReason',
     'g_estimate_amount','goldStartDate','schedAfterReason'];
@@ -4766,7 +4826,7 @@ function _isDirty() {
   if (!_modalSnapshot) return false;
   const ids = ['modalTitle','modalLocation','modalName','modalAddress','modalDesc','t_remote_name','t_remote_platform','t_remote_content','t_studio_name','t_studio_platform','t_studio_content','t_desc',
     'startDate','endDate','startTime','endTime',
-    'g_name','g_phone','g_platform_etc','g_budget_etc','g_topic_etc','g_equipment',
+    'g_nickname','g_name','g_phone','g_platform_etc','g_budget_etc','g_topic_etc','g_equipment',
     'g_req_topic_etc','g_req_detail','g_special','g_balance_amount',
     'g_source_ref','specialReason',
     'g_estimate_amount','goldStartDate','schedAfterReason'];
