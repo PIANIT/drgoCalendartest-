@@ -1326,8 +1326,8 @@
 
 <!-- ════ 검색 패널 ════ -->
 <div id="searchPanel" style="display:none;padding:10px 32px 12px;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:57px;z-index:9;">
-  <div style="display:flex;gap:8px;align-items:center;">
-    <div style="position:relative;flex:1;max-width:520px;">
+  <div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;">
+    <div style="position:relative;max-width:520px;width:100%;">
       <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none;">🔍</span>
       <input id="calSearchInput" class="field-input" placeholder="제목, 이름, 장소, 날짜로 검색…" style="padding-left:34px;height:36px;" autocomplete="off" />
     </div>
@@ -1812,53 +1812,60 @@
           </div>
         </div>
         <div class="field-row">
-          <div class="field-group">
+          <div class="field-group" style="flex:1;">
             <label class="field-label">플랫폼</label>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-              <div class="radio-group" id="g_platform_group" style="flex-wrap:wrap;gap:5px;">
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:nowrap;">
+              <div class="radio-group" id="g_platform_group" style="flex-wrap:nowrap;gap:5px;flex-shrink:0;">
                 <div class="radio-btn" data-val="SOOP">SOOP</div>
                 <div class="radio-btn" data-val="치지직">치지직</div>
                 <div class="radio-btn" data-val="유튜브">유튜브</div>
                 <div class="radio-btn" data-val="틱톡">틱톡</div>
                 <div class="radio-btn" data-val="기타">기타</div>
               </div>
-              <div class="conditional-field" id="g_platform_etc_wrap" style="margin-top:0;flex:1;min-width:120px;">
+              <div class="conditional-field" id="g_platform_etc_wrap" style="margin-top:0;flex:1;min-width:80px;">
                 <input class="field-input" id="g_platform_etc" placeholder="직접 입력" style="font-size:13px;" />
               </div>
             </div>
           </div>
-          <div class="field-group">
+        </div>
+        <div class="field-row">
+          <div class="field-group" style="flex:0 0 auto;">
             <label class="field-label">경력 여부</label>
             <div class="radio-group" id="g_career_group">
               <div class="radio-btn active" data-val="처음">처음</div>
+              <div class="radio-btn" data-val="초보">초보</div>
               <div class="radio-btn" data-val="경력">경력</div>
             </div>
           </div>
-        </div>
-        <div class="field-group">
-          <label class="field-label">유입 경로</label>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-            <div class="radio-group" id="g_source_group" style="flex-wrap:wrap;gap:5px;">
-              <div class="radio-btn" data-val="광고">📢 광고</div>
-              <div class="radio-btn" data-val="검색">🔍 검색</div>
-              <div class="radio-btn" data-val="소개">🤝 소개</div>
-            </div>
-            <div class="conditional-field" id="g_source_ref_wrap" style="margin-top:0;flex:1;min-width:130px;">
-              <input class="field-input" id="g_source_ref" placeholder="소개해 준 분 이름" style="font-size:13px;" />
+          <div class="field-group" style="flex:1;">
+            <label class="field-label">유입 경로</label>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:nowrap;">
+              <div class="radio-group" id="g_source_group" style="flex-wrap:nowrap;gap:5px;flex-shrink:0;">
+                <div class="radio-btn" data-val="광고">📢 광고</div>
+                <div class="radio-btn" data-val="검색">🔍 검색</div>
+                <div class="radio-btn" data-val="소개">🤝 소개</div>
+              </div>
+              <div class="conditional-field" id="g_source_ref_wrap" style="margin-top:0;flex:1;min-width:100px;">
+                <input class="field-input" id="g_source_ref" placeholder="소개해 준 분 이름" style="font-size:13px;" />
+              </div>
             </div>
           </div>
         </div>
         <div class="field-group">
           <label class="field-label">방송 주제</label>
-          <div class="radio-group" id="g_topic_group">
-            <div class="radio-btn" data-val="소통">소통</div>
-            <div class="radio-btn" data-val="먹방">먹방</div>
-            <div class="radio-btn" data-val="게임">게임</div>
-            <div class="radio-btn" data-val="야외">야외</div>
-            <div class="radio-btn" data-val="기타">기타</div>
-          </div>
-          <div class="conditional-field" id="g_topic_etc_wrap" style="margin-top:8px;">
-            <input class="field-input" id="g_topic_etc" placeholder="방송 주제를 직접 입력하세요" />
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:nowrap;">
+            <div class="radio-group" id="g_topic_group" style="flex-wrap:nowrap;gap:5px;flex-shrink:0;">
+              <div class="radio-btn" data-val="소통">소통</div>
+              <div class="radio-btn" data-val="먹방">먹방</div>
+              <div class="radio-btn" data-val="게임">게임</div>
+              <div class="radio-btn" data-val="야외">야외</div>
+              <div class="radio-btn" data-val="노래">노래</div>
+              <div class="radio-btn" data-val="주식/코인">주식/코인</div>
+              <div class="radio-btn" data-val="기타">기타</div>
+            </div>
+            <div class="conditional-field" id="g_topic_etc_wrap" style="margin-top:0;flex:1;min-width:100px;">
+              <input class="field-input" id="g_topic_etc" placeholder="방송 주제를 직접 입력하세요" style="font-size:13px;" />
+            </div>
           </div>
         </div>
         <div class="field-group" style="margin-top:10px;">
@@ -3427,7 +3434,7 @@ function loadGoldFields(ev){
     g_estimate_amount:'estimate_amount'};
   Object.entries(MAP).forEach(([id,key])=>{ const el=document.getElementById(id); if(el) el.value=g[key]||''; });
   /* 방송 주제 복원 (복수선택) */
-  const TOPIC_BTNS=['소통','먹방','게임','야외','기타'];
+  const TOPIC_BTNS=['소통','먹방','게임','야외','노래','주식/코인','기타'];
   const savedTopicRaw = g.topic||'';
   const savedTopics = savedTopicRaw ? savedTopicRaw.split(',').map(s=>s.trim()) : [];
   document.getElementById('g_topic_group').querySelectorAll('.radio-btn').forEach(b=>b.classList.remove('active'));
