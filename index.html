@@ -2316,7 +2316,7 @@ const firebaseConfig = {
 };
 const app       = initializeApp(firebaseConfig);
 const db        = getFirestore(app);
-const storage   = getStorage(app, 'gs://drgo-calender-images');
+const storage   = getStorage(app, 'gs://drgo-calender-seoul');
 const eventsCol = collection(db, 'events');
 
 async function tryAuth() {
