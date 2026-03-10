@@ -588,6 +588,18 @@
   .field-input:focus, .field-textarea:focus, .field-select:focus { border-color:var(--accent); }
   .field-input::placeholder, .field-textarea::placeholder { color:var(--text-muted); }
   .field-textarea { resize:none; min-height:80px; line-height:1.7; overflow:hidden; box-sizing:border-box; transition:height 0.15s; }
+
+  /* ── 주소 검색 ── */
+  .location-input-wrap { display:flex; flex-direction:column; gap:6px; }
+  .addr-search-btn {
+    display:inline-flex; align-items:center; gap:5px; align-self:flex-start;
+    padding:5px 12px; border-radius:8px; font-size:12px; cursor:pointer;
+    border:1px solid var(--border); background:var(--surface2);
+    color:var(--text-muted); font-family:var(--font-main);
+    transition:all 0.15s; white-space:nowrap;
+  }
+  .addr-search-btn:hover { border-color:var(--accent); color:var(--accent); background:rgba(200,176,138,.1); }
+  .addr-search-btn:disabled { opacity:0.4; cursor:not-allowed; }
   .field-select { cursor:pointer; color-scheme:dark; } html.light .field-select { color-scheme:light; }
   .field-select option { background:var(--surface2); }
 
@@ -1592,7 +1604,10 @@
     <div class="modal-body">
       <div class="field-group">
         <label class="field-label" for="modalLocation">장소</label>
-        <textarea class="field-input field-textarea" id="modalLocation" placeholder="장소를 입력하세요" autocomplete="off" rows="2" style="min-height:40px;resize:none;"></textarea>
+        <div class="location-input-wrap">
+          <textarea class="field-input field-textarea" id="modalLocation" placeholder="장소를 입력하세요" autocomplete="off" rows="2" style="min-height:40px;resize:none;"></textarea>
+          <button type="button" class="addr-search-btn" id="addrSearchBtn" title="주소 검색">🔍 주소 검색</button>
+        </div>
       </div>
       <div class="datetime-section">
         <div class="allday-row">
@@ -4135,6 +4150,7 @@ function applyLockState(){
     banner.classList.add('visible'); modal.style.borderColor='rgba(200,176,138,0.35)';
     inputs.forEach(el=>el.disabled=true);
     const aBtn=document.getElementById('assigneeBtn'); if(aBtn) aBtn.disabled=true;
+    const addrBtn=document.getElementById('addrSearchBtn'); if(addrBtn) addrBtn.disabled=true;
     /* time trigger도 disabled */
     document.querySelectorAll('.time-picker-trigger').forEach(t=>t.classList.add('disabled'));
     if(window.closeTimePicker) window.closeTimePicker();
@@ -4162,6 +4178,7 @@ function applyLockState(){
     banner.classList.remove('visible'); modal.style.borderColor='';
     inputs.forEach(el=>el.disabled=false); setAllDay(isAllDay);
     const aBtn=document.getElementById('assigneeBtn'); if(aBtn) aBtn.disabled=false;
+    const addrBtn=document.getElementById('addrSearchBtn'); if(addrBtn) addrBtn.disabled=false;
     /* time trigger disabled 해제 */
     document.querySelectorAll('.time-picker-trigger').forEach(t=>t.classList.remove('disabled'));
     document.getElementById('uploadZone').classList.remove('locked-zone');
@@ -5253,8 +5270,41 @@ function initTitleResize() {
   window._resizeTitle = handler;
 }
 
+/* ── 카카오 주소 검색 (daum postcode — API 키 불필요) ── */
+function initAddrSearch() {
+  const btn = document.getElementById('addrSearchBtn');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    const run = () => {
+      new daum.Postcode({
+        oncomplete(data) {
+          const addr = data.roadAddress || data.jibunAddress;
+          const detail = data.buildingName ? ` (${data.buildingName})` : '';
+          const ta = document.getElementById('modalLocation');
+          ta.value = addr + detail;
+          ta.style.height = 'auto';
+          ta.style.height = ta.scrollHeight + 'px';
+          ta.focus();
+        },
+        theme: {
+          bgColor:'#1a1a12', searchBgColor:'#2a2a1a', contentBgColor:'#1a1a12',
+          pageBgColor:'#111108', textColor:'#e8dcc8', queryTextColor:'#e8dcc8',
+          postcodeTextColor:'#c8b08a', emphTextColor:'#c8b08a', outlineColor:'#3a3a2a',
+        },
+      }).open();
+    };
+    if (window.daum && window.daum.Postcode) { run(); }
+    else {
+      const s = document.createElement('script');
+      s.src = 'https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+      s.onload = run;
+      document.head.appendChild(s);
+    }
+  });
+}
+
 function init(){
-  applyThemeBtn(); initAutoResize(); initTitleResize();
+  applyThemeBtn(); initAutoResize(); initTitleResize(); initAddrSearch();
   currentYear=today.getFullYear(); currentMonth=today.getMonth();
   /* 앱 시작 시 담당자 목록 미리 로드 + 실시간 동기화 */
   loadAssigneePool(true);
