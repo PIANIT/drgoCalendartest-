@@ -549,7 +549,7 @@
 
   .modal-header { padding:20px 28px 0; display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
   .modal-date-badge { font-family:var(--font-mono); font-size:11px; color:var(--accent); letter-spacing:0.15em; }
-  .modal-title-input { background:none; border:none; font-family:var(--font-main); font-size:22px; font-weight:500; color:var(--text); width:100%; outline:none; margin-top:4px; }
+  .modal-title-input { background:none; border:none; font-family:var(--font-main); font-size:22px; font-weight:500; color:var(--text); width:100%; outline:none; margin-top:4px; resize:none; overflow:hidden; line-height:1.35; min-height:32px; display:block; padding:0; }
   .modal-title-input::placeholder { color:var(--text-muted); }
 
   .modal-header-btns { display:flex; gap:8px; flex-shrink:0; }
@@ -1129,6 +1129,40 @@
     .more-badge { font-size:11px; padding:0 5px; }
     .week-row { min-height:95px; }
   }
+
+  /* ── 모바일 모달 레이아웃 수정 ── */
+  @media (max-width:600px) {
+    /* ① 날짜+시간 행: 날짜 위, 시간 아래로 */
+    .dt-row {
+      grid-template-columns: 36px 1fr 1fr;
+      grid-template-rows: auto auto;
+    }
+    .dt-row .dt-input[type="date"] {
+      grid-column: 2 / 4;
+    }
+    .dt-row .time-picker-trigger {
+      grid-column: auto;
+    }
+
+    /* ② 방송룸 이름+플랫폼: 가로 나란히 대신 세로로 */
+    .field-row {
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* ③ textarea 모바일 스크롤 가능하게 */
+    .field-textarea {
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch;
+      max-height: 200px;
+    }
+
+    /* 제목 textarea 자동 높이 유지 */
+    .modal-title-input {
+      max-height: none;
+      overflow-y: hidden;
+    }
+  }
 </style>
 </head>
 <body>
@@ -1482,7 +1516,7 @@
         <div class="holiday-btn-wrap">
           <span class="holiday-dot" id="holidayDot">📅 공휴일로 지정</span>
         </div>
-        <input class="modal-title-input" id="modalTitle" placeholder="일정 제목을 입력하세요" />
+        <textarea class="modal-title-input" id="modalTitle" placeholder="일정 제목을 입력하세요" rows="1"></textarea>
         <button class="assignee-btn" id="assigneeBtn" title="담당자 지정">
           <span id="assigneeBtnIcon">👤</span>
           <span id="assigneeBtnLabel">담당자 지정</span>
@@ -3336,7 +3370,7 @@ function openNewModal(dk){
   document.getElementById('modalOverlay').classList.add('open');
   applyLockState();
   if (!isMobile() && pcView==='month') document.getElementById('modalTitle').focus();
-  setTimeout(()=>{ refreshAutoResize(); _takeSnapshot(); }, 30);
+  setTimeout(()=>{ refreshAutoResize(); if(window._resizeTitle) window._resizeTitle(); _takeSnapshot(); }, 30);
 }
 
 function openModal(evIdx){
@@ -3347,6 +3381,7 @@ function openModal(evIdx){
   editingId=ev._id;
   document.getElementById('modalDateBadge').textContent=formatDateBadge(ev.startDate);
   document.getElementById('modalTitle').value=ev.title||'';
+  if(window._resizeTitle) setTimeout(window._resizeTitle, 0);
   document.getElementById('modalLocation').value=ev.location||'';
   const nm=ev.notifMinutes; document.getElementById('notifSelect').value=(nm&&nm!=='allday')?nm:'';
   document.getElementById('modalName').value=ev.name||'';
@@ -3387,7 +3422,7 @@ function openModal(evIdx){
   if (!isLocked && !isMobile() && pcView==='month') document.getElementById('modalTitle').focus();
   /* 편집 시 textarea 기존 내용 높이 반영 */
   setTimeout(()=>{ document.querySelectorAll('.field-textarea').forEach(ta=>{ if(!isLocked){ ta.style.height='auto'; ta.style.height=(ta.scrollHeight+4)+'px'; } }); },50);
-  setTimeout(()=>{ refreshAutoResize(); _takeSnapshot(); }, 30);
+  setTimeout(()=>{ refreshAutoResize(); if(window._resizeTitle) window._resizeTitle(); _takeSnapshot(); }, 30);
 }
 
 function formatDateBadge(dk){
@@ -5125,8 +5160,18 @@ function autoResize(el) { el.style.height='auto'; el.style.height=el.scrollHeigh
 function initAutoResize() { document.querySelectorAll('.field-textarea').forEach(el=>{ el.addEventListener('input',()=>autoResize(el)); autoResize(el); }); }
 function refreshAutoResize() { document.querySelectorAll('.field-textarea').forEach(el=>autoResize(el)); }
 
+/* 제목 textarea 자동 높이 */
+function initTitleResize() {
+  const t = document.getElementById('modalTitle');
+  if (!t) return;
+  const resize = () => { t.style.height='auto'; t.style.height=t.scrollHeight+'px'; };
+  t.addEventListener('input', resize);
+  // 모달 열릴 때도 호출되도록 전역 등록
+  window._resizeTitle = resize;
+}
+
 function init(){
-  applyThemeBtn(); initAutoResize();
+  applyThemeBtn(); initAutoResize(); initTitleResize();
   currentYear=today.getFullYear(); currentMonth=today.getMonth();
   /* 앱 시작 시 담당자 목록 미리 로드 + 실시간 동기화 */
   loadAssigneePool(true);
