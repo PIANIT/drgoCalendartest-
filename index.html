@@ -1700,7 +1700,7 @@
         <div class="special-opts" id="schedEventOpts">
           <div class="special-opt-btn" data-seopt="fast">    <span class="opt-icon">←</span>빠른 일정 희망</div>
           <div class="special-opt-btn" data-seopt="urgent">  <span class="opt-icon">🚨</span>긴급 일정</div>
-          <div class="special-opt-btn" data-seopt="after">   <span class="opt-icon">→</span><span id="schedAfterLabel">□</span>일 이후 희망</div>
+          <div class="special-opt-btn" data-seopt="after">   <span class="opt-icon">→</span><span id="schedAfterLabel">날짜 선택</span> 이후 희망</div>
         </div>
         <div id="schedReasonWrap" style="display:none;margin-top:6px;">
           <input class="field-input" id="schedAfterReason" placeholder="사유 (선택)" style="font-size:13px;" />
@@ -2797,6 +2797,7 @@ const SPECIAL_ICONS = { car:'🚗', brief:'💼', return:'←', group:'👥', ur
 /* 일정 옵션 */
 let schedEventOpts = new Set(); // 'fast', 'urgent', 'after'
 let schedAfterDays = 0;
+let schedAfterDate = ''; // 선택한 날짜 'YYYY-MM-DD'
 const SCHED_EVENT_ICONS = { fast:'←', urgent:'🚨', after:'→' };
 const SCHED_EVENT_LABELS_LOG = { fast:'← 빠른 일정 희망', urgent:'🚨 긴급 일정', after:'→ {n}일 이후 희망' };
 const SCHED_OPTS = {
@@ -2934,18 +2935,15 @@ document.getElementById('schedEventOpts').addEventListener('click', e => {
   const afterClickBtn = e.target.closest('.special-opt-btn[data-seopt="after"]');
   const isAfterLabel  = e.target.id === 'schedAfterLabel';
 
-  /* after 버튼 또는 숫자 클릭 */
+  /* after 버튼 또는 라벨 클릭 */
   if (isAfterLabel || afterClickBtn) {
     if (afterClickBtn && afterClickBtn.classList.contains('active') && !isAfterLabel) {
       /* 이미 active → 재클릭으로 해제 */
       _seDeactivateAll();
       return;
     }
-    /* 비활성 or 숫자 클릭 → 모달 열기 */
-    const inp = document.getElementById('afterDayInput');
-    if (inp) inp.value = (schedAfterDays > 0) ? schedAfterDays : '';
-    document.getElementById('afterDayModalOverlay').classList.add('open');
-    setTimeout(()=>{ document.getElementById('afterDayInput')?.focus(); }, 80);
+    /* 비활성 or 라벨 클릭 → 날짜 캘린더 모달 열기 */
+    openAfterDatePicker();
     return;
   }
 
@@ -2967,7 +2965,7 @@ function _seDeactivateAll() {
   document.querySelectorAll('#schedEventOpts .special-opt-btn').forEach(b => b.classList.remove('active'));
   schedEventOpts.clear();
   const lbl = document.getElementById('schedAfterLabel');
-  if (lbl && schedAfterDays <= 0) lbl.textContent = '□';
+  if (lbl && schedAfterDays <= 0) lbl.textContent = '날짜 선택';
   _seUpdateReasonWrap();
 }
 function _seUpdateReasonWrap() {
@@ -2980,48 +2978,125 @@ function _seUpdateReasonWrap() {
   }
 }
 
-/* afterDay 모달 */
-(function(){
-  function getInpVal() {
-    return parseInt(document.getElementById('afterDayInput')?.value||'0', 10);
-  }
-  function setInpVal(v) {
-    const inp = document.getElementById('afterDayInput');
-    if (inp) inp.value = v > 0 ? v : '';
-  }
+/* afterDate 날짜 캘린더 피커 */
+let _afterPickerYear = 0, _afterPickerMonth = 0, _afterPickerSelected = '';
 
-  document.getElementById('afterDayMinus').addEventListener('click', () => {
-    const cur = getInpVal(); setInpVal(Math.max(1, cur > 0 ? cur - 1 : 1));
+function openAfterDatePicker() {
+  /* 현재 이벤트 startDate를 기준 날짜로 사용 */
+  const base = document.getElementById('startDate')?.value || '';
+  const today = new Date();
+  let initDate = schedAfterDate || base || `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  const d = new Date(initDate + 'T00:00:00');
+  _afterPickerYear  = d.getFullYear();
+  _afterPickerMonth = d.getMonth();
+  _afterPickerSelected = schedAfterDate || '';
+  renderAfterDatePicker();
+  document.getElementById('afterDayModalOverlay').classList.add('open');
+}
+
+function renderAfterDatePicker() {
+  const base = document.getElementById('startDate')?.value || '';
+  const baseDate = base ? new Date(base + 'T00:00:00') : null;
+  const y = _afterPickerYear, m = _afterPickerMonth;
+  const firstDay = new Date(y, m, 1).getDay();
+  const daysInMonth = new Date(y, m+1, 0).getDate();
+
+  const monthNames = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  let html = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <button id="apPrev" style="background:none;border:none;color:var(--text);font-size:18px;cursor:pointer;padding:4px 8px;">‹</button>
+      <span style="font-size:14px;font-weight:700;color:var(--text);">${y}년 ${monthNames[m]}</span>
+      <button id="apNext" style="background:none;border:none;color:var(--text);font-size:18px;cursor:pointer;padding:4px 8px;">›</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;margin-bottom:4px;">`;
+
+  ['일','월','화','수','목','금','토'].forEach((d,i) => {
+    html += `<div style="font-size:10px;color:${i===0?'var(--red)':i===6?'#6ab0f5':'var(--text-muted)'};padding:2px 0;">${d}</div>`;
   });
-  document.getElementById('afterDayPlus').addEventListener('click', () => {
-    const cur = getInpVal(); setInpVal(Math.min(999, cur > 0 ? cur + 1 : 1));
-  });
-  document.querySelectorAll('.after-day-preset').forEach(btn => {
-    btn.addEventListener('click', () => { setInpVal(parseInt(btn.dataset.d, 10)); });
-  });
-  document.getElementById('afterDayConfirm').addEventListener('click', () => {
-    const val = getInpVal();
-    if (!val || val < 1) {
-      document.getElementById('afterDayInput')?.focus(); return;
+  html += '</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;">';
+
+  for (let i=0; i<firstDay; i++) html += '<div></div>';
+  for (let day=1; day<=daysInMonth; day++) {
+    const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const isSelected = dateStr === _afterPickerSelected;
+    const isBase = dateStr === base;
+    let diffStr = '';
+    if (baseDate && isSelected) {
+      const sel = new Date(dateStr + 'T00:00:00');
+      const diff = Math.round((sel - baseDate) / 86400000);
+      diffStr = diff >= 0 ? `+${diff}` : `${diff}`;
     }
-    schedAfterDays = val;
-    const lbl = document.getElementById('schedAfterLabel');
-    if (lbl) lbl.textContent = schedAfterDays;
-    /* 다른 버튼 해제 후 after 버튼 자동 선택 */
-    _seDeactivateAll();
-    const afterBtn = document.querySelector('#schedEventOpts .special-opt-btn[data-seopt="after"]');
-    if (afterBtn) { afterBtn.classList.add('active'); schedEventOpts.add('after'); }
-    _seUpdateReasonWrap();
+    const dow = (firstDay + day - 1) % 7;
+    const isToday = dateStr === (() => { const n=new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`; })();
+    const bg    = isSelected ? 'var(--accent)' : isBase ? 'rgba(100,160,240,0.15)' : 'transparent';
+    const color = isSelected ? '#1a1207' : dow===0 ? 'var(--red)' : dow===6 ? '#6ab0f5' : 'var(--text)';
+    const border= isBase && !isSelected ? '1px solid var(--accent2)' : 'none';
+    html += `<div data-pick="${dateStr}" style="padding:5px 2px;border-radius:6px;cursor:pointer;background:${bg};color:${color};font-size:12px;font-weight:${isSelected?700:400};border:${border};position:relative;">${day}${isToday&&!isSelected?'<span style="position:absolute;bottom:1px;left:50%;transform:translateX(-50%);width:3px;height:3px;background:var(--accent);border-radius:50%;display:block;"></span>':''}</div>`;
+  }
+  html += '</div>';
+  if (_afterPickerSelected && baseDate) {
+    const sel = new Date(_afterPickerSelected + 'T00:00:00');
+    const diff = Math.round((sel - baseDate) / 86400000);
+    const diffLabel = diff >= 0 ? `+${diff}일` : `${diff}일`;
+    const [sy,sm,sd] = _afterPickerSelected.split('-');
+    html += `<div style="text-align:center;margin-top:8px;font-size:13px;color:var(--accent);font-weight:700;">${parseInt(sm)}/${parseInt(sd)} (${diffLabel})</div>`;
+  } else if (!base) {
+    html += `<div style="text-align:center;margin-top:8px;font-size:11px;color:var(--text-muted);">일정 시작날짜를 먼저 설정하면 차이가 표시됩니다</div>`;
+  } else {
+    html += `<div style="text-align:center;margin-top:8px;font-size:11px;color:var(--text-muted);">날짜를 선택하세요</div>`;
+  }
+  document.getElementById('afterDatePickerBody').innerHTML = html;
+
+  document.getElementById('apPrev').addEventListener('click', e => {
+    e.stopPropagation();
+    _afterPickerMonth--; if(_afterPickerMonth<0){_afterPickerMonth=11;_afterPickerYear--;}
+    renderAfterDatePicker();
+  });
+  document.getElementById('apNext').addEventListener('click', e => {
+    e.stopPropagation();
+    _afterPickerMonth++; if(_afterPickerMonth>11){_afterPickerMonth=0;_afterPickerYear++;}
+    renderAfterDatePicker();
+  });
+  document.querySelectorAll('[data-pick]').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      _afterPickerSelected = el.dataset.pick;
+      renderAfterDatePicker();
+    });
+  });
+}
+
+document.getElementById('afterDayConfirm').addEventListener('click', () => {
+  if (!_afterPickerSelected) return;
+  const base = document.getElementById('startDate')?.value || '';
+  const baseDate = base ? new Date(base + 'T00:00:00') : null;
+  schedAfterDate = _afterPickerSelected;
+  if (baseDate) {
+    const sel = new Date(_afterPickerSelected + 'T00:00:00');
+    schedAfterDays = Math.round((sel - baseDate) / 86400000);
+  } else {
+    schedAfterDays = 1;
+  }
+  /* 라벨 표기: M/D(+N일) */
+  const [sy,sm,sd] = _afterPickerSelected.split('-');
+  const diffLabel  = schedAfterDays >= 0 ? `+${schedAfterDays}일` : `${schedAfterDays}일`;
+  const lbl = document.getElementById('schedAfterLabel');
+  if (lbl) lbl.textContent = `${parseInt(sm)}/${parseInt(sd)}(${diffLabel})`;
+  /* after 버튼 활성화 */
+  _seDeactivateAll();
+  const afterBtn = document.querySelector('#schedEventOpts .special-opt-btn[data-seopt="after"]');
+  if (afterBtn) { afterBtn.classList.add('active'); schedEventOpts.add('after'); }
+  _seUpdateReasonWrap();
+  document.getElementById('afterDayModalOverlay').classList.remove('open');
+});
+document.getElementById('afterDayCancel').addEventListener('click', () => {
+  document.getElementById('afterDayModalOverlay').classList.remove('open');
+});
+document.getElementById('afterDayModalOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('afterDayModalOverlay'))
     document.getElementById('afterDayModalOverlay').classList.remove('open');
-  });
-  document.getElementById('afterDayCancel').addEventListener('click', () => {
-    document.getElementById('afterDayModalOverlay').classList.remove('open');
-  });
-  document.getElementById('afterDayModalOverlay').addEventListener('click', e => {
-    if (e.target === document.getElementById('afterDayModalOverlay'))
-      document.getElementById('afterDayModalOverlay').classList.remove('open');
-  });
-})();
+});
+
 
 document.getElementById('scheduleOpts').addEventListener('click', e => {
   const btn = e.target.closest('.sched-opt-btn');
@@ -3036,7 +3111,7 @@ document.getElementById('scheduleOpts').addEventListener('click', e => {
   desc.textContent = schedOpt ? SCHED_OPTS[schedOpt].desc : '';
 });
 
-function setSpecialOpts(opts, sopt, seOpts, afterDays, afterReason) {
+function setSpecialOpts(opts, sopt, seOpts, afterDays, afterReason, afterDate) {
   specialOpts = new Set(opts||[]);
   document.querySelectorAll('.special-opt-btn').forEach(btn => {
     btn.classList.toggle('active', specialOpts.has(btn.dataset.opt));
@@ -3051,11 +3126,23 @@ function setSpecialOpts(opts, sopt, seOpts, afterDays, afterReason) {
   /* 일정 옵션 복원 */
   schedEventOpts = new Set(seOpts||[]);
   schedAfterDays = afterDays||0;
+  schedAfterDate = afterDate||'';
   document.querySelectorAll('#schedEventOpts .special-opt-btn').forEach(btn => {
     btn.classList.toggle('active', schedEventOpts.has(btn.dataset.seopt));
   });
   const afterLabel = document.getElementById('schedAfterLabel');
-  if (afterLabel) afterLabel.textContent = (schedAfterDays && schedAfterDays > 0) ? schedAfterDays : '□';
+  if (afterLabel) {
+    if (schedAfterDate) {
+      const [sy,sm,sd] = schedAfterDate.split('-');
+      const diffLabel = schedAfterDays >= 0 ? `+${schedAfterDays}일` : `${schedAfterDays}일`;
+      afterLabel.textContent = `${parseInt(sm)}/${parseInt(sd)}(${diffLabel})`;
+    } else if (schedAfterDays && schedAfterDays !== 0) {
+      /* 구버전 데이터: 날짜 없이 일수만 있는 경우 */
+      afterLabel.textContent = `${schedAfterDays}일`;
+    } else {
+      afterLabel.textContent = '날짜 선택';
+    }
+  }
   const afterReasonEl = document.getElementById('schedAfterReason');
   if (afterReasonEl) afterReasonEl.value = afterReason||'';
   /* 사유 칸 표시 상태 갱신 */
@@ -3574,7 +3661,7 @@ function openModal(evIdx){
   if (currentColor==='gold') { loadGoldFields(ev); resetTealFields(); }
   else if (currentColor==='teal') { resetTealFields(); loadTealFields(ev); resetGoldFields(); }
   else { resetGoldFields(); resetTealFields(); }
-  setSpecialOpts(ev.specialOpts||[], ev.schedOpt||null, ev.schedEventOpts||[], ev.schedAfterDays||0, ev.schedAfterReason||'');
+  setSpecialOpts(ev.specialOpts||[], ev.schedOpt||null, ev.schedEventOpts||[], ev.schedAfterDays||0, ev.schedAfterReason||'', ev.schedAfterDate||'');
   renderAttachments();
   document.getElementById('deleteBtn').style.display='';
   document.getElementById('logBtn').style.display='';
@@ -3661,6 +3748,7 @@ async function saveEvent(){
       specialOpts:[...specialOpts], schedOpt:schedOpt,
       schedEventOpts:[...schedEventOpts],
       schedAfterDays: schedEventOpts.has('after') ? schedAfterDays : null,
+      schedAfterDate: schedEventOpts.has('after') ? schedAfterDate : null,
       schedAfterReason: document.getElementById('schedAfterReason')?.value.trim()||'',
       updatedAt:serverTimestamp(),
     };
@@ -4329,6 +4417,7 @@ document.getElementById('lockBtn').addEventListener('click', async ()=>{
         specialOpts:[...specialOpts],
         schedEventOpts:[...schedEventOpts],
         schedAfterDays: schedEventOpts.has('after') ? schedAfterDays : null,
+        schedAfterDate: schedEventOpts.has('after') ? schedAfterDate : null,
         schedAfterReason: document.getElementById('schedAfterReason')?.value.trim()||'',
         updatedAt:serverTimestamp(),
       };
@@ -4629,6 +4718,7 @@ function _takeSnapshot() {
   snap._specialOpts = JSON.stringify([...specialOpts].sort());
   snap._schedEventOpts = JSON.stringify([...schedEventOpts].sort());
   snap._schedAfterDays = schedAfterDays;
+  snap._schedAfterDate = schedAfterDate;
   snap._schedAfterReason = document.getElementById('schedAfterReason')?.value||'';
   snap._topic = getRadio('g_topic_group');
   snap._platform = JSON.stringify([...document.querySelectorAll('#g_platform_group .radio-btn.active')].map(b=>b.dataset.val).sort());
@@ -4663,6 +4753,7 @@ function _isDirty() {
   snap._specialOpts = JSON.stringify([...specialOpts].sort());
   snap._schedEventOpts = JSON.stringify([...schedEventOpts].sort());
   snap._schedAfterDays = schedAfterDays;
+  snap._schedAfterDate = schedAfterDate;
   snap._schedAfterReason = document.getElementById('schedAfterReason')?.value||'';
   snap._topic = getRadio('g_topic_group');
   snap._platform = JSON.stringify([...document.querySelectorAll('#g_platform_group .radio-btn.active')].map(b=>b.dataset.val).sort());
@@ -6834,27 +6925,9 @@ document.getElementById('closeBtn').addEventListener('click', () => {
 <!-- □일 이후 희망 숫자 지정 모달 -->
 <div class="modal-overlay" id="afterDayModalOverlay" style="z-index:3100;">
   <div class="modal" style="max-width:300px;padding:0;overflow:hidden;">
-    <div style="padding:20px 24px 16px;">
-      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px;">📅 며칠 이후 희망?</div>
-      <!-- 프리셋 버튼 -->
-      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:12px;">
-        <button class="after-day-preset" data-d="3"  style="padding:5px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;">3일</button>
-        <button class="after-day-preset" data-d="5"  style="padding:5px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;">5일</button>
-        <button class="after-day-preset" data-d="7"  style="padding:5px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;">7일</button>
-        <button class="after-day-preset" data-d="14" style="padding:5px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;">14일</button>
-        <button class="after-day-preset" data-d="30" style="padding:5px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;">30일</button>
-      </div>
-      <!-- 직접 입력 + ±버튼 -->
-      <div style="display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:4px;">
-        <button id="afterDayMinus" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:18px;line-height:1;cursor:pointer;flex-shrink:0;">−</button>
-        <div style="display:flex;align-items:center;gap:4px;">
-          <input id="afterDayInput" type="number" min="1" max="999"
-            style="width:70px;text-align:center;font-size:28px;font-weight:700;color:var(--accent);font-family:var(--font-mono);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:4px 6px;outline:none;"
-            placeholder="□" />
-          <span style="font-size:15px;color:var(--text-muted);">일</span>
-        </div>
-        <button id="afterDayPlus"  style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:18px;line-height:1;cursor:pointer;flex-shrink:0;">+</button>
-      </div>
+    <div style="padding:16px 18px 12px;">
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px;">📅 이후 희망 날짜 선택</div>
+      <div id="afterDatePickerBody"></div>
     </div>
     <div style="display:flex;gap:8px;padding:0 16px 16px;">
       <button id="afterDayCancel"  style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-size:13px;">취소</button>
