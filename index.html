@@ -1162,6 +1162,24 @@
       max-height: none;
       overflow-y: hidden;
     }
+
+    /* ④ 모달 헤더: 버튼을 위로 올리고 제목이 전체 너비 사용 */
+    .modal-header {
+      flex-direction: column-reverse;
+      gap: 6px;
+      padding: 14px 16px 0;
+    }
+    .modal-header > div:first-child {
+      width: 100%;
+    }
+    .modal-header-btns {
+      width: 100%;
+      justify-content: flex-end;
+    }
+    .modal-title-input {
+      width: 100%;
+      font-size: 20px;
+    }
   }
 </style>
 </head>
@@ -5160,14 +5178,42 @@ function autoResize(el) { el.style.height='auto'; el.style.height=el.scrollHeigh
 function initAutoResize() { document.querySelectorAll('.field-textarea').forEach(el=>{ el.addEventListener('input',()=>autoResize(el)); autoResize(el); }); }
 function refreshAutoResize() { document.querySelectorAll('.field-textarea').forEach(el=>autoResize(el)); }
 
-/* 제목 textarea 자동 높이 */
+/* 제목 textarea: 모바일에서 폰트 자동 축소 + 높이 자동 조절 */
+function resizeTitleEl(t) {
+  if (!t) return;
+  const mobile = window.innerWidth <= 600;
+  if (mobile) {
+    /* 1) 폰트 최대치로 초기화 */
+    t.style.fontSize = '20px';
+    t.style.height = 'auto';
+    /* 2) scrollWidth > clientWidth이면 폰트 축소 (최소 13px) */
+    let fs = 20;
+    while (fs > 13) {
+      t.style.fontSize = fs + 'px';
+      t.style.height = 'auto';
+      /* 한 줄 높이: lineHeight * 1줄 */
+      const lineH = Math.ceil(parseFloat(getComputedStyle(t).lineHeight) || fs * 1.35);
+      if (t.scrollHeight <= lineH + 4) break; /* 한 줄에 들어옴 */
+      fs -= 0.5;
+    }
+    /* 3) 폰트 줄여도 한 줄 안되면 줄바꿈 허용하며 높이 자동 */
+    t.style.height = 'auto';
+    t.style.height = t.scrollHeight + 'px';
+  } else {
+    /* PC: 고정 22px, 높이 자동 */
+    t.style.fontSize = '22px';
+    t.style.height = 'auto';
+    t.style.height = t.scrollHeight + 'px';
+  }
+}
+
 function initTitleResize() {
   const t = document.getElementById('modalTitle');
   if (!t) return;
-  const resize = () => { t.style.height='auto'; t.style.height=t.scrollHeight+'px'; };
-  t.addEventListener('input', resize);
-  // 모달 열릴 때도 호출되도록 전역 등록
-  window._resizeTitle = resize;
+  const handler = () => resizeTitleEl(t);
+  t.addEventListener('input', handler);
+  window.addEventListener('resize', handler);
+  window._resizeTitle = handler;
 }
 
 function init(){
