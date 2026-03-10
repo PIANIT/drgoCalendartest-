@@ -833,7 +833,7 @@
   /* ── 담당자 이름 뱃지 (칩용) ── */
   .ev-assignee-badge {
     display:inline-flex; align-items:center; justify-content:center;
-    font-size:10px; font-weight:700; letter-spacing:-0.3px;
+    font-size:9px; font-weight:700; letter-spacing:-0.5px;
     color:var(--text); white-space:nowrap; flex-shrink:0;
     margin-left:3px; line-height:1;
   }
@@ -983,6 +983,16 @@
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
   .pc-day-wrap { padding:0 32px 40px; max-width:900px; margin:0 auto; }
+  .pc-day-wrap { display:flex; align-items:flex-start; gap:0; padding:0 0 40px; max-width:960px; margin:0 auto; }
+  .pc-day-content { flex:1; min-width:0; padding:0 12px; }
+  .pc-day-nav-btn {
+    flex-shrink:0; width:52px; align-self:stretch;
+    background:none; border:none; color:var(--text-muted);
+    font-size:48px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    border-radius:12px; transition:all 0.15s; line-height:1;
+    margin-top:8px;
+  }
+  .pc-day-nav-btn:hover { color:var(--accent); background:rgba(200,176,138,0.1); }
   .pc-day-header {
     display:flex; align-items:baseline; gap:12px;
     padding:20px 0 16px; border-bottom:1px solid var(--border);
@@ -1332,8 +1342,12 @@
 
 <div id="pcDayView" style="display:none;">
   <div class="pc-day-wrap">
-    <div class="pc-day-header" id="pcDayHeader"></div>
-    <div class="pc-day-list" id="pcDayList"></div>
+    <button class="pc-day-nav-btn" id="pcDayPrev" title="전날">&#8249;</button>
+    <div class="pc-day-content">
+      <div class="pc-day-header" id="pcDayHeader"></div>
+      <div class="pc-day-list" id="pcDayList"></div>
+    </div>
+    <button class="pc-day-nav-btn" id="pcDayNext" title="다음날">&#8250;</button>
   </div>
 </div>
 
@@ -2459,7 +2473,15 @@ function subscribeEvents(year, month) {
 subscribeEvents(today.getFullYear(), today.getMonth());
 
 /* ─ 담당자 이니셜 / 배지 HTML (렌더러보다 먼저 정의) ─ */
-function _assigneeInitial(name) { if (!name) return '?'; const n = name.trim(); return n.length >= 2 ? n.slice(-2) : n; }
+function _assigneeInitial(name) {
+  if (!name) return '?';
+  const n = name.trim();
+  if (!n) return '?';
+  // 영문·숫자로만 이루어진 이름 → 앞 3글자 대문자
+  if (/^[A-Za-z0-9 ._-]+$/.test(n)) return n.replace(/\s+/g,'').slice(0,3).toUpperCase();
+  // 한글 포함 → 뒤 2글자 (기존 방식)
+  return n.length >= 2 ? n.slice(-2) : n;
+}
 function makeAssigneeBadgesHtml(assignees) {
   if (!assignees || assignees.length === 0) return '';
   return assignees.map(name =>
@@ -5689,9 +5711,31 @@ document.getElementById('todayBtn').addEventListener('click',()=>{
     return;
   }
   pcDayDate=todayStr; pcWeekStart=getPcWeekStart();
-  if (pcView==='month'){currentYear=today.getFullYear();currentMonth=today.getMonth();render();}
+  if (pcView==='month'){
+    currentYear=today.getFullYear(); currentMonth=today.getMonth();
+    subscribeEvents(currentYear, currentMonth);
+    render();
+  }
   else if (pcView==='week') renderPcWeek();
   else renderPcDay();
+});
+
+/* 일간 뷰 전날/다음날 화살표 */
+document.getElementById('pcDayPrev').addEventListener('click', () => {
+  pcDayDate = addDaysPc(pcDayDate||todayStr, -1);
+  subscribeEvents(
+    parseInt((pcDayDate).slice(0,4)),
+    parseInt((pcDayDate).slice(5,7)) - 1
+  );
+  renderPcDay();
+});
+document.getElementById('pcDayNext').addEventListener('click', () => {
+  pcDayDate = addDaysPc(pcDayDate||todayStr, 1);
+  subscribeEvents(
+    parseInt((pcDayDate).slice(0,4)),
+    parseInt((pcDayDate).slice(5,7)) - 1
+  );
+  renderPcDay();
 });
 
 document.querySelectorAll('.view-toggle-btn').forEach(btn=>{
