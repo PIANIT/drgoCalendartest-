@@ -523,8 +523,21 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
 .log-entry-body { padding:10px 14px; font-size:12px; color:var(--text-muted); }
 .log-entry-title { font-size:13px; color:var(--text); font-weight:500; margin-bottom:4px; }
 .log-changes-wrap { display:flex; flex-direction:column; gap:6px; margin-top:6px; }
-.log-change-row { display:grid; grid-template-columns:80px 1fr; gap:8px; align-items:start; }
-.log-field-name { font-family:var(--font-mono); font-size:10px; letter-spacing:0.08em; color:var(--text-muted); text-transform:uppercase; padding-top:4px; word-break:keep-all; }
+.log-change-row { display:grid; grid-template-columns:100px 1fr; gap:8px; align-items:start; }
+.log-field-name { font-family:var(--font-mono); font-size:10px; letter-spacing:0.08em; color:var(--text-muted); text-transform:uppercase; padding-top:4px; word-break:break-word; white-space:normal; line-height:1.4; }
+/* 수정내역 페이지네이션 */
+.change-log-pagination {
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  padding:12px 0 4px; border-top:1px solid var(--border); margin-top:4px; flex-shrink:0;
+}
+.change-log-page-btn {
+  background:var(--surface2,#2a2a2a); border:1px solid var(--border); color:var(--text);
+  padding:5px 14px; border-radius:7px; font-size:12px; cursor:pointer;
+  font-family:var(--font-main); transition:all 0.15s;
+}
+.change-log-page-btn:hover:not(:disabled) { border-color:var(--accent2); color:var(--accent2); }
+.change-log-page-btn:disabled { opacity:0.3; cursor:default; }
+.change-log-page-info { font-size:12px; color:var(--text-muted); font-family:var(--font-mono); min-width:70px; text-align:center; }
 .log-before { font-size:12px; color:var(--red); background:rgba(212,136,136,0.1); border-radius:4px; padding:3px 8px; text-decoration:line-through; opacity:0.8; white-space:pre-wrap; word-break:break-word; }
 .log-after  { font-size:12px; color:var(--green); background:rgba(136,212,136,0.1); border-radius:4px; padding:3px 8px; white-space:pre-wrap; word-break:break-word; }
 .log-empty-msg { text-align:center; padding:40px 0; color:var(--text-muted); font-size:13px; }
@@ -972,10 +985,13 @@ html.light .dr-date-box input[type="date"] { color-scheme:light; }
       <button class="icon-btn" id="changeLogClose">✕</button>
     </div>
     <div class="log-modal-body" id="changeLogBody"></div>
+    <div class="change-log-pagination" id="changeLogPagination" style="display:none;">
+      <button class="change-log-page-btn" id="changeLogPagePrev">‹ 이전</button>
+      <span class="change-log-page-info" id="changeLogPageInfo"></span>
+      <button class="change-log-page-btn" id="changeLogPageNext">다음 ›</button>
+    </div>
   </div>
 </div>
-
-<!-- ═══ CRM DETAIL MODAL ═══ -->
 <div class="modal-overlay" id="crmDetailOverlay">
   <div class="modal" style="max-width:560px;">
     <div class="modal-header">
@@ -1779,13 +1795,88 @@ function openDetail(ev) {
 /* ══════════════════════════════
    수정내역 모달
 ══════════════════════════════ */
+const CHANGE_LOG_PAGE_SIZE = 5;
+let _changeLogAllLogs = [];
+let _changeLogCurrentPage = 1;
+
+function renderChangeLogPage(page) {
+  const body       = document.getElementById('changeLogBody');
+  const pagination = document.getElementById('changeLogPagination');
+  const pageInfo   = document.getElementById('changeLogPageInfo');
+  const prevBtn    = document.getElementById('changeLogPagePrev');
+  const nextBtn    = document.getElementById('changeLogPageNext');
+
+  const total      = _changeLogAllLogs.length;
+  const totalPages = Math.ceil(total / CHANGE_LOG_PAGE_SIZE);
+  _changeLogCurrentPage = Math.max(1, Math.min(page, totalPages));
+
+  const start    = (_changeLogCurrentPage - 1) * CHANGE_LOG_PAGE_SIZE;
+  const pageLogs = _changeLogAllLogs.slice(start, start + CHANGE_LOG_PAGE_SIZE);
+
+  body.innerHTML = '';
+  pageLogs.forEach(log => {
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+
+    const ts = log.createdAt?.toDate ? log.createdAt.toDate() : new Date(log.createdAt||0);
+    const timeStr = ts.toLocaleString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+    const uid = log.userId || '알 수 없음';
+    const isCreate = log.type === 'create';
+
+    const head = document.createElement('div');
+    head.className = 'log-entry-head';
+    head.innerHTML = `
+      <span class="log-badge-${isCreate?'create':'update'}">${isCreate?'생성':'수정'}</span>
+      <span class="log-user-tag">👤 ${uid}</span>
+      <span class="log-time-tag">${timeStr}</span>`;
+    entry.appendChild(head);
+
+    if (!isCreate && log.changes && log.changes.length > 0) {
+      const changesWrap = document.createElement('div');
+      changesWrap.className = 'log-entry-body';
+      const cwInner = document.createElement('div');
+      cwInner.className = 'log-changes-wrap';
+      log.changes.forEach(ch => {
+        const row = document.createElement('div');
+        row.className = 'log-change-row';
+        row.innerHTML = `
+          <span class="log-field-name">${ch.field||'항목'}</span>
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <span class="log-before">${ch.before||'(없음)'}</span>
+            <span class="log-after">${ch.after||'(없음)'}</span>
+          </div>`;
+        cwInner.appendChild(row);
+      });
+      changesWrap.appendChild(cwInner);
+      entry.appendChild(changesWrap);
+    }
+    body.appendChild(entry);
+  });
+
+  if (totalPages > 1) {
+    pagination.style.display = 'flex';
+    pageInfo.textContent = `${_changeLogCurrentPage} / ${totalPages}`;
+    prevBtn.disabled = _changeLogCurrentPage <= 1;
+    nextBtn.disabled = _changeLogCurrentPage >= totalPages;
+  } else {
+    pagination.style.display = 'none';
+  }
+}
+
+document.getElementById('changeLogPagePrev').addEventListener('click', () => renderChangeLogPage(_changeLogCurrentPage - 1));
+document.getElementById('changeLogPageNext').addEventListener('click', () => renderChangeLogPage(_changeLogCurrentPage + 1));
+
 async function openChangeLog(eventId, title, db) {
-  const overlay = document.getElementById('changeLogOverlay');
-  const body    = document.getElementById('changeLogBody');
-  const titleEl = document.getElementById('changeLogTitle');
+  const overlay    = document.getElementById('changeLogOverlay');
+  const body       = document.getElementById('changeLogBody');
+  const pagination = document.getElementById('changeLogPagination');
+  const titleEl    = document.getElementById('changeLogTitle');
   titleEl.textContent = title || eventId;
   overlay.classList.add('open');
   body.innerHTML = '<div class="log-empty-msg">로딩 중…</div>';
+  pagination.style.display = 'none';
+  _changeLogAllLogs = [];
+  _changeLogCurrentPage = 1;
 
   try {
     const q = query(
@@ -1795,52 +1886,14 @@ async function openChangeLog(eventId, title, db) {
       orderBy('createdAt','desc')
     );
     const snap = await getDocs(q);
-    const logs = snap.docs.map(d=>({_id:d.id,...d.data()}));
+    _changeLogAllLogs = snap.docs.map(d=>({_id:d.id,...d.data()}));
 
-    if (!logs.length) {
+    if (!_changeLogAllLogs.length) {
       body.innerHTML = '<div class="log-empty-msg">수정 내역이 없습니다</div>';
       return;
     }
 
-    body.innerHTML = '';
-    logs.forEach(log => {
-      const entry = document.createElement('div');
-      entry.className = 'log-entry';
-
-      const ts = log.createdAt?.toDate ? log.createdAt.toDate() : new Date(log.createdAt||0);
-      const timeStr = ts.toLocaleString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
-      const uid = log.userId || '알 수 없음';
-      const isCreate = log.type === 'create';
-
-      const head = document.createElement('div');
-      head.className = 'log-entry-head';
-      head.innerHTML = `
-        <span class="log-badge-${isCreate?'create':'update'}">${isCreate?'생성':'수정'}</span>
-        <span class="log-user-tag">👤 ${uid}</span>
-        <span class="log-time-tag">${timeStr}</span>`;
-      entry.appendChild(head);
-
-      if (!isCreate && log.changes && log.changes.length > 0) {
-        const changesWrap = document.createElement('div');
-        changesWrap.className = 'log-entry-body';
-        const cwInner = document.createElement('div');
-        cwInner.className = 'log-changes-wrap';
-        log.changes.forEach(ch => {
-          const row = document.createElement('div');
-          row.className = 'log-change-row';
-          row.innerHTML = `
-            <span class="log-field-name">${ch.field||'항목'}</span>
-            <div style="display:flex;flex-direction:column;gap:3px;">
-              <span class="log-before">${ch.before||'(없음)'}</span>
-              <span class="log-after">${ch.after||'(없음)'}</span>
-            </div>`;
-          cwInner.appendChild(row);
-        });
-        changesWrap.appendChild(cwInner);
-        entry.appendChild(changesWrap);
-      }
-      body.appendChild(entry);
-    });
+    renderChangeLogPage(1);
   } catch(e) {
     console.error(e);
     body.innerHTML = `<div class="log-empty-msg">오류: ${e.message}</div>`;
