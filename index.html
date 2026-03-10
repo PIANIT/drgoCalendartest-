@@ -1283,13 +1283,22 @@
     #g_career_group {
       flex-wrap: wrap;
     }
-    /* conditional-field 인라인 입력칸 모바일 너비 */
+    /* 플랫폼/방송주제/유입경로 외부 flex → 모바일 wrap */
+    #g_platform_wrap,
+    #g_source_wrap,
+    #g_topic_wrap {
+      flex-wrap: wrap !important;
+    }
+    /* conditional-field 인라인 입력칸 모바일: 다음 줄에 전체 너비로 */
     #g_platform_etc_wrap,
     #g_topic_etc_wrap,
-    #g_source_ref_wrap {
+    #g_source_ref_wrap,
+    #g_budget_etc_wrap,
+    #g_req_topic_etc_wrap {
       min-width: 0 !important;
       width: 100%;
-      margin-top: 4px !important;
+      flex-basis: 100%;
+      margin-top: 6px !important;
     }
   }
 </style>
@@ -1849,7 +1858,7 @@
         <div class="field-row">
           <div class="field-group" style="flex:1;">
             <label class="field-label">플랫폼</label>
-            <div style="display:flex;gap:6px;align-items:center;flex-wrap:nowrap;">
+            <div id="g_platform_wrap" style="display:flex;gap:6px;align-items:center;flex-wrap:nowrap;">
               <div class="radio-group" id="g_platform_group" style="flex-wrap:nowrap;gap:5px;flex-shrink:0;">
                 <div class="radio-btn" data-val="SOOP">SOOP</div>
                 <div class="radio-btn" data-val="치지직">치지직</div>
@@ -1874,7 +1883,7 @@
           </div>
           <div class="field-group" style="flex:1;">
             <label class="field-label">유입 경로</label>
-            <div style="display:flex;gap:6px;align-items:center;flex-wrap:nowrap;">
+            <div id="g_source_wrap" style="display:flex;gap:6px;align-items:center;flex-wrap:nowrap;">
               <div class="radio-group" id="g_source_group" style="flex-wrap:nowrap;gap:5px;flex-shrink:0;">
                 <div class="radio-btn" data-val="광고">📢 광고</div>
                 <div class="radio-btn" data-val="검색">🔍 검색</div>
@@ -1888,7 +1897,7 @@
         </div>
         <div class="field-group">
           <label class="field-label">방송 주제</label>
-          <div style="display:flex;gap:6px;align-items:center;flex-wrap:nowrap;">
+          <div id="g_topic_wrap" style="display:flex;gap:6px;align-items:center;flex-wrap:nowrap;">
             <div class="radio-group" id="g_topic_group" style="flex-wrap:nowrap;gap:5px;flex-shrink:0;">
               <div class="radio-btn" data-val="소통">소통</div>
               <div class="radio-btn" data-val="먹방">먹방</div>
