@@ -1132,19 +1132,42 @@
 
   /* ── 모바일 모달 레이아웃 수정 ── */
   @media (max-width:600px) {
-    /* ① 날짜+시간 행: 날짜 위, 시간 아래로 */
+    /* ① 날짜+시간 행: 날짜/시간을 2행으로 분리 */
     .dt-row {
+      display: grid;
       grid-template-columns: 36px 1fr 1fr;
       grid-template-rows: auto auto;
+      gap: 6px 8px;
+      align-items: center;
     }
+    /* 라벨은 1열 1행 유지 */
+    .dt-row .dt-label {
+      grid-column: 1;
+      grid-row: 1 / 3;
+      align-self: center;
+    }
+    /* 날짜 input: 2~3열 1행 꽉 채움 */
     .dt-row .dt-input[type="date"] {
       grid-column: 2 / 4;
+      grid-row: 1;
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      overflow: hidden;
+      -webkit-appearance: none;
+      appearance: none;
+      box-sizing: border-box;
+      font-size: 13px;
+      padding: 9px 8px;
     }
+    /* 시간 picker 두 개: 2행에 각 1칸씩 */
     .dt-row .time-picker-trigger {
-      grid-column: auto;
+      grid-row: 2;
+      min-width: 0;
+      width: 100%;
     }
 
-    /* ② 방송룸 이름+플랫폼: 가로 나란히 대신 세로로 */
+    /* ② 방송룸 이름+플랫폼: 세로 스택 */
     .field-row {
       flex-direction: column;
       gap: 10px;
@@ -1157,13 +1180,7 @@
       max-height: 200px;
     }
 
-    /* 제목 textarea 자동 높이 유지 */
-    .modal-title-input {
-      max-height: none;
-      overflow-y: hidden;
-    }
-
-    /* ④ 모달 헤더: 버튼을 위로 올리고 제목이 전체 너비 사용 */
+    /* ④ 모달 헤더: 버튼 위, 제목 전체 너비 */
     .modal-header {
       flex-direction: column-reverse;
       gap: 6px;
@@ -1176,9 +1193,27 @@
       width: 100%;
       justify-content: flex-end;
     }
+
+    /* ⑤ 제목: 전체 너비, 공휴일버튼~담당자버튼 사이 균등 간격 */
+    .holiday-btn-wrap {
+      margin-top: 8px;
+      margin-bottom: 0;
+    }
+    .title-wrap {
+      margin-top: 8px;
+      margin-bottom: 0;
+      width: 100%;
+    }
     .modal-title-input {
       width: 100%;
       font-size: 20px;
+      max-height: none;
+      overflow-y: hidden;
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+    .assignee-btn {
+      margin-top: 8px;
     }
   }
 </style>
@@ -1534,7 +1569,9 @@
         <div class="holiday-btn-wrap">
           <span class="holiday-dot" id="holidayDot">📅 공휴일로 지정</span>
         </div>
-        <textarea class="modal-title-input" id="modalTitle" placeholder="일정 제목을 입력하세요" rows="1"></textarea>
+        <div class="title-wrap">
+          <textarea class="modal-title-input" id="modalTitle" placeholder="일정 제목을 입력하세요" rows="1"></textarea>
+        </div>
         <button class="assignee-btn" id="assigneeBtn" title="담당자 지정">
           <span id="assigneeBtnIcon">👤</span>
           <span id="assigneeBtnLabel">담당자 지정</span>
