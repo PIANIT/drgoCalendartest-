@@ -796,9 +796,23 @@
     transition:all 0.12s; line-height:1;
   }
   .assignee-del-btn:hover { color:var(--red); background:rgba(200,80,80,.12); }
+  .assignee-order-btns { display:none; flex-direction:column; gap:1px; flex-shrink:0; }
+  .assignee-order-btn {
+    background:none; border:none; color:var(--text-muted); cursor:pointer;
+    font-size:11px; padding:1px 4px; border-radius:3px; line-height:1;
+    transition:all 0.1s;
+  }
+  .assignee-order-btn:hover { color:var(--accent); background:rgba(200,176,138,.15); }
+  .assignee-order-btn:disabled { opacity:0.2; cursor:default; }
   .assignee-edit-mode .assignee-del-btn { display:flex; align-items:center; }
+  .assignee-edit-mode .assignee-order-btns { display:flex; }
   .assignee-edit-mode .assignee-item { cursor:default; }
   .assignee-edit-mode .assignee-item:hover { background:none; }
+  /* 선택 모드에서도 순서 버튼 표시 */
+  .assignee-reorder-mode .assignee-order-btns { display:flex; }
+  .assignee-reorder-mode .assignee-check { display:none; }
+  .assignee-reorder-mode .assignee-item { cursor:default; }
+  .assignee-reorder-mode .assignee-item:hover { background:none; }
   .assignee-add-row {
     display:none; align-items:center; gap:8px; margin-top:8px;
     padding-top:8px; border-top:1px solid var(--border);
@@ -2015,6 +2029,7 @@
     </div>
     <div class="assignee-modal-footer">
       <button class="assignee-edit-toggle" id="assigneeEditToggle">✏️ 목록 편집</button>
+      <button class="assignee-edit-toggle" id="assigneeReorderBtn" style="display:none;">↕ 순서 변경</button>
       <button class="assignee-confirm-btn" id="assigneeConfirmBtn">확인</button>
     </div>
   </div>
@@ -2237,7 +2252,8 @@ window.addEventListener('popstate', (e) => {
 });
 let _assigneePool    = [];
 let _assigneeChecked = new Set();
-let _assigneeEditMode = false;
+let _assigneeEditMode    = false;
+let _assigneeReorderMode = false;
 let _currentEventAssignees = [];
 let _assigneeUnsub   = null;   // onSnapshot 구독 해제용
 /* AUTH */
@@ -3966,7 +3982,7 @@ function _showLockedCompact(){
   if (dtSec) dtSec.style.display='none';
   let cdt = document.getElementById('_compactDt');
   if (!cdt){ cdt=document.createElement('div'); cdt.id='_compactDt';
-    cdt.style.cssText='font-size:13px;color:var(--text);padding:6px 0 4px;font-family:var(--font-mono);'; }
+    cdt.style.cssText='font-size:15px;color:var(--text);padding:8px 0 5px;font-family:var(--font-mono);font-weight:600;'; }
   const sd = document.getElementById('startDate').value||'';
   const ed = document.getElementById('endDate').value||sd;
   const st = document.getElementById('startTime').value||'';
@@ -4006,12 +4022,12 @@ function _showLockedCompact(){
   const parts=[];
   if (schedOpt) parts.push(SCHED_ICONS[schedOpt]||schedOpt);
   parts.push('📌'+(TYPE_LABELS[currentColor]||currentColor));
-  /* 특수옵션 + 사유 */
+
+  /* 특수옵션 — 아이콘만 표시 (사유 괄호 제거) */
   const spReason2 = document.getElementById('specialReason')?.value.trim()||'';
   const spActive=[...specialOpts].map(k=>SP_LABELS[k]||k).filter(Boolean);
   if (spActive.length) {
-    const spChip = spActive.join(' · ') + (spReason2 ? ` (${spReason2})` : '');
-    parts.push(spChip);
+    parts.push(spActive.join(' · '));  /* 사유 없이 아이콘만 */
   }
 
   /* 일정옵션 + 사유 */
@@ -4031,16 +4047,31 @@ function _showLockedCompact(){
 
   let cMeta = document.getElementById('_compactMeta');
   if (!cMeta){ cMeta=document.createElement('div'); cMeta.id='_compactMeta';
-    cMeta.style.cssText='font-size:12px;color:var(--text-muted);padding:3px 0 6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;'; }
+    cMeta.style.cssText='font-size:13px;color:var(--text-muted);padding:4px 0 2px;display:flex;flex-wrap:wrap;gap:7px;align-items:center;'; }
   cMeta.innerHTML='';
   parts.forEach(p=>{
     const sp=document.createElement('span');
-    sp.style.cssText='background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:2px 8px;font-size:11px;white-space:nowrap;';
+    sp.style.cssText='background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:3px 11px;font-size:13px;white-space:nowrap;';
     sp.textContent=p;
     cMeta.appendChild(sp);
   });
+
+  /* 특수옵션 사유 — 칩 바로 아래 별도 줄로 표시 */
+  let cReason = document.getElementById('_compactReason');
+  if (!cReason){ cReason=document.createElement('div'); cReason.id='_compactReason'; }
+  cReason.style.cssText='font-size:13px;color:var(--text-muted);padding:2px 4px 6px;';
+  if (spReason2 && spActive.length) {
+    cReason.textContent = '📝 ' + spReason2;
+    cReason.style.display = '';
+  } else {
+    cReason.style.display = 'none';
+  }
+
   const insertAnchor = schedFg || spFg || seFg;
-  if (insertAnchor) insertAnchor.parentNode.insertBefore(cMeta, insertAnchor);
+  if (insertAnchor) {
+    insertAnchor.parentNode.insertBefore(cMeta, insertAnchor);
+    insertAnchor.parentNode.insertBefore(cReason, insertAnchor);
+  }
 
   /* ── 7. 의뢰자 정보 버튼 → 텍스트 컴팩트 표시 ── */
   _showLockedGoldCompact();
@@ -4049,7 +4080,7 @@ function _showLockedCompact(){
 function _hideLockedCompact(){
   const dtSec = document.querySelector('.datetime-section');
   if (dtSec) dtSec.style.display='';
-  ['_compactDt','_compactMeta','_compactGold'].forEach(id=>{
+  ['_compactDt','_compactMeta','_compactReason','_compactGold'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.remove();
   });
   const ng=document.getElementById('notifGroup'); if(ng) ng.style.display='';
@@ -4164,7 +4195,7 @@ function _showLockedGoldCompact(){
   cGold.innerHTML='';
   rows.forEach(([label,val])=>{
     const chip=document.createElement('span');
-    chip.style.cssText='background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:2px 9px;font-size:11px;color:var(--text-muted);white-space:nowrap;';
+    chip.style.cssText='background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:3px 11px;font-size:13px;color:var(--text-muted);white-space:nowrap;';
     chip.innerHTML=`<span style="opacity:0.6;margin-right:3px;">${label}</span>${val}`;
     cGold.appendChild(chip);
   });
@@ -6375,21 +6406,39 @@ function renderAssigneeList() {
   }
 
   list.innerHTML = '';
-  _assigneePool.forEach(name => {
+  const isEdit    = _assigneeEditMode;
+  const isReorder = _assigneeReorderMode;
+  list.classList.toggle('assignee-edit-mode',    isEdit);
+  list.classList.toggle('assignee-reorder-mode', isReorder);
+
+  _assigneePool.forEach((name, idx) => {
     const isChecked = _assigneeChecked.has(name);
     const item = document.createElement('div');
-    item.className = 'assignee-item' + (isChecked ? ' checked' : '') + (_assigneeEditMode ? ' edit-mode' : '');
+    item.className = 'assignee-item' + (isChecked ? ' checked' : '');
     item.dataset.name = name;
+
+    /* 선택 모드 & 순서 변경 모드 공통: 체크 아이콘 */
+    const checkHtml = `<div class="assignee-check">${isChecked ? '✓' : ''}</div>`;
+
+    /* 위아래 버튼 */
+    const orderHtml = `
+      <div class="assignee-order-btns">
+        <button class="assignee-order-btn" data-move="up"   title="위로" ${idx===0?'disabled':''}>▲</button>
+        <button class="assignee-order-btn" data-move="down" title="아래로" ${idx===_assigneePool.length-1?'disabled':''}>▼</button>
+      </div>`;
+
     item.innerHTML = `
-      <div class="assignee-check">${isChecked ? '✓' : ''}</div>
+      ${checkHtml}
       <span class="ev-assignee-avatar" style="width:28px;height:28px;font-size:13px;flex-shrink:0;">${_assigneeInitial(name)}</span>
       <span class="assignee-name">${name}</span>
+      ${orderHtml}
       <button class="assignee-del-btn" data-del="${name}" title="삭제">✕</button>
     `;
 
+    /* 선택 클릭 (편집/순서변경 모드 아닐 때) */
     item.addEventListener('click', e => {
-      if (_assigneeEditMode) return;
-      if (e.target.classList.contains('assignee-del-btn')) return;
+      if (_assigneeEditMode || _assigneeReorderMode) return;
+      if (e.target.closest('.assignee-del-btn') || e.target.closest('.assignee-order-btns')) return;
       if (_assigneeChecked.has(name)) {
         _assigneeChecked.delete(name);
         item.classList.remove('checked');
@@ -6401,6 +6450,23 @@ function renderAssigneeList() {
       }
     });
 
+    /* 위아래 버튼 */
+    item.querySelectorAll('.assignee-order-btn').forEach(btn => {
+      btn.addEventListener('click', async e => {
+        e.stopPropagation();
+        const dir = btn.dataset.move;
+        const i   = _assigneePool.indexOf(name);
+        if (dir === 'up'   && i > 0) {
+          [_assigneePool[i-1], _assigneePool[i]] = [_assigneePool[i], _assigneePool[i-1]];
+        } else if (dir === 'down' && i < _assigneePool.length - 1) {
+          [_assigneePool[i], _assigneePool[i+1]] = [_assigneePool[i+1], _assigneePool[i]];
+        }
+        if (isEdit) await saveAssigneePool();
+        renderAssigneeList();
+      });
+    });
+
+    /* 삭제 버튼 */
     item.querySelector('.assignee-del-btn').addEventListener('click', async e => {
       e.stopPropagation();
       const nm = e.currentTarget.dataset.del;
@@ -6413,27 +6479,26 @@ function renderAssigneeList() {
 
     list.appendChild(item);
   });
-
-  if (_assigneeEditMode) {
-    list.classList.add('assignee-edit-mode');
-  } else {
-    list.classList.remove('assignee-edit-mode');
-  }
 }
 
 /* ─ 담당자 모달 열기 ─ */
 async function openAssigneeModal(currentAssignees) {
   _assigneeChecked = new Set(currentAssignees || []);
-  _assigneeEditMode = false;
+  _assigneeEditMode    = false;
+  _assigneeReorderMode = false;
 
-  const toggle  = document.getElementById('assigneeEditToggle');
-  const addRow  = document.getElementById('assigneeAddRow');
-  const addInput= document.getElementById('assigneeAddInput');
-  const list    = document.getElementById('assigneeList');
+  const toggle    = document.getElementById('assigneeEditToggle');
+  const reorderBtn= document.getElementById('assigneeReorderBtn');
+  const addRow    = document.getElementById('assigneeAddRow');
+  const addInput  = document.getElementById('assigneeAddInput');
+  const list      = document.getElementById('assigneeList');
 
   toggle.classList.remove('active');
   toggle.textContent = '✏️ 목록 편집';
-  list.classList.remove('assignee-edit-mode');
+  reorderBtn.style.display = '';
+  reorderBtn.classList.remove('active');
+  reorderBtn.textContent = '↕ 순서 변경';
+  list.classList.remove('assignee-edit-mode', 'assignee-reorder-mode');
   addRow.style.display = 'none';
   addInput.value = '';
   document.getElementById('assigneeConfirmBtn').style.display = '';
@@ -6448,18 +6513,55 @@ document.getElementById('assigneeEditToggle').addEventListener('click', () => {
   const toggle = document.getElementById('assigneeEditToggle');
   const addRow = document.getElementById('assigneeAddRow');
   const confirmBtn = document.getElementById('assigneeConfirmBtn');
+  const reorderBtn = document.getElementById('assigneeReorderBtn');
+
+  /* 순서변경 모드 비활성화 */
+  _assigneeReorderMode = false;
+  reorderBtn.classList.remove('active');
+  reorderBtn.textContent = '↕ 순서 변경';
 
   if (_assigneeEditMode) {
     toggle.classList.add('active');
     toggle.textContent = '✅ 편집 완료';
     addRow.style.display = 'flex';
     confirmBtn.style.display = 'none';
+    reorderBtn.style.display = 'none';
     document.getElementById('assigneeAddInput').focus();
   } else {
     toggle.classList.remove('active');
     toggle.textContent = '✏️ 목록 편집';
     addRow.style.display = 'none';
     confirmBtn.style.display = '';
+    reorderBtn.style.display = '';
+  }
+  renderAssigneeList();
+});
+
+/* ─ 순서 변경 모드 토글 ─ */
+document.getElementById('assigneeReorderBtn').addEventListener('click', () => {
+  _assigneeReorderMode = !_assigneeReorderMode;
+  const reorderBtn = document.getElementById('assigneeReorderBtn');
+  const toggle     = document.getElementById('assigneeEditToggle');
+  const confirmBtn = document.getElementById('assigneeConfirmBtn');
+
+  /* 편집 모드 비활성화 */
+  _assigneeEditMode = false;
+  toggle.classList.remove('active');
+  toggle.textContent = '✏️ 목록 편집';
+  document.getElementById('assigneeAddRow').style.display = 'none';
+
+  if (_assigneeReorderMode) {
+    reorderBtn.classList.add('active');
+    reorderBtn.textContent = '✅ 순서 완료';
+    confirmBtn.style.display = 'none';
+    toggle.style.display = 'none';
+  } else {
+    reorderBtn.classList.remove('active');
+    reorderBtn.textContent = '↕ 순서 변경';
+    confirmBtn.style.display = '';
+    toggle.style.display = '';
+    /* 순서 완료 시 pool 저장 */
+    saveAssigneePool();
   }
   renderAssigneeList();
 });
@@ -6488,7 +6590,8 @@ document.getElementById('assigneeAddInput').addEventListener('keydown', e => {
 
 /* ─ 확인 버튼 ─ */
 document.getElementById('assigneeConfirmBtn').addEventListener('click', () => {
-  _currentEventAssignees = [..._assigneeChecked];
+  /* pool 순서를 우선순위로 삼아 선택된 담당자 정렬 */
+  _currentEventAssignees = _assigneePool.filter(n => _assigneeChecked.has(n));
   updateAssigneeBtn(_currentEventAssignees);
   document.getElementById('assigneeModalOverlay').classList.remove('open');
 });
