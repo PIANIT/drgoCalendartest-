@@ -2303,6 +2303,8 @@ function updateLockUI() {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 import { getFirestore, collection, doc, setDoc, deleteDoc, addDoc, query, where, orderBy, getDocs, getDoc, onSnapshot, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject }
+  from "https://www.gstatic.com/firebasejs/12.9.0/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey:            "AIzaSyDnEOATYmwq0WJr6pCl-86-Q3ZEQjrrfeY",
@@ -2314,6 +2316,7 @@ const firebaseConfig = {
 };
 const app       = initializeApp(firebaseConfig);
 const db        = getFirestore(app);
+const storage   = getStorage(app);
 const eventsCol = collection(db, 'events');
 
 async function tryAuth() {
@@ -2415,28 +2418,57 @@ function isCustomHoliday(dk) {
   return events.some(ev => ev.color==='holiday' && ev.startDate<=dk && (ev.endDate||ev.startDate)>=dk);
 }
 
-const IMG_MAX_PX = 800;
-const IMG_QUALITY = 0.72;
-function compressImage(file) {
+/* ── 이미지 압축 설정 ── */
+const THUMB_MAX_PX  = 300;   /* 썸네일 최대 픽셀 */
+const THUMB_QUALITY = 0.65;  /* 썸네일 화질 */
+const FULL_MAX_PX   = 2400;  /* 원본 최대 픽셀 (고화질) */
+const FULL_QUALITY  = 0.92;  /* 원본 화질 */
+
+/* 이미지를 canvas로 리사이즈 → Blob 반환 */
+function resizeToBlob(file, maxPx, quality) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
     img.onload = () => {
       let { width: w, height: h } = img;
-      if (w > IMG_MAX_PX || h > IMG_MAX_PX) {
-        if (w >= h) { h = Math.round(h * IMG_MAX_PX / w); w = IMG_MAX_PX; }
-        else        { w = Math.round(w * IMG_MAX_PX / h); h = IMG_MAX_PX; }
+      if (w > maxPx || h > maxPx) {
+        if (w >= h) { h = Math.round(h * maxPx / w); w = maxPx; }
+        else        { w = Math.round(w * maxPx / h); h = maxPx; }
       }
       const canvas = document.createElement('canvas');
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
       URL.revokeObjectURL(url);
-      resolve(canvas.toDataURL('image/jpeg', IMG_QUALITY));
+      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('toBlob 실패')),
+        'image/jpeg', quality);
     };
     img.onerror = reject;
     img.src = url;
   });
 }
+
+/* Storage 업로드 → { thumbUrl, fullUrl } 반환 */
+async function uploadImageToStorage(file, pathPrefix) {
+  const ts   = Date.now();
+  const base = file.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9가-힣_-]/g,'_');
+  const thumbBlob = await resizeToBlob(file, THUMB_MAX_PX, THUMB_QUALITY);
+  const fullBlob  = await resizeToBlob(file, FULL_MAX_PX,  FULL_QUALITY);
+  const thumbRef  = storageRef(storage, `${pathPrefix}/thumb_${ts}_${base}.jpg`);
+  const fullRef   = storageRef(storage, `${pathPrefix}/full_${ts}_${base}.jpg`);
+  const [thumbSnap, fullSnap] = await Promise.all([
+    uploadBytes(thumbRef, thumbBlob, { contentType:'image/jpeg' }),
+    uploadBytes(fullRef,  fullBlob,  { contentType:'image/jpeg' }),
+  ]);
+  const [thumbUrl, fullUrl] = await Promise.all([
+    getDownloadURL(thumbSnap.ref),
+    getDownloadURL(fullSnap.ref),
+  ]);
+  return { thumbUrl, fullUrl };
+}
+
+/* 구버전 base64 호환용 — data 필드가 있으면 그걸 사용 */
+function imgThumbSrc(img) { return img.thumbUrl || img.data || ''; }
+function imgFullSrc(img)  { return img.fullUrl  || img.data || ''; }
 
 let currentYear, currentMonth;
 let events = [];
@@ -3394,9 +3426,9 @@ function loadGoldFields(ev){
   const spRWrap2=document.getElementById('specialReasonWrap');
   if(spRWrap2) spRWrap2.style.display=(specialOpts.size>0)&&(g.specialReason)?'':'none';
   goldImgs={
-    quote:(g.quoteImgs||[]).map(i=>({name:i.name,data:i.data,note:i.note||''})),
-    ref:  (g.refImgs  ||[]).map(i=>({name:i.name,data:i.data,note:i.note||''})),
-    room: (g.roomImgs ||[]).map(i=>({name:i.name,data:i.data,note:i.note||''})),
+    quote:(g.quoteImgs||[]).map(i=>({name:i.name, thumbUrl:i.thumbUrl||null, fullUrl:i.fullUrl||null, data:i.data||null, note:i.note||''})),
+    ref:  (g.refImgs  ||[]).map(i=>({name:i.name, thumbUrl:i.thumbUrl||null, fullUrl:i.fullUrl||null, data:i.data||null, note:i.note||''})),
+    room: (g.roomImgs ||[]).map(i=>({name:i.name, thumbUrl:i.thumbUrl||null, fullUrl:i.fullUrl||null, data:i.data||null, note:i.note||''})),
   };
   renderImgGrid('quote'); renderImgGrid('ref'); renderImgGrid('room');
 }
@@ -3448,9 +3480,9 @@ function collectGoldTextFields(){
     specialReason,
     career:getRadio('g_career_group'), paid:getRadio('g_paid_group'), order:getRadio('g_order_group'), delivery:getRadio('g_delivery_group'),
     balance:getRadio('g_balance_group'), balance_amount:document.getElementById('g_balance_amount').value.trim(),
-    quoteImgs:goldImgs.quote.map(i=>({name:i.name,data:i.data,note:i.note||''})),
-    refImgs:goldImgs.ref.map(i=>({name:i.name,data:i.data,note:i.note||''})),
-    roomImgs:goldImgs.room.map(i=>({name:i.name,data:i.data,note:i.note||''})),
+    quoteImgs:goldImgs.quote.map(i=>({name:i.name, thumbUrl:i.thumbUrl||null, fullUrl:i.fullUrl||null, data:i.data||null, note:i.note||''})),
+    refImgs:goldImgs.ref.map(i=>({name:i.name, thumbUrl:i.thumbUrl||null, fullUrl:i.fullUrl||null, data:i.data||null, note:i.note||''})),
+    roomImgs:goldImgs.room.map(i=>({name:i.name, thumbUrl:i.thumbUrl||null, fullUrl:i.fullUrl||null, data:i.data||null, note:i.note||''})),
   };
 }
 
@@ -4320,15 +4352,28 @@ document.getElementById('lockBtn').addEventListener('click', async ()=>{
 
 async function handleImgFiles(key, files){
   for (const file of Array.from(files)){
+    /* 업로드 중 임시 placeholder */
+    const placeholderIdx = goldImgs[key].length;
+    goldImgs[key].push({ name: file.name, thumbUrl: null, fullUrl: null, note: '', _uploading: true });
+    renderImgGrid(key);
     try {
-      const compressed = await compressImage(file);
-      goldImgs[key].push({name:file.name, data:compressed});
+      const docId = editingId || ('tmp_' + Date.now());
+      const { thumbUrl, fullUrl } = await uploadImageToStorage(file, `events/${docId}/${key}`);
+      goldImgs[key][placeholderIdx] = { name: file.name, thumbUrl, fullUrl, note: '' };
       renderImgGrid(key);
-    } catch(e){
-      console.error('이미지 압축 실패:', e);
-      const reader=new FileReader();
-      reader.onload=ev=>{ goldImgs[key].push({name:file.name,data:ev.target.result,note:''}); renderImgGrid(key); };
-      reader.readAsDataURL(file);
+      /* 견적서 업로드 시 금액 자동 추출 */
+      if (key === 'quote') {
+        const allUploaded = goldImgs.quote.filter(i => i.fullUrl || i.data);
+        if (allUploaded.length > 0) {
+          const hasAmount = document.getElementById('g_estimate_amount')?.value.trim();
+          if (!hasAmount) extractEstimateAmount(allUploaded);
+        }
+      }
+    } catch(e) {
+      console.error('Storage 업로드 실패:', e);
+      goldImgs[key].splice(placeholderIdx, 1);
+      renderImgGrid(key);
+      alert(`'${file.name}' 업로드에 실패했습니다.\n${e.message}`);
     }
   }
 }
@@ -4341,12 +4386,24 @@ function renderImgGrid(key){
 
     /* 썸네일 래퍼 */
     const wrap=document.createElement('div'); wrap.className='img-thumb-wrap';
-    const el=document.createElement('img'); el.src=img.data;
-    el.addEventListener('click',e=>{e.stopPropagation();openLightbox(img.data);});
+
+    if (img._uploading) {
+      const spin=document.createElement('div');
+      spin.style.cssText='width:100%;height:80px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px;gap:6px;';
+      spin.innerHTML='<span style="display:inline-block;animation:spin 1s linear infinite;">⏳</span> 업로드 중…';
+      wrap.appendChild(spin);
+    } else {
+      const el=document.createElement('img');
+      el.src = imgThumbSrc(img);
+      el.style.cssText='width:100%;height:100%;object-fit:cover;cursor:zoom-in;border-radius:6px;';
+      el.addEventListener('click',e=>{e.stopPropagation();openLightbox(imgFullSrc(img));});
+      wrap.appendChild(el);
+    }
+
     const rm=document.createElement('button');
     rm.className='img-remove'+(isLocked?' hidden':''); rm.innerHTML='✕';
     rm.addEventListener('click',e=>{e.stopPropagation();goldImgs[key].splice(i,1);renderImgGrid(key);});
-    wrap.appendChild(el); wrap.appendChild(rm);
+    wrap.appendChild(rm);
 
     /* 파일명 */
     const fname=document.createElement('div'); fname.className='img-filename';
@@ -4355,13 +4412,12 @@ function renderImgGrid(key){
     /* 주석 입력 */
     const note=document.createElement('textarea'); note.className='img-note';
     note.placeholder='주석 입력'; note.value=img.note||'';
-    note.rows=1; note.disabled=isLocked;
+    note.rows=1; note.disabled=isLocked||!!img._uploading;
     note.addEventListener('input',()=>{
       goldImgs[key][i].note=note.value;
       note.style.height='auto';
       note.style.height=note.scrollHeight+'px';
     });
-    /* 초기 높이 맞추기 */
     setTimeout(()=>{ note.style.height='auto'; note.style.height=note.scrollHeight+'px'; },0);
 
     item.appendChild(wrap); item.appendChild(fname); item.appendChild(note);
@@ -4382,24 +4438,33 @@ setupImgZone('roomZone','roomInput','room');
 
 /* ── 견적서 이미지 업로드 시 총액 자동 추출 ── */
 /* 이미지 1장 → 숫자(원) 반환. 실패 시 null */
-async function extractAmountFromImage(base64Data) {
-  if (!base64Data) return null;
-  const mediaType = base64Data.split(';')[0].replace('data:', '') || 'image/jpeg';
-  const base64 = base64Data.split(',')[1];
-  if (!base64) return null;
-
+async function extractAmountFromImage(imgObj) {
+  /* imgObj: { fullUrl, data } 중 하나 이상 있어야 함 */
   const EXTRACT_URL = 'https://asia-northeast3-drgo-calender.cloudfunctions.net/extractEstimate';
   try {
+    let payload;
+    if (imgObj.fullUrl) {
+      /* Storage URL 방식: URL을 fetch → base64 변환 */
+      const resp = await fetch(imgObj.fullUrl);
+      const arrBuf = await resp.arrayBuffer();
+      const uint8 = new Uint8Array(arrBuf);
+      let bin = ''; uint8.forEach(b => bin += String.fromCharCode(b));
+      const b64 = btoa(bin);
+      payload = { imageBase64: b64, mediaType: 'image/jpeg' };
+    } else if (imgObj.data) {
+      /* 구버전 base64 방식 */
+      const mediaType = imgObj.data.split(';')[0].replace('data:', '') || 'image/jpeg';
+      const base64 = imgObj.data.split(',')[1];
+      if (!base64) return null;
+      payload = { imageBase64: base64, mediaType };
+    } else { return null; }
+
     const res = await fetch(EXTRACT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ imageBase64: base64, mediaType })
+      body: JSON.stringify(payload)
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      console.warn('이미지 분석 실패:', err);
-      return null; /* 실패한 장은 건너뛰고 계속 진행 */
-    }
+    if (!res.ok) { console.warn('이미지 분석 실패'); return null; }
     const data = await res.json();
     const text = data.amount?.trim() || '';
     if (!text || text === '없음') return null;
@@ -4407,7 +4472,7 @@ async function extractAmountFromImage(base64Data) {
     return isNaN(num) ? null : num;
   } catch(e) {
     console.warn('이미지 분석 오류:', e);
-    return null; /* 네트워크 오류도 건너뛰기 */
+    return null;
   }
 }
 
@@ -4424,7 +4489,7 @@ async function extractEstimateAmount(imgs) {
     for (let i = 0; i < imgs.length; i++) {
       statusEl.textContent = `🔍 분석 중... (${i+1}/${imgs.length})`;
       statusEl.style.color = 'var(--accent)';
-      const num = await extractAmountFromImage(imgs[i].data);
+      const num = await extractAmountFromImage(imgs[i]);
       if (num !== null) { total += num; found++; }
     }
 
