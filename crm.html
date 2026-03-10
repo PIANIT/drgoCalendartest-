@@ -921,7 +921,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:16p
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 import { getFirestore, collection, doc, setDoc, deleteDoc, addDoc, getDoc, getDocs,
-         onSnapshot, query, orderBy, where, limit, startAfter, endAt, serverTimestamp, updateDoc, arrayUnion }
+         onSnapshot, query, orderBy, where, limit, startAfter, endAt, serverTimestamp, updateDoc, arrayUnion, deleteField }
   from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL }
   from "https://www.gstatic.com/firebasejs/12.9.0/firebase-storage.js";
@@ -2047,6 +2047,12 @@ function initApp(){
       data.calQuoteImgs=Array.from(document.getElementById('vrQuoteImages').querySelectorAll('img')).map(i=>({data:i.src,name:''}));
       data.calRefImgs  =Array.from(document.getElementById('vrRefImages').querySelectorAll('img')).map(i=>({data:i.src,name:''}));
       data.calRoomImgs =Array.from(document.getElementById('vrRoomImages').querySelectorAll('img')).map(i=>({data:i.src,name:''}));
+    } else if(editingVrId) {
+      /* 연결해제 시 기존 캘린더 필드 Firestore에서 삭제 */
+      const df = deleteField();
+      ['calEventId','calTitle','calName','calPhone','calPlatform','calTopic','calBudget',
+       'calSchedEvent','calSource','calReqTopic','calSpecialReason','calEstimate','calBalance',
+       'calQuoteImgs','calRefImgs','calRoomImgs'].forEach(k => { data[k] = df; });
     }
     try{
       if(editingVrId){ await updateDoc(doc(db,`crm_clients/${selectedClient._id}/visit_requests`,editingVrId),data); showToast('수정되었습니다','success'); }
