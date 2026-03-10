@@ -600,6 +600,15 @@
   }
   .addr-search-btn:hover { border-color:var(--accent); color:var(--accent); background:rgba(200,176,138,.1); }
   .addr-search-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+  @media (max-width:600px) {
+    .addr-search-btn {
+      align-self: stretch;        /* 전체 너비 */
+      justify-content: center;
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+  }
   .field-select { cursor:pointer; color-scheme:dark; } html.light .field-select { color-scheme:light; }
   .field-select option { background:var(--surface2); }
 
@@ -2134,6 +2143,17 @@
 
 <div class="lightbox" id="lightbox">
   <img id="lightboxImg" src="" alt="preview" />
+</div>
+
+<!-- ═══ 카카오 주소검색 (모바일 embed) ═══ -->
+<div id="addrSearchOverlay" style="display:none;position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,0.7);flex-direction:column;align-items:center;justify-content:center;">
+  <div style="width:100%;max-width:500px;height:80vh;background:var(--surface);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);flex-shrink:0;">
+      <span style="font-size:14px;font-weight:700;color:var(--text);">📍 주소 검색</span>
+      <button id="addrSearchClose" style="background:none;border:none;font-size:20px;color:var(--text-muted);cursor:pointer;padding:2px 6px;border-radius:6px;">✕</button>
+    </div>
+    <div id="addrSearchEmbed" style="flex:1;min-height:0;"></div>
+  </div>
 </div>
 
 <!-- ═══ 나가기 확인 팝업 ═══ -->
@@ -5296,25 +5316,62 @@ function initTitleResize() {
 function initAddrSearch() {
   const btn = document.getElementById('addrSearchBtn');
   if (!btn) return;
+
+  /* 주소 선택 공통 콜백 */
+  function onAddrSelected(data) {
+    const addr = data.roadAddress || data.jibunAddress;
+    const detail = data.buildingName ? ` (${data.buildingName})` : '';
+    const ta = document.getElementById('modalLocation');
+    ta.value = addr + detail;
+    ta.style.height = 'auto';
+    ta.style.height = ta.scrollHeight + 'px';
+    ta.focus();
+    /* 모바일 embed 오버레이 닫기 */
+    const ov = document.getElementById('addrSearchOverlay');
+    if (ov) { ov.style.display = 'none'; ov.style.flexDirection = ''; }
+  }
+
+  /* 닫기 버튼 */
+  document.getElementById('addrSearchClose')?.addEventListener('click', () => {
+    const ov = document.getElementById('addrSearchOverlay');
+    if (ov) { ov.style.display = 'none'; }
+  });
+
   btn.addEventListener('click', () => {
     const run = () => {
-      new daum.Postcode({
-        oncomplete(data) {
-          const addr = data.roadAddress || data.jibunAddress;
-          const detail = data.buildingName ? ` (${data.buildingName})` : '';
-          const ta = document.getElementById('modalLocation');
-          ta.value = addr + detail;
-          ta.style.height = 'auto';
-          ta.style.height = ta.scrollHeight + 'px';
-          ta.focus();
-        },
-        theme: {
-          bgColor:'#1a1a12', searchBgColor:'#2a2a1a', contentBgColor:'#1a1a12',
-          pageBgColor:'#111108', textColor:'#e8dcc8', queryTextColor:'#e8dcc8',
-          postcodeTextColor:'#c8b08a', emphTextColor:'#c8b08a', outlineColor:'#3a3a2a',
-        },
-      }).open();
+      if (isMobile()) {
+        /* 모바일: embed 방식으로 오버레이 안에 표시 */
+        const embedEl = document.getElementById('addrSearchEmbed');
+        const ov      = document.getElementById('addrSearchOverlay');
+        embedEl.innerHTML = ''; /* 이전 내용 초기화 */
+        new daum.Postcode({
+          oncomplete(data) {
+            onAddrSelected(data);
+          },
+          theme: {
+            bgColor:'#1a1a12', searchBgColor:'#2a2a1a', contentBgColor:'#1a1a12',
+            pageBgColor:'#111108', textColor:'#e8dcc8', queryTextColor:'#e8dcc8',
+            postcodeTextColor:'#c8b08a', emphTextColor:'#c8b08a', outlineColor:'#3a3a2a',
+          },
+          width: '100%',
+          height: '100%',
+        }).embed(embedEl, { autoClose: false });
+        ov.style.display = 'flex';
+      } else {
+        /* PC: 팝업 방식 */
+        new daum.Postcode({
+          oncomplete(data) {
+            onAddrSelected(data);
+          },
+          theme: {
+            bgColor:'#1a1a12', searchBgColor:'#2a2a1a', contentBgColor:'#1a1a12',
+            pageBgColor:'#111108', textColor:'#e8dcc8', queryTextColor:'#e8dcc8',
+            postcodeTextColor:'#c8b08a', emphTextColor:'#c8b08a', outlineColor:'#3a3a2a',
+          },
+        }).open();
+      }
     };
+
     if (window.daum && window.daum.Postcode) { run(); }
     else {
       const s = document.createElement('script');
