@@ -731,7 +731,7 @@
   .color-dot:hover { filter:brightness(1.15); }
   .color-dot.locked-dot { pointer-events:none; opacity:0.5; }
   /* 공휴일 버튼 - color-dot 스타일 공유 */
-  .holiday-btn-wrap { margin-top:4px; }
+  .holiday-btn-wrap { margin-top:4px; display:none; }
   .holiday-dot {
     display:inline-flex; align-items:center; gap:5px;
     padding:4px 10px; border-radius:20px; font-size:11px; cursor:pointer;
@@ -2285,7 +2285,17 @@ function isAuthenticated() {
 function getLockRemaining() { return Math.max(0, parseInt(localStorage.getItem(LOCK_KEY)||'0') - Date.now()); }
 function getTriesLeft() { return Math.max(0, MAX_TRIES - parseInt(localStorage.getItem(TRIES_KEY)||'0')); }
 function showAuth() { document.getElementById('authOverlay').classList.remove('hidden'); }
-function hideAuth() { document.getElementById('authOverlay').classList.add('hidden'); }
+function hideAuth() {
+  document.getElementById('authOverlay').classList.add('hidden');
+  applyHolidayBtnVisibility();
+}
+
+/* 공휴일 버튼: adminLevel 5만 표시 */
+function applyHolidayBtnVisibility() {
+  const level = parseInt(localStorage.getItem('cal_auth_level') || '0', 10);
+  const wrap = document.querySelector('.holiday-btn-wrap');
+  if (wrap) wrap.style.display = level >= 5 ? '' : 'none';
+}
 
 function updateLockUI() {
   const rem = getLockRemaining();
@@ -2345,6 +2355,7 @@ async function tryAuth() {
       localStorage.setItem(SESSION_KEY, '1');
       localStorage.setItem(SESSION_UID, userId);
       localStorage.setItem('cal_auth_name', userDoc.data().displayName || userId);
+      localStorage.setItem('cal_auth_level', String(userDoc.data().adminLevel ?? 0));
       localStorage.setItem(SESSION_EXP, Date.now() + AUTH_TTL_MS);
       localStorage.removeItem(TRIES_KEY);
       localStorage.removeItem(LOCK_KEY);
@@ -5325,6 +5336,7 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
   localStorage.removeItem('cal_auth_ok');
   localStorage.removeItem('cal_auth_uid');
   localStorage.removeItem('cal_auth_name');
+  localStorage.removeItem('cal_auth_level');
   localStorage.removeItem('cal_auth_exp');
   location.reload();
 });
@@ -5385,6 +5397,7 @@ document.getElementById('changePwSubmit').addEventListener('click', async () => 
     localStorage.removeItem('cal_auth_ok');
     localStorage.removeItem('cal_auth_uid');
     localStorage.removeItem('cal_auth_name');
+    localStorage.removeItem('cal_auth_level');
     localStorage.removeItem('cal_auth_exp');
     alert('비밀번호가 변경되었습니다. 새 비밀번호로 다시 로그인해주세요.');
     location.reload();
