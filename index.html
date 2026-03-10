@@ -2562,7 +2562,7 @@ function getSpecialIconStr(ev) {
   const sp = (ev.specialOpts||[]).map(k => SPECIAL_ICONS[k]||'').join('');
   const se = (ev.schedEventOpts||[]).map(k => SCHED_EVENT_ICONS[k]||'').join('');
   const afterStr = (ev.schedEventOpts||[]).includes('after') && ev.schedAfterDays
-    ? `<span title="${ev.schedAfterDays}일 이후 희망${ev.schedAfterReason?' - '+ev.schedAfterReason:''}" style="font-size:10px;color:var(--text-muted);">${ev.schedAfterDays}일이후</span>` : '';
+    ? `<span title="${ev.schedAfterDays}일 이후 희망${ev.schedAfterReason?' - '+ev.schedAfterReason:''}" style="font-size:10px;color:var(--text-muted);">→</span>` : '';
   return (sp||se) ? sp+se+afterStr+' ' : '';
 }
 function getSchedSuffix(ev) {
@@ -3061,6 +3061,9 @@ function renderAfterDatePicker() {
     el.addEventListener('click', e => {
       e.stopPropagation();
       _afterPickerSelected = el.dataset.pick;
+      /* 에러 메시지 숨기기 */
+      const errEl = document.getElementById('afterPickerError');
+      if (errEl) errEl.style.display = 'none';
       renderAfterDatePicker();
     });
   });
@@ -3070,18 +3073,26 @@ document.getElementById('afterDayConfirm').addEventListener('click', () => {
   if (!_afterPickerSelected) return;
   const base = document.getElementById('startDate')?.value || '';
   const baseDate = base ? new Date(base + 'T00:00:00') : null;
-  schedAfterDate = _afterPickerSelected;
-  if (baseDate) {
-    const sel = new Date(_afterPickerSelected + 'T00:00:00');
-    schedAfterDays = Math.round((sel - baseDate) / 86400000);
-  } else {
-    schedAfterDays = 1;
+  const diff = baseDate
+    ? Math.round((new Date(_afterPickerSelected + 'T00:00:00') - baseDate) / 86400000)
+    : 1;
+
+  /* 음수 또는 0일 에러 처리 */
+  if (baseDate && diff <= 0) {
+    const errEl = document.getElementById('afterPickerError');
+    if (errEl) {
+      errEl.textContent = '지정된 날짜는 시작날짜와 같은날짜이거나 더 빠른 날짜로 지정하였습니다.';
+      errEl.style.display = 'block';
+    }
+    return;
   }
-  /* 라벨 표기: M/D(+N일) */
-  const [sy,sm,sd] = _afterPickerSelected.split('-');
-  const diffLabel  = schedAfterDays >= 0 ? `+${schedAfterDays}일` : `${schedAfterDays}일`;
+
+  schedAfterDate = _afterPickerSelected;
+  schedAfterDays = diff;
+  /* 라벨: +N일 */
+  const diffLabel = `+${schedAfterDays}일`;
   const lbl = document.getElementById('schedAfterLabel');
-  if (lbl) lbl.textContent = `${parseInt(sm)}/${parseInt(sd)}(${diffLabel})`;
+  if (lbl) lbl.textContent = diffLabel;
   /* after 버튼 활성화 */
   _seDeactivateAll();
   const afterBtn = document.querySelector('#schedEventOpts .special-opt-btn[data-seopt="after"]');
@@ -3133,9 +3144,8 @@ function setSpecialOpts(opts, sopt, seOpts, afterDays, afterReason, afterDate) {
   const afterLabel = document.getElementById('schedAfterLabel');
   if (afterLabel) {
     if (schedAfterDate) {
-      const [sy,sm,sd] = schedAfterDate.split('-');
       const diffLabel = schedAfterDays >= 0 ? `+${schedAfterDays}일` : `${schedAfterDays}일`;
-      afterLabel.textContent = `${parseInt(sm)}/${parseInt(sd)}(${diffLabel})`;
+      afterLabel.textContent = diffLabel;
     } else if (schedAfterDays && schedAfterDays !== 0) {
       /* 구버전 데이터: 날짜 없이 일수만 있는 경우 */
       afterLabel.textContent = `${schedAfterDays}일`;
@@ -4156,7 +4166,7 @@ function _showLockedCompact(){
     schedEventOpts.forEach(k => {
       let label = '';
       if (k==='after') {
-        label = schedAfterDays > 0 ? `→${schedAfterDays}일 이후 희망` : '→□일 이후 희망';
+        label = schedAfterDays > 0 ? `→+${schedAfterDays}일` : '→';
       } else {
         label = SE_LABELS[k]||k;
       }
@@ -6928,6 +6938,7 @@ document.getElementById('closeBtn').addEventListener('click', () => {
     <div style="padding:16px 18px 12px;">
       <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px;">📅 이후 희망 날짜 선택</div>
       <div id="afterDatePickerBody"></div>
+      <div id="afterPickerError" style="display:none;margin-top:8px;padding:8px 10px;background:rgba(220,60,60,0.12);border:1px solid var(--red);border-radius:7px;font-size:11px;color:var(--red);line-height:1.5;"></div>
     </div>
     <div style="display:flex;gap:8px;padding:0 16px 16px;">
       <button id="afterDayCancel"  style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-size:13px;">취소</button>
