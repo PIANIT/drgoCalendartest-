@@ -4137,7 +4137,7 @@ function _showLockedGoldCompact(){
   const sourceVal = getActiveVal('g_source_group');
   if (sourceVal) {
     const refName = document.getElementById('g_source_ref')?.value.trim()||'';
-    rows.push(['유입', sourceVal==='소개'&&refName ? `소개 (${refName})` : sourceVal]);
+    rows.push(['🔗 유입', sourceVal==='소개'&&refName ? `소개 (${refName})` : sourceVal]);
   }
 
   /* 플랫폼 */
@@ -4146,11 +4146,11 @@ function _showLockedGoldCompact(){
     ? document.getElementById('g_platform_etc')?.value.trim() : '';
   const platform = platVals
     ? platVals.split(', ').map(v=>v==='기타'?(platEtc||'기타'):v).join(', ') : '';
-  if (platform) rows.push(['플랫폼', platform]);
+  if (platform) rows.push(['📺 플랫폼', platform]);
 
   /* 경력 */
   const career = getActiveVal('g_career_group');
-  if (career) rows.push(['경력', career]);
+  if (career) rows.push(['🎓 경력', career]);
 
   /* 방송주제 */
   const topicVals = getActiveVals('g_topic_group');
@@ -4158,13 +4158,13 @@ function _showLockedGoldCompact(){
     ? document.getElementById('g_topic_etc')?.value.trim() : '';
   const topic = topicVals
     ? topicVals.split(', ').map(v=>v==='기타'?(topicEtc||'기타'):v).join(', ') : '';
-  if (topic) rows.push(['방송주제', topic]);
+  if (topic) rows.push(['🎙 방송주제', topic]);
 
   /* 예산 */
   const budget = getActiveVal('g_budget_group');
   const budgetVal = budget==='직접입력'
     ? (document.getElementById('g_budget_etc')?.value.trim()||'직접입력') : budget;
-  if (budgetVal) rows.push(['예산', budgetVal]);
+  if (budgetVal) rows.push(['💰 예산', budgetVal]);
 
   /* 의뢰주제 */
   const reqTopicVals = getActiveVals('g_req_topic_group');
@@ -4172,17 +4172,13 @@ function _showLockedGoldCompact(){
     ? document.getElementById('g_req_topic_etc')?.value.trim() : '';
   const reqTopic = reqTopicVals
     ? reqTopicVals.split(', ').map(v=>v==='기타'?(reqTopicEtc||'기타'):v).join(', ') : '';
-  if (reqTopic) rows.push(['의뢰주제', reqTopic]);
+  if (reqTopic) rows.push(['📋 의뢰주제', reqTopic]);
 
-  /* 특수옵션 사유 */
-  const spReason = document.getElementById('specialReason')?.value.trim()||'';
-  if (spReason && specialOpts.size>0) rows.push(['특수옵션사유', spReason]);
-
-  /* 결제/주문/잔금/수령 */
-  const paid    = getActiveVal('g_paid_group');    if(paid)     rows.push(['결제', paid]);
-  const order   = getActiveVal('g_order_group');   if(order)    rows.push(['주문', order]);
-  const balance = getActiveVal('g_balance_group'); if(balance)  rows.push(['잔금', balance]);
-  const delivery= getActiveVal('g_delivery_group');if(delivery) rows.push(['수령', delivery]);
+  /* 결제/주문/잔금/수령 — 특수옵션사유 칩 제거 */
+  const paid    = getActiveVal('g_paid_group');    if(paid)     rows.push(['💳 결제', paid]);
+  const order   = getActiveVal('g_order_group');   if(order)    rows.push(['📦 주문', order]);
+  const balance = getActiveVal('g_balance_group'); if(balance)  rows.push(['💵 잔금', balance]);
+  const delivery= getActiveVal('g_delivery_group');if(delivery) rows.push(['🚚 수령', delivery]);
 
   if (!rows.length) return;
 
@@ -4195,8 +4191,8 @@ function _showLockedGoldCompact(){
   cGold.innerHTML='';
   rows.forEach(([label,val])=>{
     const chip=document.createElement('span');
-    chip.style.cssText='background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:3px 11px;font-size:13px;color:var(--text-muted);white-space:nowrap;';
-    chip.innerHTML=`<span style="opacity:0.6;margin-right:3px;">${label}</span>${val}`;
+    chip.style.cssText='background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:3px 11px;font-size:13px;color:var(--text);white-space:nowrap;';
+    chip.innerHTML=`<span style="color:var(--text-muted);margin-right:4px;">${label}</span><span style="font-weight:600;">${val}</span>`;
     cGold.appendChild(chip);
   });
   goldTpl.insertBefore(cGold, goldTpl.firstChild);
