@@ -2518,8 +2518,20 @@ document.getElementById('authBtn').addEventListener('click', tryAuth);
 document.getElementById('authInput').addEventListener('keydown', e => { if (e.key==='Enter') tryAuth(); });
 document.getElementById('authIdInput').addEventListener('keydown', e => { if (e.key==='Enter') document.getElementById('authInput').focus(); });
 
-if (isAuthenticated()) { hideAuth(); }
-else { showAuth(); updateLockUI(); setTimeout(() => document.getElementById('authIdInput').focus(), 100); }
+if (isAuthenticated()) {
+  // 페이지 로드 시 Firestore에서 adminLevel 재확인 (admin에서 권한 변경 시 즉시 반영)
+  const uid = localStorage.getItem(SESSION_UID);
+  if (uid) {
+    getDoc(doc(db, 'users', uid)).then(snap => {
+      if (snap.exists()) {
+        localStorage.setItem('cal_auth_level', String(snap.data().adminLevel ?? 0));
+      }
+      hideAuth();
+    }).catch(() => hideAuth()); // Firestore 실패해도 기존 level로 진행
+  } else {
+    hideAuth();
+  }
+} else { showAuth(); updateLockUI(); setTimeout(() => document.getElementById('authIdInput').focus(), 100); }
 
 
 
