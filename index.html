@@ -2393,7 +2393,7 @@ function hideAuth() {
 function applyHolidayBtnVisibility() {
   const level = parseInt(localStorage.getItem('cal_auth_level') || '0', 10);
   const wrap = document.querySelector('.holiday-btn-wrap');
-  if (wrap) wrap.style.display = level >= 5 ? '' : 'none';
+  if (wrap) wrap.style.display = level >= 5 ? 'block' : 'none';
 }
 
 function updateLockUI() {
