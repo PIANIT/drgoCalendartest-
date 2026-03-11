@@ -1277,47 +1277,77 @@
       margin-top: 8px;
     }
 
-    /* gold 섹션 모바일 — 버튼 그룹 wrap 허용 */
-    #g_platform_group,
-    #g_topic_group,
+    /* gold 섹션 모바일 */
+    /* 플랫폼: 외부 wrap → 세로 스택, 버튼그룹 wrap, 직접입력 다음줄 */
+    #g_platform_wrap {
+      flex-direction: column !important;
+      align-items: stretch !important;
+    }
+    #g_platform_group {
+      flex-wrap: wrap !important;
+      flex-shrink: unset !important;
+    }
+    #g_platform_etc_wrap {
+      min-width: 0 !important;
+      width: 100% !important;
+      flex-basis: 100% !important;
+      margin-top: 4px !important;
+    }
+
+    /* 방송주제: 외부 wrap → 세로 스택, 버튼그룹 wrap, 직접입력 다음줄 */
+    #g_topic_wrap {
+      flex-direction: column !important;
+      align-items: stretch !important;
+    }
+    #g_topic_group {
+      flex-wrap: wrap !important;
+      flex-shrink: unset !important;
+    }
+    #g_topic_etc_wrap {
+      min-width: 0 !important;
+      width: 100% !important;
+      flex-basis: 100% !important;
+      margin-top: 4px !important;
+    }
+
+    /* 유입경로: 외부 wrap → 세로 스택 */
+    #g_source_wrap {
+      flex-wrap: wrap !important;
+    }
     #g_source_group {
       flex-wrap: wrap !important;
     }
-    /* 플랫폼: SOOP~틱톡은 1행, 기타+입력칸은 2행 */
-    #g_platform_group .radio-btn[data-val="기타"] {
-      order: 10;
-      flex-basis: auto;
-    }
-    /* 방송주제: 소통~노래는 1행, 주식/코인+기타+입력칸은 2행 */
-    #g_topic_group .radio-btn[data-val="주식/코인"],
-    #g_topic_group .radio-btn[data-val="기타"] {
-      order: 10;
-    }
-    /* 경력+유입경로 행: 모바일에서 세로 스택 */
-    #g_career_group {
-      flex-wrap: wrap;
-    }
-    /* 플랫폼/방송주제/유입경로 외부 flex → 모바일 wrap */
-    #g_platform_wrap,
-    #g_source_wrap,
-    #g_topic_wrap {
-      flex-wrap: wrap !important;
-    }
-    /* conditional-field 인라인 입력칸 모바일: 다음 줄에 전체 너비로 */
-    #g_platform_etc_wrap,
-    #g_topic_etc_wrap,
-    #g_source_ref_wrap,
-    #g_budget_etc_wrap,
-    #g_req_topic_etc_wrap {
+    #g_source_ref_wrap {
       min-width: 0 !important;
-      width: 100%;
-      flex-basis: 100%;
-      margin-top: 6px !important;
+      width: 100% !important;
+      flex-basis: 100% !important;
+      margin-top: 4px !important;
     }
-    /* 예산 직접입력: 다음 줄 */
+
+    /* 예산 직접입력: 다음 줄 전체 너비 */
     #g_budget_wrap {
       flex-wrap: wrap !important;
     }
+    #g_budget_etc_wrap {
+      min-width: 0 !important;
+      width: 100% !important;
+      flex-basis: 100% !important;
+      margin-top: 4px !important;
+    }
+
+    /* 의뢰주제 직접입력: 다음 줄 */
+    #g_req_topic_etc_wrap {
+      min-width: 0 !important;
+      width: 100% !important;
+      flex-basis: 100% !important;
+      margin-top: 4px !important;
+    }
+
+    /* 경력+유입경로 행: 세로 스택 */
+    #g_career_group {
+      flex-wrap: wrap;
+    }
+
     /* 견적 추출버튼 숨김, 총액 input 전체 너비 */
     #g_estimate_btn,
     #g_estimate_status {
@@ -1888,7 +1918,7 @@
         <div class="field-row">
           <div class="field-group" style="flex:1;">
             <label class="field-label">플랫폼</label>
-            <div id="g_platform_wrap" style="display:flex;gap:6px;align-items:center;flex-wrap:nowrap;">
+            <div id="g_platform_wrap" style="display:flex;gap:6px;align-items:center;">
               <div class="radio-group" id="g_platform_group" style="gap:5px;flex-shrink:0;">
                 <div class="radio-btn" data-val="SOOP">SOOP</div>
                 <div class="radio-btn" data-val="치지직">치지직</div>
@@ -1913,7 +1943,7 @@
           </div>
           <div class="field-group" style="flex:1;">
             <label class="field-label">유입 경로</label>
-            <div id="g_source_wrap" style="display:flex;gap:6px;align-items:center;flex-wrap:nowrap;">
+            <div id="g_source_wrap" style="display:flex;gap:6px;align-items:center;">
               <div class="radio-group" id="g_source_group" style="gap:5px;flex-shrink:0;">
                 <div class="radio-btn" data-val="광고">📢 광고</div>
                 <div class="radio-btn" data-val="검색">🔍 검색</div>
@@ -1927,7 +1957,7 @@
         </div>
         <div class="field-group">
           <label class="field-label">방송 주제</label>
-          <div id="g_topic_wrap" style="display:flex;gap:6px;align-items:center;flex-wrap:nowrap;">
+          <div id="g_topic_wrap" style="display:flex;gap:6px;align-items:center;">
             <div class="radio-group" id="g_topic_group" style="gap:5px;flex-shrink:0;">
               <div class="radio-btn" data-val="소통">소통</div>
               <div class="radio-btn" data-val="먹방">먹방</div>
