@@ -620,10 +620,6 @@
   .check-item span:last-child { font-size:13px; }
 
   .radio-group { display:flex; gap:8px; flex-wrap:wrap; }
-  /* 데스크탑: 플랫폼/방송주제/유입경로는 한 줄 유지 */
-  #g_platform_group,
-  #g_topic_group,
-  #g_source_group { flex-wrap:nowrap; }
   .radio-btn { padding:6px 14px; border:1px solid var(--border); border-radius:20px; font-size:12px; cursor:pointer; transition:all 0.2s; user-select:none; font-family:var(--font-mono); letter-spacing:0.05em; color:var(--text-muted); }
   .radio-btn:hover { border-color:var(--accent); color:var(--accent); }
   .radio-btn.active { background:var(--accent); border-color:var(--accent); color:#1a1207; font-weight:600; }
@@ -736,6 +732,15 @@
   .color-dot.locked-dot { pointer-events:none; opacity:0.5; }
   /* 공휴일 버튼 - color-dot 스타일 공유 */
   .holiday-btn-wrap { margin-top:4px; display:none; }
+
+  /* ── 개인/공유 캘린더 토글 ── */
+  .cal-mode-toggle { display:flex; align-items:center; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:3px; gap:2px; }
+  .cal-mode-btn { padding:4px 12px; border-radius:6px; border:none; background:transparent; color:var(--text-muted); font-size:12px; cursor:pointer; transition:all .15s; white-space:nowrap; }
+  .cal-mode-btn.active { background:var(--accent); color:#fff; font-weight:600; }
+  .cal-mode-btn.private.active { background:#a78bfa; }
+  @media (max-width:600px) {
+    .cal-mode-btn { padding:3px 8px; font-size:11px; }
+  }
   .holiday-dot {
     display:inline-flex; align-items:center; gap:5px;
     padding:4px 10px; border-radius:20px; font-size:11px; cursor:pointer;
@@ -1205,27 +1210,27 @@
       -webkit-appearance: none;
       appearance: none;
       box-sizing: border-box;
-      font-size: 10px;
-      padding: 8px 2px;
+      font-size: 11px;
+      padding: 8px 4px;
     }
     /* 시간 picker: 3열 한 줄 */
     .dt-row .time-picker-trigger {
       grid-column: 3;
       grid-row: 1;
       min-width: 0;
-      width: 68px;
-      font-size: 10px;
-      padding: 8px 2px;
+      width: 72px;
+      font-size: 11px;
+      padding: 8px 4px;
       text-align: center;
     }
     /* gold 날짜+시간 한 줄 */
     #goldDtRow .dt-input[type="date"] {
-      font-size: 10px;
-      padding: 8px 2px;
+      font-size: 11px;
+      padding: 8px 4px;
     }
     #goldDtRow .time-picker-trigger {
-      font-size: 10px;
-      padding: 8px 2px;
+      font-size: 11px;
+      padding: 8px 4px;
     }
 
     /* ② 방송룸 이름+플랫폼: 세로 스택 */
@@ -1277,88 +1282,32 @@
       margin-top: 8px;
     }
 
-    /* gold 섹션 모바일 */
-    /* 플랫폼: 외부 wrap → 세로 스택, 버튼그룹 wrap, 직접입력 다음줄 */
-    #g_platform_wrap {
-      flex-direction: column !important;
-      align-items: stretch !important;
-    }
-    #g_platform_group {
-      flex-wrap: wrap !important;
-      flex-shrink: unset !important;
-    }
-    #g_platform_etc_wrap {
-      min-width: 0 !important;
-      width: 100% !important;
-      flex-basis: 100% !important;
-      margin-top: 4px !important;
-    }
-
-    /* 방송주제: 외부 wrap → 세로 스택, 버튼그룹 wrap, 직접입력 다음줄 */
-    #g_topic_wrap {
-      flex-direction: column !important;
-      align-items: stretch !important;
-    }
-    #g_topic_group {
-      flex-wrap: wrap !important;
-      flex-shrink: unset !important;
-    }
-    #g_topic_etc_wrap {
-      min-width: 0 !important;
-      width: 100% !important;
-      flex-basis: 100% !important;
-      margin-top: 4px !important;
-    }
-
-    /* 유입경로: 외부 wrap → 세로 스택 */
-    #g_source_wrap {
-      flex-wrap: wrap !important;
-    }
+    /* gold 섹션 모바일 — 버튼 그룹 wrap 허용 */
+    #g_platform_group,
+    #g_topic_group,
     #g_source_group {
       flex-wrap: wrap !important;
     }
-    #g_source_ref_wrap {
-      min-width: 0 !important;
-      width: 100% !important;
-      flex-basis: 100% !important;
-      margin-top: 4px !important;
-    }
-
-    /* 예산 직접입력: 다음 줄 전체 너비 */
-    #g_budget_wrap {
-      flex-wrap: wrap !important;
-    }
-    #g_budget_etc_wrap {
-      min-width: 0 !important;
-      width: 100% !important;
-      flex-basis: 100% !important;
-      margin-top: 4px !important;
-    }
-
-    /* 의뢰주제 직접입력: 다음 줄 */
-    #g_req_topic_etc_wrap {
-      min-width: 0 !important;
-      width: 100% !important;
-      flex-basis: 100% !important;
-      margin-top: 4px !important;
-    }
-
-    /* 경력+유입경로 행: 세로 스택 */
+    /* 경력+유입경로 행: 모바일에서 세로 스택 */
     #g_career_group {
       flex-wrap: wrap;
     }
-
-    /* 견적 추출버튼 숨김, 총액 input 전체 너비 */
-    #g_estimate_btn,
-    #g_estimate_status {
-      display: none !important;
+    /* 플랫폼/방송주제/유입경로 외부 flex → 모바일 wrap */
+    #g_platform_wrap,
+    #g_source_wrap,
+    #g_topic_wrap {
+      flex-wrap: wrap !important;
     }
-    #g_estimate_row {
-      display: block !important;
-    }
-    #g_estimate_amount {
-      width: 100% !important;
-      flex: none !important;
+    /* conditional-field 인라인 입력칸 모바일: 다음 줄에 전체 너비로 */
+    #g_platform_etc_wrap,
+    #g_topic_etc_wrap,
+    #g_source_ref_wrap,
+    #g_budget_etc_wrap,
+    #g_req_topic_etc_wrap {
+      min-width: 0 !important;
+      width: 100%;
+      flex-basis: 100%;
+      margin-top: 6px !important;
     }
   }
 </style>
@@ -1412,6 +1361,11 @@
     <button class="nav-btn" id="todayBtn" style="font-size:11px;letter-spacing:0.05em;width:auto;padding:0 10px;font-family:var(--font-mono);">TODAY</button>
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
+    <!-- 공유/개인 캘린더 토글 -->
+    <div class="cal-mode-toggle" id="calModeToggle">
+      <button class="cal-mode-btn shared active" id="calModeShared" title="팀 전체 공유 일정">🗂 공유</button>
+      <button class="cal-mode-btn private" id="calModePrivate" title="나만 보는 개인 일정">🔒 개인</button>
+    </div>
     <div class="view-toggle-group">
       <button class="view-toggle-btn active" data-view="month">월간</button>
       <button class="view-toggle-btn" data-view="week">주간</button>
@@ -1727,6 +1681,7 @@
         </button>
       </div>
       <div class="modal-header-btns">
+        <span id="privateModeBadge" style="display:none;font-size:11px;background:#a78bfa22;color:#a78bfa;border:1px solid #a78bfa55;border-radius:6px;padding:2px 8px;font-weight:600;">🔒 개인</span>
         <button class="icon-btn" id="lockBtn" title="내용 고정">🔓</button>
         <button class="btn-save-top" id="saveBtnTop">저장</button>
         <button class="icon-btn close-btn" id="closeBtn">✕</button>
@@ -1918,8 +1873,8 @@
         <div class="field-row">
           <div class="field-group" style="flex:1;">
             <label class="field-label">플랫폼</label>
-            <div id="g_platform_wrap" style="display:flex;gap:6px;align-items:center;">
-              <div class="radio-group" id="g_platform_group" style="gap:5px;flex-shrink:0;">
+            <div id="g_platform_wrap" style="display:flex;gap:6px;align-items:center;flex-wrap:nowrap;">
+              <div class="radio-group" id="g_platform_group" style="flex-wrap:nowrap;gap:5px;flex-shrink:0;">
                 <div class="radio-btn" data-val="SOOP">SOOP</div>
                 <div class="radio-btn" data-val="치지직">치지직</div>
                 <div class="radio-btn" data-val="유튜브">유튜브</div>
@@ -1943,8 +1898,8 @@
           </div>
           <div class="field-group" style="flex:1;">
             <label class="field-label">유입 경로</label>
-            <div id="g_source_wrap" style="display:flex;gap:6px;align-items:center;">
-              <div class="radio-group" id="g_source_group" style="gap:5px;flex-shrink:0;">
+            <div id="g_source_wrap" style="display:flex;gap:6px;align-items:center;flex-wrap:nowrap;">
+              <div class="radio-group" id="g_source_group" style="flex-wrap:nowrap;gap:5px;flex-shrink:0;">
                 <div class="radio-btn" data-val="광고">📢 광고</div>
                 <div class="radio-btn" data-val="검색">🔍 검색</div>
                 <div class="radio-btn" data-val="소개">🤝 소개</div>
@@ -1957,8 +1912,8 @@
         </div>
         <div class="field-group">
           <label class="field-label">방송 주제</label>
-          <div id="g_topic_wrap" style="display:flex;gap:6px;align-items:center;">
-            <div class="radio-group" id="g_topic_group" style="gap:5px;flex-shrink:0;">
+          <div id="g_topic_wrap" style="display:flex;gap:6px;align-items:center;flex-wrap:nowrap;">
+            <div class="radio-group" id="g_topic_group" style="flex-wrap:nowrap;gap:5px;flex-shrink:0;">
               <div class="radio-btn" data-val="소통">소통</div>
               <div class="radio-btn" data-val="먹방">먹방</div>
               <div class="radio-btn" data-val="게임">게임</div>
@@ -1974,7 +1929,7 @@
         </div>
         <div class="field-group" style="margin-top:10px;">
           <label class="field-label">예산 성향</label>
-          <div id="g_budget_wrap" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
             <div class="radio-group" id="g_budget_group" style="flex-wrap:wrap;gap:5px;">
               <div class="radio-btn" data-val="풍족">풍족</div>
               <div class="radio-btn" data-val="부족">부족</div>
@@ -2030,7 +1985,7 @@
           </div>
           <div class="field-group" style="flex:1;min-width:0;">
             <label class="field-label" for="g_estimate_amount">견적 총액</label>
-            <div id="g_estimate_row" style="display:flex;align-items:center;gap:6px;">
+            <div style="display:flex;align-items:center;gap:6px;">
               <input class="field-input" id="g_estimate_amount" placeholder="금액 입력" type="text" style="flex:1;min-width:0;" />
               <button type="button" id="g_estimate_btn" onclick="runExtractEstimate()"
                 style="background:none;border:1px solid var(--border);color:var(--text-muted);border-radius:6px;padding:6px 8px;font-size:11px;cursor:pointer;white-space:nowrap;font-family:var(--font-main);transition:all 0.2s;flex-shrink:0;"
@@ -2423,7 +2378,7 @@ function hideAuth() {
 function applyHolidayBtnVisibility() {
   const level = parseInt(localStorage.getItem('cal_auth_level') || '0', 10);
   const wrap = document.querySelector('.holiday-btn-wrap');
-  if (wrap) wrap.style.display = level >= 5 ? 'block' : 'none';
+  if (wrap) wrap.style.display = level >= 5 ? '' : 'none';
 }
 
 function updateLockUI() {
@@ -2458,6 +2413,37 @@ const app       = initializeApp(firebaseConfig);
 const db        = getFirestore(app);
 const storage   = getStorage(app, 'gs://drgo-calender-seoul');
 const eventsCol = collection(db, 'events');
+
+/* ── 개인/공유 캘린더 모드 ── */
+const CAL_MODE_KEY = 'cal_mode'; // 'shared' | 'private'
+let _calMode = localStorage.getItem(CAL_MODE_KEY) || 'shared';
+
+function _getEventsCol() {
+  if (_calMode === 'private') {
+    const uid = localStorage.getItem('cal_auth_uid') || 'unknown';
+    return collection(db, 'private_events', uid, 'events');
+  }
+  return collection(db, 'events');
+}
+
+function _setCalMode(mode) {
+  _calMode = mode;
+  localStorage.setItem(CAL_MODE_KEY, mode);
+  document.getElementById('calModeShared').classList.toggle('active', mode === 'shared');
+  document.getElementById('calModePrivate').classList.toggle('active', mode === 'private');
+  // 구독 재시작
+  if (_eventsUnsub) { _eventsUnsub(); _eventsUnsub = null; }
+  _subscribedRange = { from: '', to: '' };
+  subscribeEvents(currentYear, currentMonth);
+}
+
+// 토글 버튼 이벤트
+document.getElementById('calModeShared').addEventListener('click', () => _setCalMode('shared'));
+document.getElementById('calModePrivate').addEventListener('click', () => _setCalMode('private'));
+
+// 초기 토글 UI 반영
+document.getElementById('calModeShared').classList.toggle('active', _calMode === 'shared');
+document.getElementById('calModePrivate').classList.toggle('active', _calMode === 'private');
 
 async function tryAuth() {
   if (getLockRemaining() > 0) return;
@@ -2518,20 +2504,8 @@ document.getElementById('authBtn').addEventListener('click', tryAuth);
 document.getElementById('authInput').addEventListener('keydown', e => { if (e.key==='Enter') tryAuth(); });
 document.getElementById('authIdInput').addEventListener('keydown', e => { if (e.key==='Enter') document.getElementById('authInput').focus(); });
 
-if (isAuthenticated()) {
-  // 페이지 로드 시 Firestore에서 adminLevel 재확인 (admin에서 권한 변경 시 즉시 반영)
-  const uid = localStorage.getItem(SESSION_UID);
-  if (uid) {
-    getDoc(doc(db, 'users', uid)).then(snap => {
-      if (snap.exists()) {
-        localStorage.setItem('cal_auth_level', String(snap.data().adminLevel ?? 0));
-      }
-      hideAuth();
-    }).catch(() => hideAuth()); // Firestore 실패해도 기존 level로 진행
-  } else {
-    hideAuth();
-  }
-} else { showAuth(); updateLockUI(); setTimeout(() => document.getElementById('authIdInput').focus(), 100); }
+if (isAuthenticated()) { hideAuth(); }
+else { showAuth(); updateLockUI(); setTimeout(() => document.getElementById('authIdInput').focus(), 100); }
 
 
 
@@ -2673,7 +2647,7 @@ function subscribeEvents(year, month) {
   setLoading(true);
   clearTimeout(loadingTimeout);
 
-  const q = query(eventsCol,
+  const q = query(_getEventsCol(),
     where('startDate', '>=', from),
     where('startDate', '<=', to),
     orderBy('startDate', 'asc')
@@ -3778,6 +3752,9 @@ function openNewModal(dk){
   resetGoldFields(); renderAttachments();
   document.getElementById('deleteBtn').style.display='none';
   document.getElementById('logBtn').style.display='none';
+  // 개인 모드 배지
+  const _pmBadge = document.getElementById('privateModeBadge');
+  if (_pmBadge) _pmBadge.style.display = _calMode === 'private' ? '' : 'none';
   document.getElementById('modalOverlay').classList.add('open');
   applyLockState();
   if (!isMobile() && pcView==='month') document.getElementById('modalTitle').focus();
@@ -3921,28 +3898,30 @@ async function saveEvent(){
     /* ── 수정 시 변경 내역 계산 ── */
     const prevEv = isNew ? null : events.find(e=>e._id===editingId);
 
-    await setDoc(doc(db,'events',docId), evData);
+    await setDoc(doc(_getEventsCol(), docId), evData);
 
-    /* ── 로그 기록 ── */
-    const currentUserId = localStorage.getItem('cal_auth_name') || localStorage.getItem('cal_auth_uid') || '(알 수 없음)';
-    const logsCol = collection(db, 'eventLogs');
-    if (isNew) {
-      await addDoc(logsCol, {
-        eventId: docId,
-        type: 'create',
-        userId: currentUserId,
-        createdAt: serverTimestamp()
-      });
-    } else {
-      const changes = calcChanges(prevEv, evData);
-      if (changes.length > 0) {
+    /* ── 로그 기록 (공유 캘린더만) ── */
+    if (_calMode === 'shared') {
+      const currentUserId = localStorage.getItem('cal_auth_name') || localStorage.getItem('cal_auth_uid') || '(알 수 없음)';
+      const logsCol = collection(db, 'eventLogs');
+      if (isNew) {
         await addDoc(logsCol, {
           eventId: docId,
-          type: 'update',
+          type: 'create',
           userId: currentUserId,
-          changes,
           createdAt: serverTimestamp()
         });
+      } else {
+        const changes = calcChanges(prevEv, evData);
+        if (changes.length > 0) {
+          await addDoc(logsCol, {
+            eventId: docId,
+            type: 'update',
+            userId: currentUserId,
+            changes,
+            createdAt: serverTimestamp()
+          });
+        }
       }
     }
 
@@ -4137,7 +4116,7 @@ async function deleteEvent(){
     showConfirm(`"${title}"을(를) 삭제할까요?\n삭제 후 복구할 수 없습니다.`, () => resolve(true), () => resolve(false));
   });
   if (!ok) return;
-  try { await deleteDoc(doc(db,'events',editingId)); }
+  try { await deleteDoc(doc(_getEventsCol(), editingId)); }
   catch(e){ alert('삭제 중 오류: '+e.message); }
   closeModal();
 }
@@ -4622,7 +4601,7 @@ document.getElementById('lockBtn').addEventListener('click', async ()=>{
       };
       if (currentColor==='gold') evData.gold=collectGoldTextFields();
     if (currentColor==='teal') { const td=collectTealFields(); evData.teal=td; evData.desc=td.desc||evData.desc; }
-      await setDoc(doc(db,'events',docId), evData);
+      await setDoc(doc(_getEventsCol(), docId), evData);
       editingId=docId;
       document.getElementById('deleteBtn').style.display='';
     } catch(e){ console.error(e); isLocked=!isLocked; }
@@ -4632,7 +4611,7 @@ document.getElementById('lockBtn').addEventListener('click', async ()=>{
       const ev=events.find(e=>e._id===editingId);
       if (ev) {
         const {_id,...evData}=ev;
-        await setDoc(doc(db,'events',editingId),{...evData,locked:isLocked,updatedAt:serverTimestamp()});
+        await setDoc(doc(_getEventsCol(), editingId),{...evData,locked:isLocked,updatedAt:serverTimestamp()});
       }
     } catch(e){ console.error(e); }
   }
