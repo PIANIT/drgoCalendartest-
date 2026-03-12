@@ -36,7 +36,7 @@
   .csr-title { font-size:13px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .csr-meta  { font-size:11px; color:var(--text-muted); margin-top:3px; display:flex; gap:10px; flex-wrap:wrap; }
   .csr-empty { text-align:center; padding:18px; color:var(--text-muted); font-size:13px; }
-  @media(max-width:600px){ #searchPanel{ padding:8px 12px 10px; top:48px; left:0; right:0; z-index:20; } }
+  @media(max-width:600px){ #searchPanel{ padding:8px 12px 10px; top:88px; left:0; right:0; z-index:20; } }
 </style>
 <style>
   /* ── PWA 설치 배너 ── */
@@ -733,7 +733,8 @@
   /* 공휴일 버튼 - color-dot 스타일 공유 */
   .holiday-btn-wrap { margin-top:4px; display:none; }
 
-  /* ── 개인/공유 캘린더 토글 ── */
+  /* 개인/공유 캘린더 토글 */
+  .header-right-mobile { display:flex; align-items:center; gap:8px; }
   .cal-mode-toggle { display:flex; align-items:center; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:3px; gap:2px; }
   .cal-mode-btn { padding:4px 12px; border-radius:6px; border:none; background:transparent; color:var(--text-muted); font-size:12px; cursor:pointer; transition:all .15s; white-space:nowrap; }
   .cal-mode-btn.active { background:var(--accent); color:#fff; font-weight:600; }
@@ -1079,15 +1080,39 @@
     .legend { padding:5px 10px; gap:5px; overflow-x:auto; flex-wrap:nowrap; -webkit-overflow-scrolling:touch; min-height:unset; }
     .filter-btn { font-size:10px; padding:3px 8px; height:26px; }
     #mobileView { display:block; }
-    header { padding:0 10px; height:48px; flex-wrap:nowrap; gap:4px; overflow:hidden; }
-    .header-left { gap:4px; flex:1; min-width:0; overflow:hidden; }
-    .month-label { font-size:13px; min-width:0; flex:1; text-align:center; white-space:normal; overflow:visible; line-height:1.3; }
+
+    /* ── 모바일 헤더: 2줄 레이아웃 ── */
+    header {
+      padding:0 10px;
+      height:auto;
+      flex-wrap:wrap;
+      gap:0;
+      overflow:visible;
+      flex-direction:column;
+      align-items:stretch;
+    }
+    /* 1행: 날짜 내비게이션 */
+    .header-left {
+      display:flex; align-items:center; gap:6px;
+      height:48px; width:100%; flex:none;
+      justify-content:center;
+    }
+    /* 2행: 나머지 버튼들 */
+    .header-right-mobile {
+      display:flex !important; align-items:center; gap:6px;
+      height:40px; width:100%; justify-content:flex-end;
+      padding-bottom:6px;
+    }
+    .month-label { font-size:16px; font-weight:700; min-width:0; flex:1; text-align:center; white-space:normal; overflow:visible; line-height:1.3; }
     .app-title { display:none; }
     .year-nav-btn { display:none !important; }
     .add-btn { font-size:11px; padding:5px 10px; white-space:nowrap; flex-shrink:0; }
     .view-toggle-group { display:none; }
-    .nav-btn { width:28px; height:28px; font-size:15px; flex-shrink:0; }
-    .icon-btn, .settings-btn, .theme-btn { width:28px; height:28px; font-size:14px; flex-shrink:0; }
+    .nav-btn { width:32px; height:32px; font-size:17px; flex-shrink:0; }
+    #todayBtn { font-size:11px !important; width:auto !important; padding:0 10px !important; height:32px; flex-shrink:0; }
+    .icon-btn, .settings-btn, .theme-btn { width:30px; height:30px; font-size:14px; flex-shrink:0; }
+    .cal-mode-toggle { padding:2px; gap:1px; }
+    .cal-mode-btn { padding:3px 7px; font-size:11px; }
     .mv-wrap { padding:0 0 60px; }
     .mv-nav { display:flex; align-items:center; justify-content:space-between; padding:5px 14px 4px; gap:8px; }
     .mv-nav-label { font-size:13px; font-weight:600; color:var(--text); text-align:center; flex:1; }
@@ -1360,7 +1385,7 @@
     <button class="nav-btn year-nav-btn" id="nextYearBtn" title="다음 년도">»</button>
     <button class="nav-btn" id="todayBtn" style="font-size:11px;letter-spacing:0.05em;width:auto;padding:0 10px;font-family:var(--font-mono);">TODAY</button>
   </div>
-  <div style="display:flex;align-items:center;gap:8px;">
+  <div style="display:flex;align-items:center;gap:8px;" class="header-right-mobile">
     <!-- 공유/개인 캘린더 토글 -->
     <div class="cal-mode-toggle" id="calModeToggle">
       <button class="cal-mode-btn shared active" id="calModeShared" title="팀 전체 공유 일정">🗂 공유</button>
