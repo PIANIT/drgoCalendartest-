@@ -3,8 +3,8 @@
    Cache-first + Network fallback 전략
    Firebase Firestore는 온라인 필수 (캐시 제외)
 ═══════════════════════════════════════════ */
-const CACHE_NAME    = 'drgo-cal-v3.0';
-const RUNTIME_CACHE = 'drgo-cal-runtime-v3.0';
+const CACHE_NAME    = 'drgo-cal-v3.1';
+const RUNTIME_CACHE = 'drgo-cal-runtime-v3.1';
 
 /* 설치 시 즉시 캐시할 핵심 파일 */
 const PRECACHE_URLS = [

@@ -6185,6 +6185,7 @@ document.getElementById('todayBtn').addEventListener('click',()=>{
   if (isMobile()) {
     mvSelDate=todayStr; mvWeekStart=getWeekStart(todayStr);
     const td=new Date(); mvMonthYear=td.getFullYear(); mvMonthMonth=td.getMonth();
+    subscribeEvents(mvMonthYear, mvMonthMonth);
     if(mvMode==='month') renderMvMonth();
     else if(mvMode==='week') renderMvWeek();
     else { renderMvDay(); updateMvNav(); }
