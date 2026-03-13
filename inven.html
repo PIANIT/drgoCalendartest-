@@ -48,6 +48,25 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-main);min-hei
 
 /* ── TOOLBAR ── */
 .toolbar{display:flex;align-items:center;gap:8px;padding:10px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+/* 페이지당 개수 버튼 */
+.page-size-btns{display:flex;align-items:center;gap:4px;margin-left:auto;}
+.psz-btn{background:none;border:1px solid var(--border);color:var(--text-muted);border-radius:6px;padding:4px 10px;font-size:11px;font-family:inherit;cursor:pointer;transition:all .15s;}
+.psz-btn:hover{border-color:var(--accent);color:var(--accent);}
+.psz-btn.active{background:var(--accent);border-color:var(--accent);color:#1a1a1a;font-weight:700;}
+/* 페이지네이션 바 */
+.pagination-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-top:1px solid var(--border);gap:10px;flex-wrap:wrap;}
+.pg-info{font-size:12px;color:var(--text-muted);}
+.pg-btns{display:flex;align-items:center;gap:4px;}
+.pg-btn{background:none;border:1px solid var(--border);color:var(--text-muted);border-radius:6px;padding:4px 10px;font-size:12px;font-family:inherit;cursor:pointer;transition:all .15s;min-width:32px;}
+.pg-btn:hover{border-color:var(--accent);color:var(--accent);}
+.pg-btn.active{background:var(--accent);border-color:var(--accent);color:#1a1a1a;font-weight:700;}
+.pg-btn:disabled{opacity:.3;cursor:not-allowed;}
+.pg-ellipsis{color:var(--text-muted);font-size:12px;padding:0 4px;}
+/* 특이사항 툴팁 */
+.note-cell{position:relative;cursor:pointer;max-width:160px;}
+.note-chip{display:inline-flex;align-items:center;gap:3px;background:rgba(212,188,150,.18);color:var(--accent);border-radius:4px;padding:1px 6px;font-size:10px;white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis;}
+.note-tooltip{display:none;position:absolute;bottom:calc(100% + 6px);left:0;z-index:900;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;min-width:180px;max-width:280px;font-size:12px;color:var(--text);line-height:1.6;box-shadow:0 6px 20px rgba(0,0,0,.35);white-space:pre-wrap;word-break:break-all;}
+.note-cell:hover .note-tooltip{display:block;}
 .search-wrap{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0 12px;height:32px;flex:1;min-width:160px;max-width:280px;}
 .search-wrap input{background:none;border:none;outline:none;color:var(--text);font-family:var(--font-main);font-size:12px;flex:1;}
 .search-wrap input::placeholder{color:var(--text-muted);}
@@ -244,6 +263,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-main);min-hei
     <option value="out">재고 없음</option>
     <option value="order">발주 예정</option>
   </select>
+  <div class="page-size-btns" id="pageSizeBtns">
+    <span style="font-size:11px;color:var(--text-muted);">표시:</span>
+    <button class="psz-btn" data-size="10">10</button>
+    <button class="psz-btn active" data-size="30">30</button>
+    <button class="psz-btn" data-size="50">50</button>
+  </div>
 </div>
 
 <!-- TABLE -->
@@ -263,6 +288,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-main);min-hei
         <th data-col="price">판매가격 <span class="sort-arrow">↕</span></th>
         <th>제품링크</th>
         <th data-col="status">상태</th>
+        <th>특이사항</th>
         <th>관리</th>
       </tr>
     </thead>
@@ -272,6 +298,11 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-main);min-hei
     <div class="empty-icon">📦</div>
     <div style="font-size:14px;">등록된 품목이 없습니다</div>
   </div>
+</div>
+<!-- 페이지네이션 -->
+<div class="pagination-bar" id="paginationBar">
+  <span class="pg-info" id="pgInfo"></span>
+  <div class="pg-btns" id="pgBtns"></div>
 </div>
 
 <!-- ═══ ADD / EDIT MODAL ═══ -->
@@ -516,6 +547,7 @@ const IMG_MAX_PX = 800, IMG_QUALITY = 0.72;
 let items = [], history = [], cats = null;
 let sortCol = 'name', sortDir = 1;
 let editId = null, deleteId = null, adjId = null, adjType = 'in';
+let _pageSize = 30, _curPage = 1;
 let itemImgs = [], allExpanded = false;
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
@@ -697,14 +729,23 @@ document.getElementById('filterL1').addEventListener('change', () => {
   const s2=document.getElementById('filterL2'), s3=document.getElementById('filterL3');
   s2.innerHTML='<option value="">중분류 전체</option>'; s3.innerHTML='<option value="">소분류 전체</option>';
   findL1(document.getElementById('filterL1').value)?.children?.forEach(c => s2.appendChild(new Option(c.name,c.id)));
-  renderTable();
+  _curPage = 1; renderTable();
 });
 document.getElementById('filterL2').addEventListener('change', () => {
   const s3=document.getElementById('filterL3'); s3.innerHTML='<option value="">소분류 전체</option>';
   findL2(document.getElementById('filterL1').value, document.getElementById('filterL2').value)?.children?.forEach(c => s3.appendChild(new Option(c.name,c.id)));
+  _curPage = 1; renderTable();
+});
+document.getElementById('filterL3').addEventListener('change', () => { _curPage = 1; renderTable(); });
+
+/* 페이지당 개수 버튼 */
+document.getElementById('pageSizeBtns').addEventListener('click', e => {
+  const btn = e.target.closest('.psz-btn'); if (!btn) return;
+  _pageSize = parseInt(btn.dataset.size);
+  _curPage  = 1;
+  document.querySelectorAll('.psz-btn').forEach(b => b.classList.toggle('active', b === btn));
   renderTable();
 });
-document.getElementById('filterL3').addEventListener('change', renderTable);
 function refreshModalCats() {
   populateCatSelects(document.getElementById('fCatL1').value, document.getElementById('fCatL2').value, document.getElementById('fCatL3').value);
 }
@@ -752,13 +793,28 @@ function renderTable() {
     const arr = th.querySelector('.sort-arrow');
     if (arr) arr.textContent = th.dataset.col===sortCol ? (sortDir===1?'↑':'↓') : '↕';
   });
-  if (!filtered.length) { tbody.innerHTML = ''; empty.style.display = ''; return; }
+  if (!filtered.length) { tbody.innerHTML = ''; empty.style.display = ''; renderPagination(0); return; }
   empty.style.display = 'none';
-  tbody.innerHTML = filtered.map(item => {
+
+  // 페이지네이션 계산
+  const total = filtered.length;
+  const totalPages = Math.ceil(total / _pageSize);
+  if (_curPage > totalPages) _curPage = totalPages;
+  const start = (_curPage - 1) * _pageSize;
+  const paged = filtered.slice(start, start + _pageSize);
+
+  tbody.innerHTML = paged.map(item => {
     const status = calcStatus(item);
     const qc     = status==='out' ? 'low' : status==='low' ? 'warn' : 'ok';
     const cn     = catNames(item.catL1, item.catL2, item.catL3);
     const hasImg = item.imgs && item.imgs.length > 0;
+    // 특이사항 셀
+    const noteHtml = item.note
+      ? `<div class="note-cell">
+           <span class="note-chip">📝 ${item.note}</span>
+           <div class="note-tooltip">${item.note.replace(/</g,'&lt;')}</div>
+         </div>`
+      : '—';
     return `<tr>
       <td><span class="cell-code">${item.code||'—'}</span></td>
       <td><span class="cell-name">${item.name}</span>${hasImg ? ` <span style="font-size:10px;color:var(--text-muted);">🖼${item.imgs.length}</span>` : ''}</td>
@@ -772,6 +828,7 @@ function renderTable() {
       <td style="font-size:11px;color:var(--text-muted);">${item.price>0 ? fmtMoney(item.price) : '—'}</td>
       <td class="link-cell">${item.link ? `<a href="${item.link}" target="_blank" rel="noopener">🔗 링크</a>` : '—'}</td>
       <td><span class="badge ${STATUS_BADGE[status]}">${STATUS_LABEL[status]}</span></td>
+      <td>${noteHtml}</td>
       <td><div class="row-actions">
         <button class="row-btn adj-btn"  data-id="${item._id}" title="입출고">📥</button>
         <button class="row-btn edit-btn" data-id="${item._id}" title="수정">✏️</button>
@@ -782,6 +839,45 @@ function renderTable() {
   tbody.querySelectorAll('.edit-btn').forEach(b => b.addEventListener('click', () => openEdit(b.dataset.id)));
   tbody.querySelectorAll('.del-btn').forEach(b  => b.addEventListener('click', () => openDelete(b.dataset.id)));
   tbody.querySelectorAll('.adj-btn').forEach(b  => b.addEventListener('click', () => openAdjust(b.dataset.id)));
+
+  renderPagination(total);
+}
+
+function renderPagination(total) {
+  const bar   = document.getElementById('paginationBar');
+  const info  = document.getElementById('pgInfo');
+  const btns  = document.getElementById('pgBtns');
+  if (total === 0) { bar.style.display = 'none'; return; }
+  bar.style.display = '';
+  const totalPages = Math.ceil(total / _pageSize);
+  const start = (_curPage - 1) * _pageSize + 1;
+  const end   = Math.min(_curPage * _pageSize, total);
+  info.textContent = `${start}–${end} / 전체 ${total}개`;
+
+  // 페이지 번호 버튼 생성 (최대 7개 노출)
+  let pages = [];
+  if (totalPages <= 7) {
+    for (let i=1;i<=totalPages;i++) pages.push(i);
+  } else {
+    pages = [1];
+    if (_curPage > 3) pages.push('…');
+    for (let i=Math.max(2,_curPage-1); i<=Math.min(totalPages-1,_curPage+1); i++) pages.push(i);
+    if (_curPage < totalPages - 2) pages.push('…');
+    pages.push(totalPages);
+  }
+
+  btns.innerHTML = `<button class="pg-btn" id="pgPrev" ${_curPage===1?'disabled':''}>‹</button>`
+    + pages.map(p => p==='…'
+        ? `<span class="pg-ellipsis">…</span>`
+        : `<button class="pg-btn ${p===_curPage?'active':''}" data-page="${p}">${p}</button>`
+    ).join('')
+    + `<button class="pg-btn" id="pgNext" ${_curPage===totalPages?'disabled':''}>›</button>`;
+
+  btns.querySelector('#pgPrev')?.addEventListener('click', () => { _curPage--; renderTable(); window.scrollTo(0,0); });
+  btns.querySelector('#pgNext')?.addEventListener('click', () => { _curPage++; renderTable(); window.scrollTo(0,0); });
+  btns.querySelectorAll('[data-page]').forEach(b => b.addEventListener('click', () => {
+    _curPage = parseInt(b.dataset.page); renderTable(); window.scrollTo(0,0);
+  }));
 }
 
 /* ══════════════════════════════════════
@@ -1223,8 +1319,8 @@ document.querySelectorAll('#invTable th[data-col]').forEach(th => {
     renderTable();
   });
 });
-document.getElementById('searchInput').addEventListener('input', renderTable);
-document.getElementById('filterStatus').addEventListener('change', renderTable);
+document.getElementById('searchInput').addEventListener('input', () => { _curPage = 1; renderTable(); });
+document.getElementById('filterStatus').addEventListener('change', () => { _curPage = 1; renderTable(); });
 
 /* ══════════════════════════════════════
    TOAST
