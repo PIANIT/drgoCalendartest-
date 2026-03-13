@@ -106,6 +106,17 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-main);min-hei
 /* ── MODAL ── */
 .modal-overlay{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);align-items:center;justify-content:center;}
 .modal-overlay.open{display:flex;}
+/* ── 나가기 확인 팝업 ── */
+.confirm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;backdrop-filter:blur(2px);align-items:center;justify-content:center;padding:20px;}
+.confirm-overlay.open{display:flex;}
+.confirm-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 28px 20px;max-width:360px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.35);animation:popIn .18s ease;}
+.confirm-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px;}
+.confirm-desc{font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:20px;}
+.confirm-btns{display:flex;gap:10px;justify-content:flex-end;}
+.confirm-btn-cancel{padding:9px 18px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--text-muted);font-family:inherit;font-size:13px;cursor:pointer;transition:all .15s;}
+.confirm-btn-cancel:hover{border-color:var(--accent);color:var(--accent);}
+.confirm-btn-leave{padding:9px 18px;border-radius:8px;border:none;background:#c0392b;color:#fff;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
+.confirm-btn-leave:hover{filter:brightness(1.12);}
 .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:560px;box-shadow:0 24px 64px rgba(0,0,0,.55);overflow:hidden;animation:modalIn .2s ease;display:flex;flex-direction:column;max-height:90vh;}
 @keyframes modalIn{from{transform:scale(.96);opacity:0}to{transform:scale(1);opacity:1}}
 .modal-lg{max-width:680px;}
@@ -797,6 +808,40 @@ function subscribeHistory() {
 /* ══════════════════════════════════════
    ADD / EDIT ITEM
 ══════════════════════════════════════ */
+/* ── Dirty Check ── */
+let _itemSnapshot = null;
+let _confirmCallback = null;
+
+function _takeSnapshot() {
+  const ids = ['fCode','fName','fQty','fMinQty','fPrice','fUnit','fLocation','fStatus','fLink','fNote'];
+  const snap = {};
+  ids.forEach(id => { const el = document.getElementById(id); if(el) snap[id] = el.value; });
+  snap._catL1 = document.getElementById('fCatL1')?.value || '';
+  snap._catL2 = document.getElementById('fCatL2')?.value || '';
+  snap._catL3 = document.getElementById('fCatL3')?.value || '';
+  snap._imgs  = JSON.stringify(itemImgs.map(i => i.name));
+  _itemSnapshot = JSON.stringify(snap);
+}
+function _isDirty() {
+  if (!_itemSnapshot) return false;
+  const ids = ['fCode','fName','fQty','fMinQty','fPrice','fUnit','fLocation','fStatus','fLink','fNote'];
+  const snap = {};
+  ids.forEach(id => { const el = document.getElementById(id); if(el) snap[id] = el.value; });
+  snap._catL1 = document.getElementById('fCatL1')?.value || '';
+  snap._catL2 = document.getElementById('fCatL2')?.value || '';
+  snap._catL3 = document.getElementById('fCatL3')?.value || '';
+  snap._imgs  = JSON.stringify(itemImgs.map(i => i.name));
+  return JSON.stringify(snap) !== _itemSnapshot;
+}
+function _showLeaveConfirm(onLeave) {
+  _confirmCallback = onLeave;
+  document.getElementById('confirmOverlay').classList.add('open');
+}
+function _closeLeaveConfirm() {
+  document.getElementById('confirmOverlay').classList.remove('open');
+  _confirmCallback = null;
+}
+
 function clearModal() {
   ['fCode','fName','fUnit','fLocation','fNote','fLink'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('fQty').value   = '0';
@@ -810,7 +855,7 @@ function openAdd() {
   document.getElementById('modalTitle').textContent = '품목 추가';
   populateCatSelects('', '', '');
   document.getElementById('itemModal').classList.add('open');
-  setTimeout(() => document.getElementById('fName').focus(), 120);
+  setTimeout(() => { _takeSnapshot(); document.getElementById('fName').focus(); }, 150);
 }
 function openEdit(id) {
   editId = id;
@@ -830,8 +875,19 @@ function openEdit(id) {
   populateCatSelects(item.catL1||'', item.catL2||'', item.catL3||'');
   renderImgGrid();
   document.getElementById('itemModal').classList.add('open');
+  setTimeout(() => _takeSnapshot(), 150);
 }
-function closeItemModal() { document.getElementById('itemModal').classList.remove('open'); }
+function closeItemModal() {
+  document.getElementById('itemModal').classList.remove('open');
+  _itemSnapshot = null;
+}
+function tryCloseItemModal() {
+  if (_isDirty()) {
+    _showLeaveConfirm(() => closeItemModal());
+  } else {
+    closeItemModal();
+  }
+}
 
 async function saveItem() {
   const name = document.getElementById('fName').value.trim();
@@ -872,10 +928,20 @@ async function saveItem() {
 }
 
 document.getElementById('addItemBtn').addEventListener('click', openAdd);
-document.getElementById('modalClose').addEventListener('click', closeItemModal);
-document.getElementById('modalCancel').addEventListener('click', closeItemModal);
+document.getElementById('modalClose').addEventListener('click', tryCloseItemModal);
+document.getElementById('modalCancel').addEventListener('click', tryCloseItemModal);
 document.getElementById('modalSave').addEventListener('click', saveItem);
-document.getElementById('itemModal').addEventListener('click', e => { if (e.target === document.getElementById('itemModal')) closeItemModal(); });
+document.getElementById('itemModal').addEventListener('click', e => { if (e.target === document.getElementById('itemModal')) tryCloseItemModal(); });
+
+/* ── 나가기 확인 팝업 버튼 ── */
+document.getElementById('confirmLeave').addEventListener('click', () => {
+  _closeLeaveConfirm();
+  if (_confirmCallback) { _confirmCallback(); _confirmCallback = null; }
+});
+document.getElementById('confirmStay').addEventListener('click', _closeLeaveConfirm);
+document.getElementById('confirmOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('confirmOverlay')) _closeLeaveConfirm();
+});
 setupImgZone();
 
 /* ══════════════════════════════════════
@@ -1180,5 +1246,16 @@ function showToast(msg) {
 })();
 
 </script>
+<!-- ═══ 나가기 확인 팝업 ═══ -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-title">⚠️ 저장하지 않은 변경사항</div>
+    <div class="confirm-desc">수정된 내용이 있습니다.<br>저장하지 않고 정말 나가시겠습니까?</div>
+    <div class="confirm-btns">
+      <button class="confirm-btn-cancel" id="confirmStay">계속 편집</button>
+      <button class="confirm-btn-leave"  id="confirmLeave">나가기</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
