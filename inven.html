@@ -97,6 +97,19 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-main);min-hei
 .link-cell a:hover{text-decoration:underline;}
 .row-actions{display:flex;align-items:center;gap:3px;}
 .row-btn{background:none;border:1px solid var(--border);color:var(--text-muted);border-radius:5px;width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .13s;}
+/* 체크박스 */
+.row-chk{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;}
+.th-chk{width:36px;text-align:center;}
+.td-chk{width:36px;text-align:center;padding:0 8px;}
+tr.selected-row{background:rgba(212,188,150,.08);}
+/* 선택 액션바 */
+.bulk-bar{display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--accent);border-radius:12px;padding:10px 20px;box-shadow:0 6px 24px rgba(0,0,0,.4);align-items:center;gap:16px;z-index:300;white-space:nowrap;}
+.bulk-bar.show{display:flex;}
+.bulk-count{font-size:13px;color:var(--text);font-weight:600;}
+.bulk-del-btn{background:#c0392b;color:#fff;border:none;border-radius:7px;padding:7px 16px;font-size:12px;font-family:inherit;font-weight:600;cursor:pointer;transition:all .15s;}
+.bulk-del-btn:hover{filter:brightness(1.12);}
+.bulk-cancel-btn{background:none;border:1px solid var(--border);color:var(--text-muted);border-radius:7px;padding:7px 12px;font-size:12px;font-family:inherit;cursor:pointer;transition:all .15s;}
+.bulk-cancel-btn:hover{border-color:var(--accent);color:var(--accent);}
 .row-btn:hover{border-color:var(--accent);color:var(--accent);}
 .row-btn.del:hover{border-color:var(--red);color:var(--red);}
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px;color:var(--text-muted);gap:10px;}
@@ -276,6 +289,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-main);min-hei
   <table class="inv-table" id="invTable">
     <thead>
       <tr>
+        <th class="th-chk"><input type="checkbox" class="row-chk" id="chkAll" title="전체선택"></th>
         <th data-col="code">코드 <span class="sort-arrow">↕</span></th>
         <th data-col="name">품목명 <span class="sort-arrow">↕</span></th>
         <th data-col="catL1">대분류 <span class="sort-arrow">↕</span></th>
@@ -815,7 +829,8 @@ function renderTable() {
            <div class="note-tooltip">${item.note.replace(/</g,'&lt;')}</div>
          </div>`
       : '—';
-    return `<tr>
+    return `<tr data-id="${item._id}">
+      <td class="td-chk"><input type="checkbox" class="row-chk item-chk" data-id="${item._id}"></td>
       <td><span class="cell-code">${item.code||'—'}</span></td>
       <td><span class="cell-name">${item.name}</span>${hasImg ? ` <span style="font-size:10px;color:var(--text-muted);">🖼${item.imgs.length}</span>` : ''}</td>
       <td>${cn.l1 ? `<span class="cell-cat" style="background:rgba(212,188,150,.15);color:var(--accent)">${cn.l1}</span>` : '—'}</td>
@@ -839,6 +854,9 @@ function renderTable() {
   tbody.querySelectorAll('.edit-btn').forEach(b => b.addEventListener('click', () => openEdit(b.dataset.id)));
   tbody.querySelectorAll('.del-btn').forEach(b  => b.addEventListener('click', () => openDelete(b.dataset.id)));
   tbody.querySelectorAll('.adj-btn').forEach(b  => b.addEventListener('click', () => openAdjust(b.dataset.id)));
+  // 체크박스 이벤트
+  tbody.querySelectorAll('.item-chk').forEach(chk => chk.addEventListener('change', updateBulkBar));
+  document.getElementById('chkAll').checked = false;
 
   renderPagination(total);
 }
@@ -1261,6 +1279,85 @@ document.getElementById('adjSave').addEventListener('click', async () => {
 /* ══════════════════════════════════════
    DELETE
 ══════════════════════════════════════ */
+/* ══════════════════════════════════════
+   선택 삭제 (BULK DELETE)
+══════════════════════════════════════ */
+function getCheckedIds() {
+  return [...document.querySelectorAll('.item-chk:checked')].map(c => c.dataset.id);
+}
+function updateBulkBar() {
+  const ids = getCheckedIds();
+  const bar = document.getElementById('bulkBar');
+  const total = document.querySelectorAll('.item-chk').length;
+  const chkAll = document.getElementById('chkAll');
+  if (chkAll) {
+    chkAll.checked = ids.length > 0 && ids.length === total;
+    chkAll.indeterminate = ids.length > 0 && ids.length < total;
+  }
+  if (ids.length > 0) {
+    document.getElementById('bulkCount').textContent = `${ids.length}개 선택됨`;
+    bar.classList.add('show');
+  } else {
+    bar.classList.remove('show');
+  }
+}
+// 전체선택 체크박스
+document.getElementById('chkAll').addEventListener('change', function() {
+  document.querySelectorAll('.item-chk').forEach(c => c.checked = this.checked);
+  // 행 하이라이트
+  document.querySelectorAll('#invBody tr').forEach(tr => tr.classList.toggle('selected-row', this.checked));
+  updateBulkBar();
+});
+// 개별 체크 시 행 하이라이트
+document.getElementById('invBody').addEventListener('change', e => {
+  if (!e.target.classList.contains('item-chk')) return;
+  e.target.closest('tr')?.classList.toggle('selected-row', e.target.checked);
+  updateBulkBar();
+});
+// 취소 버튼
+document.getElementById('bulkCancelBtn').addEventListener('click', () => {
+  document.querySelectorAll('.item-chk').forEach(c => c.checked = false);
+  document.querySelectorAll('#invBody tr').forEach(tr => tr.classList.remove('selected-row'));
+  document.getElementById('chkAll').checked = false;
+  document.getElementById('chkAll').indeterminate = false;
+  document.getElementById('bulkBar').classList.remove('show');
+});
+// 선택 삭제 버튼
+document.getElementById('bulkDelBtn').addEventListener('click', () => {
+  const ids = getCheckedIds();
+  if (!ids.length) return;
+  // 기존 deleteConfirmOverlay 재활용
+  document.getElementById('deleteConfirmMsg').textContent =
+    `선택한 ${ids.length}개 품목을 삭제하시겠습니까?\n입출고 기록도 함께 삭제됩니다.`;
+  document.getElementById('deleteConfirmOverlay').classList.add('open');
+  // 기존 리스너 덮어쓰기 방지 — 일회용 리스너
+  const okBtn = document.getElementById('deleteConfirmOk');
+  const newOk = okBtn.cloneNode(true);
+  okBtn.parentNode.replaceChild(newOk, okBtn);
+  newOk.addEventListener('click', async () => {
+    document.getElementById('deleteConfirmOverlay').classList.remove('open');
+    newOk.disabled = true;
+    document.getElementById('bulkDelBtn').disabled = true;
+    document.getElementById('bulkDelBtn').textContent = '삭제 중…';
+    try {
+      const batch = writeBatch(db);
+      // 품목 삭제
+      ids.forEach(id => batch.delete(doc(db, 'inventory_items', id)));
+      // 연관 입출고 기록 삭제
+      const hSnap = await getDocs(query(historyCol));
+      hSnap.docs.filter(d => ids.includes(d.data().itemId)).forEach(d => batch.delete(d.ref));
+      await batch.commit();
+      document.getElementById('bulkBar').classList.remove('show');
+      showToast(`${ids.length}개 품목이 삭제되었습니다`);
+    } catch(e) {
+      console.error(e); showToast('삭제 실패: ' + e.message);
+    } finally {
+      document.getElementById('bulkDelBtn').disabled = false;
+      document.getElementById('bulkDelBtn').textContent = '🗑 선택 삭제';
+    }
+  });
+});
+
 function openDelete(id) {
   deleteId = id;
   const item = items.find(i => i._id === id);
@@ -1342,6 +1439,12 @@ function showToast(msg) {
 })();
 
 </script>
+<!-- ═══ 선택 삭제 액션바 ═══ -->
+<div class="bulk-bar" id="bulkBar">
+  <span class="bulk-count" id="bulkCount">0개 선택됨</span>
+  <button class="bulk-del-btn" id="bulkDelBtn">🗑 선택 삭제</button>
+  <button class="bulk-cancel-btn" id="bulkCancelBtn">취소</button>
+</div>
 <!-- ═══ 나가기 확인 팝업 ═══ -->
 <div class="confirm-overlay" id="confirmOverlay">
   <div class="confirm-box">
