@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>상담관리 — DRGO</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --font-main:"Malgun Gothic","맑은 고딕",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  --font-mono:'DM Mono',"Malgun Gothic","맑은 고딕",monospace;
+  --bg:#111111; --surface:#1c1c1c; --surface2:#272727; --surface3:#313131;
+  --border:#3a3a3a; --border2:#2a2a2a;
+  --accent:#d4bc96; --accent2:#90bcd4;
+  --text:#f0ebe2; --text-muted:#a09890; --text-dim:#6a6460;
+  --red:#d48888; --green:#88d488; --yellow:#d4c488; --blue:#88aad4; --purple:#c488d4; --teal:#88d4c4;
+}
+html.light {
+  --bg:#f5f3f0; --surface:#ffffff; --surface2:#f0ede8; --surface3:#e8e4df;
+  --border:#dedede; --border2:#e8e4df;
+  --accent:#9c7d48; --accent2:#3a7a9a;
+  --text:#1a1a1a; --text-muted:#666666; --text-dim:#aaaaaa;
+  --red:#a84444; --green:#3a8a3a; --yellow:#8a7a1a; --blue:#2a5a9a; --purple:#7a2a9a; --teal:#2a8a7a;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-main);min-height:100vh;display:flex;flex-direction:column;}
+
+/* ── AUTH ── */
+#authOverlay{display:flex;position:fixed;inset:0;z-index:9999;background:var(--bg);align-items:center;justify-content:center;}
+#authOverlay.hidden{display:none;}
+.auth-box{width:100%;max-width:360px;padding:40px 32px;background:var(--surface);border:1px solid var(--border);border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.5);display:flex;flex-direction:column;align-items:center;}
+.auth-brand{font-family:var(--font-mono);font-size:20px;font-weight:500;letter-spacing:.25em;color:var(--accent);margin-bottom:4px;}
+.auth-subtitle{font-size:11px;letter-spacing:.15em;color:var(--text-muted);margin-bottom:28px;}
+.auth-input{width:100%;height:42px;padding:0 14px;background:var(--surface2);border:1.5px solid var(--border);border-radius:9px;color:var(--text);font-size:14px;font-family:var(--font-main);outline:none;margin-bottom:10px;transition:border-color .2s;}
+.auth-input:focus{border-color:var(--accent);}
+.auth-input.error{border-color:var(--red);}
+.auth-error{font-size:12px;color:var(--red);min-height:16px;margin-bottom:10px;text-align:center;}
+.auth-btn{width:100%;height:42px;background:var(--accent);color:#1a1207;border:none;border-radius:9px;font-size:14px;font-weight:700;font-family:var(--font-main);cursor:pointer;transition:opacity .15s;}
+.auth-btn:hover{opacity:.85;}
+.auth-btn:disabled{opacity:.45;cursor:not-allowed;}
+
+/* ── LAYOUT ── */
+.page-header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:8px;}
+.page-title{font-family:var(--font-mono);font-size:13px;font-weight:500;letter-spacing:.12em;color:var(--accent);display:flex;align-items:center;gap:8px;}
+.header-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:7px;font-size:12px;font-family:var(--font-main);cursor:pointer;transition:all .15s;font-weight:500;white-space:nowrap;border:none;}
+.btn-primary{background:var(--accent);color:#1a1207;}
+.btn-primary:hover{opacity:.88;}
+.btn-ghost{background:none;border:1px solid var(--border);color:var(--text-muted);}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
+.btn-danger{background:none;border:1px solid var(--border);color:var(--text-muted);}
+.btn-danger:hover{border-color:var(--red);color:var(--red);}
+.btn-sm{padding:4px 10px;font-size:11px;}
+
+/* ── MAIN SPLIT ── */
+.main-wrap{display:flex;flex:1;overflow:hidden;height:calc(100vh - 49px);}
+
+/* ── LEFT SIDEBAR : counsel list ── */
+.sidebar{width:280px;min-width:220px;border-right:1px solid var(--border);display:flex;flex-direction:column;background:var(--surface);flex-shrink:0;}
+.sidebar-header{padding:12px 14px;border-bottom:1px solid var(--border2);display:flex;flex-direction:column;gap:8px;}
+.search-box{display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0 10px;height:32px;}
+.search-box input{background:none;border:none;outline:none;color:var(--text);font-size:12px;font-family:var(--font-main);flex:1;}
+.search-box input::placeholder{color:var(--text-muted);}
+.filter-row{display:flex;gap:5px;}
+.filter-btn{flex:1;padding:4px 0;border-radius:6px;font-size:11px;font-family:var(--font-main);cursor:pointer;transition:all .15s;border:1px solid var(--border);background:none;color:var(--text-muted);}
+.filter-btn.active{background:var(--surface3);border-color:var(--accent);color:var(--accent);}
+
+.counsel-list{flex:1;overflow-y:auto;padding:8px;}
+.counsel-list::-webkit-scrollbar{width:4px;}
+.counsel-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+.counsel-item{padding:10px 12px;border-radius:9px;cursor:pointer;transition:background .13s;border:1px solid transparent;margin-bottom:4px;position:relative;}
+.counsel-item:hover{background:var(--surface2);}
+.counsel-item.active{background:var(--surface2);border-color:var(--accent);}
+.counsel-item-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:40px;}
+.counsel-item-meta{font-size:11px;color:var(--text-muted);display:flex;gap:8px;align-items:center;}
+.counsel-item-badge{font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600;}
+.badge-crm{background:rgba(136,170,212,.15);color:var(--blue);}
+.badge-rent{background:rgba(212,136,136,.15);color:var(--red);}
+.badge-other{background:rgba(196,136,212,.15);color:var(--purple);}
+.counsel-item-progress{position:absolute;top:10px;right:10px;font-size:10px;color:var(--text-dim);font-family:var(--font-mono);}
+.counsel-empty{text-align:center;padding:30px 16px;color:var(--text-muted);font-size:13px;}
+
+/* ── CENTER : detail ── */
+.detail-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.detail-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--text-muted);}
+.detail-empty-icon{font-size:36px;opacity:.4;}
+
+.detail-header{padding:14px 18px 10px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-shrink:0;}
+.detail-title-area{flex:1;}
+.detail-name{font-size:17px;font-weight:700;color:var(--text);}
+.detail-meta{font-size:12px;color:var(--text-muted);margin-top:3px;display:flex;gap:12px;flex-wrap:wrap;}
+.detail-actions{display:flex;gap:6px;align-items:center;flex-shrink:0;}
+
+.detail-body{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:16px;}
+.detail-body::-webkit-scrollbar{width:4px;}
+.detail-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+/* ── MEMO BOX ── */
+.memo-section{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
+.memo-section textarea{width:100%;background:none;border:none;outline:none;color:var(--text);font-size:13px;font-family:var(--font-main);resize:none;line-height:1.7;min-height:64px;}
+.memo-section textarea::placeholder{color:var(--text-dim);}
+.memo-footer{display:flex;justify-content:flex-end;margin-top:6px;}
+
+/* ── CHECKLIST SECTION ── */
+.cl-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.cl-section-header{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border2);background:var(--surface2);}
+.cl-section-title{font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--text-muted);display:flex;align-items:center;gap:6px;}
+.cl-section-title .badge{font-size:10px;padding:1px 6px;border-radius:4px;background:rgba(212,188,150,.15);color:var(--accent);}
+.cl-section-title .badge-common{background:rgba(136,212,136,.15);color:var(--green);}
+.cl-progress{font-size:11px;font-family:var(--font-mono);color:var(--text-dim);}
+
+.cl-item{display:flex;align-items:flex-start;gap:10px;padding:9px 14px;border-top:1px solid var(--border2);transition:background .12s;}
+.cl-item:hover{background:var(--surface2);}
+.cl-item.checked .cl-item-text{text-decoration:line-through;color:var(--text-dim);}
+.cl-checkbox{width:17px;height:17px;border-radius:5px;border:1.5px solid var(--border);background:none;cursor:pointer;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.cl-checkbox.checked{background:var(--green);border-color:var(--green);}
+.cl-checkbox.checked::after{content:'✓';font-size:10px;color:#1a1a1a;font-weight:700;}
+.cl-item-content{flex:1;min-width:0;}
+.cl-item-text{font-size:13px;color:var(--text);line-height:1.5;}
+.cl-item-actions{display:flex;gap:4px;opacity:0;transition:opacity .15s;flex-shrink:0;}
+.cl-item:hover .cl-item-actions{opacity:1;}
+.cl-icon-btn{background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:13px;padding:2px 4px;border-radius:4px;transition:color .13s;}
+.cl-icon-btn:hover{color:var(--red);}
+
+.cl-add-row{padding:8px 14px;border-top:1px solid var(--border2);}
+.cl-add-input{display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:0 10px;height:32px;width:100%;}
+.cl-add-input input{background:none;border:none;outline:none;color:var(--text);font-size:12px;font-family:var(--font-main);flex:1;}
+.cl-add-input input::placeholder{color:var(--text-dim);}
+.cl-add-btn{background:none;border:none;cursor:pointer;color:var(--accent);font-size:16px;padding:0;line-height:1;transition:opacity .13s;}
+.cl-add-btn:hover{opacity:.7;}
+
+/* ── LOG PANEL ── */
+.log-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.log-header{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border2);background:var(--surface2);cursor:pointer;}
+.log-header-title{font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--text-muted);}
+.log-toggle{font-size:11px;color:var(--text-dim);transition:transform .2s;}
+.log-toggle.open{transform:rotate(180deg);}
+.log-body{padding:0;}
+.log-body.collapsed{display:none;}
+.log-entry{padding:8px 14px;border-top:1px solid var(--border2);display:flex;gap:10px;align-items:flex-start;}
+.log-entry:first-child{border-top:none;}
+.log-dot{width:7px;height:7px;border-radius:50%;background:var(--border);flex-shrink:0;margin-top:4px;}
+.log-dot.create{background:var(--green);}
+.log-dot.check{background:var(--accent);}
+.log-dot.uncheck{background:var(--text-dim);}
+.log-dot.memo{background:var(--blue);}
+.log-dot.add{background:var(--teal);}
+.log-dot.delete{background:var(--red);}
+.log-content{flex:1;}
+.log-text{font-size:12px;color:var(--text);}
+.log-who-time{font-size:11px;color:var(--text-muted);margin-top:2px;}
+.log-empty{padding:14px;text-align:center;font-size:12px;color:var(--text-dim);}
+
+/* ── RIGHT PANEL : global checklist editor ── */
+.right-panel{width:260px;min-width:220px;border-left:1px solid var(--border);display:flex;flex-direction:column;background:var(--surface);flex-shrink:0;}
+.right-panel-header{padding:12px 14px;border-bottom:1px solid var(--border2);font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--text-muted);}
+.right-panel-body{flex:1;overflow-y:auto;padding:10px;}
+.right-panel-body::-webkit-scrollbar{width:4px;}
+.right-panel-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.global-cl-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;background:var(--surface2);border:1px solid var(--border2);margin-bottom:6px;cursor:grab;}
+.global-cl-item:active{cursor:grabbing;}
+.global-cl-item .drag-handle{color:var(--text-dim);font-size:12px;flex-shrink:0;cursor:grab;}
+.global-cl-item .gc-text{flex:1;font-size:12px;color:var(--text);line-height:1.4;}
+.global-cl-item .gc-del{background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:13px;padding:0 2px;transition:color .13s;}
+.global-cl-item .gc-del:hover{color:var(--red);}
+.global-cl-add{display:flex;gap:6px;margin-top:8px;}
+.global-cl-add input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--text);font-size:12px;font-family:var(--font-main);outline:none;}
+.global-cl-add input:focus{border-color:var(--accent);}
+.global-cl-add input::placeholder{color:var(--text-dim);}
+.global-cl-add button{background:var(--accent);border:none;border-radius:7px;padding:6px 12px;color:#1a1207;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.global-cl-add button:hover{opacity:.85;}
+.right-panel-divider{height:1px;background:var(--border2);margin:10px 0;}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;}
+.modal-overlay.show{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px 24px 20px;width:100%;max-width:460px;box-shadow:0 20px 60px rgba(0,0,0,.5);max-height:90vh;overflow-y:auto;}
+.modal-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:18px;}
+.form-row{margin-bottom:13px;}
+.form-label{font-size:12px;color:var(--text-muted);margin-bottom:5px;display:block;}
+.form-input,.form-select,.form-textarea{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:var(--font-main);outline:none;transition:border-color .2s;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--accent);}
+.form-textarea{resize:vertical;min-height:80px;line-height:1.6;}
+.form-select option{background:var(--surface);}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--surface3);border:1px solid var(--border);color:var(--text);padding:8px 18px;border-radius:20px;font-size:13px;opacity:0;transition:all .25s;pointer-events:none;z-index:9000;white-space:nowrap;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+@media(max-width:760px){
+  .right-panel{display:none;}
+  .sidebar{width:220px;}
+}
+@media(max-width:560px){
+  .sidebar{display:none;}
+  .detail-wrap{display:flex;}
+}
+</style>
+</head>
+<body>
+
+<!-- AUTH OVERLAY -->
+<div id="authOverlay">
+  <div class="auth-box">
+    <div class="auth-brand">DRGO</div>
+    <div class="auth-subtitle">상담관리 · COUNSEL</div>
+    <input class="auth-input" type="text" id="authId" placeholder="아이디" autocomplete="username">
+    <input class="auth-input" type="password" id="authPw" placeholder="비밀번호" autocomplete="current-password">
+    <div class="auth-error" id="authError"></div>
+    <button class="auth-btn" id="authBtn" onclick="tryAuth()">로그인</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="page-header">
+  <div class="page-title">💬 상담관리</div>
+  <div class="header-actions">
+    <button class="btn btn-ghost btn-sm" id="globalEditBtn" onclick="toggleGlobalPanel()">⚙ 공통 체크리스트 편집</button>
+    <button class="btn btn-primary btn-sm" onclick="openNewCounselModal()">＋ 상담 등록</button>
+    <span id="loginUserBadge" style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono);margin-left:4px;"></span>
+  </div>
+</div>
+
+<!-- MAIN SPLIT -->
+<div class="main-wrap">
+
+  <!-- SIDEBAR : counsel list -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="search-box">
+        <span style="color:var(--text-muted);font-size:13px;">🔍</span>
+        <input type="text" id="searchInput" placeholder="이름, 제목 검색…" oninput="renderList()">
+      </div>
+      <div class="filter-row">
+        <button class="filter-btn active" data-filter="all" onclick="setFilter('all',this)">전체</button>
+        <button class="filter-btn" data-filter="crm" onclick="setFilter('crm',this)">CRM</button>
+        <button class="filter-btn" data-filter="rent" onclick="setFilter('rent',this)">렌탈</button>
+        <button class="filter-btn" data-filter="other" onclick="setFilter('other',this)">기타</button>
+      </div>
+    </div>
+    <div class="counsel-list" id="counselList"></div>
+  </div>
+
+  <!-- CENTER : detail -->
+  <div class="detail-wrap">
+    <div class="detail-empty" id="detailEmpty">
+      <div class="detail-empty-icon">💬</div>
+      <div style="font-size:13px;">좌측에서 상담 건을 선택하세요</div>
+    </div>
+    <div id="detailPane" style="display:none;flex:1;overflow-y:auto;display:none;flex-direction:column;">
+
+      <div class="detail-header">
+        <div class="detail-title-area">
+          <div class="detail-name" id="dpName"></div>
+          <div class="detail-meta" id="dpMeta"></div>
+        </div>
+        <div class="detail-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openEditCounselModal()">편집</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteCounsel()">삭제</button>
+        </div>
+      </div>
+
+      <div class="detail-body" id="detailBody">
+
+        <!-- MEMO -->
+        <div class="memo-section">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px;">📝 메모</div>
+          <textarea id="memoArea" placeholder="상담 내용, 특이사항 등 자유롭게 메모하세요…" oninput="onMemoInput()"></textarea>
+          <div class="memo-footer">
+            <button class="btn btn-ghost btn-sm" id="memoSaveBtn" style="display:none;" onclick="saveMemo()">저장</button>
+          </div>
+        </div>
+
+        <!-- 공통 체크리스트 -->
+        <div class="cl-section" id="globalClSection">
+          <div class="cl-section-header">
+            <div class="cl-section-title">
+              ✅ 공통 체크리스트
+              <span class="badge badge-common">공통</span>
+            </div>
+            <div class="cl-progress" id="globalProgress"></div>
+          </div>
+          <div id="globalClList"></div>
+        </div>
+
+        <!-- 개별 체크리스트 -->
+        <div class="cl-section">
+          <div class="cl-section-header">
+            <div class="cl-section-title">
+              📋 개별 체크리스트
+              <span class="badge">개별</span>
+            </div>
+            <div class="cl-progress" id="personalProgress"></div>
+          </div>
+          <div id="personalClList"></div>
+          <div class="cl-add-row">
+            <div class="cl-add-input">
+              <input type="text" id="personalNewItem" placeholder="항목 추가…" onkeydown="if(event.key==='Enter')addPersonalItem()">
+              <button class="cl-add-btn" onclick="addPersonalItem()">＋</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 변경 로그 -->
+        <div class="log-section">
+          <div class="log-header" onclick="toggleLog()">
+            <div class="log-header-title">🕒 변경 내역</div>
+            <span class="log-toggle" id="logToggle">▼</span>
+          </div>
+          <div class="log-body" id="logBody"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL : global checklist editor -->
+  <div class="right-panel" id="rightPanel" style="display:none;">
+    <div class="right-panel-header">⚙ 공통 체크리스트 편집</div>
+    <div class="right-panel-body">
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;line-height:1.6;">모든 상담 건에 자동으로 적용되는 체크리스트 항목입니다.</div>
+      <div id="globalEditorList"></div>
+      <div class="global-cl-add">
+        <input type="text" id="globalNewItem" placeholder="새 공통 항목…" onkeydown="if(event.key==='Enter')addGlobalItem()">
+        <button onclick="addGlobalItem()">추가</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- NEW/EDIT COUNSEL MODAL -->
+<div class="modal-overlay" id="counselModal">
+  <div class="modal">
+    <div class="modal-title" id="counselModalTitle">상담 등록</div>
+    <div class="form-row">
+      <label class="form-label">제목 *</label>
+      <input class="form-input" type="text" id="mTitle" placeholder="상담 제목">
+    </div>
+    <div class="form-row">
+      <label class="form-label">고객명</label>
+      <input class="form-input" type="text" id="mName" placeholder="고객 이름">
+    </div>
+    <div class="form-row">
+      <label class="form-label">연락처</label>
+      <input class="form-input" type="text" id="mPhone" placeholder="010-0000-0000">
+    </div>
+    <div class="form-row">
+      <label class="form-label">분류</label>
+      <select class="form-select" id="mType">
+        <option value="crm">CRM (방문/원격)</option>
+        <option value="rent">렌탈/방송룸</option>
+        <option value="other">기타</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label class="form-label">담당자</label>
+      <input class="form-input" type="text" id="mAssignee" placeholder="담당자 이름">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeCounselModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveCounsel()">저장</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import {
+  getFirestore, collection, doc, setDoc, getDoc, getDocs,
+  addDoc, deleteDoc, updateDoc, query, orderBy, serverTimestamp, onSnapshot
+} from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
+/* ── FIREBASE ── */
+const firebaseConfig = {
+  apiKey:            "AIzaSyDnEOATYmwq0WJr6pCl-86-Q3ZEQjrrfeY",
+  authDomain:        "drgo-calender.firebaseapp.com",
+  projectId:         "drgo-calender",
+  storageBucket:     "drgo-calender.firebasestorage.app",
+  messagingSenderId: "163730741115",
+  appId:             "1:163730741115:web:73a06d5b1cf1a477734fde"
+};
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+/* ── COLLECTIONS ──
+  counsel_sessions/{id}         : 상담 건
+  counsel_sessions/{id}/logs    : 변경 내역
+  counsel_global_checklist/{id} : 공통 체크리스트 항목
+*/
+
+/* ── AUTH ── */
+const SESSION_KEY = 'cal_auth_ok';
+const SESSION_UID = 'cal_auth_uid';
+const SESSION_EXP = 'cal_auth_exp';
+
+async function sha256(msg) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function isAuth() {
+  if (localStorage.getItem(SESSION_KEY) !== '1') return false;
+  const exp = parseInt(localStorage.getItem(SESSION_EXP)||'0');
+  if (exp && Date.now() > exp) {
+    ['cal_auth_ok','cal_auth_uid','cal_auth_name','cal_auth_exp'].forEach(k=>localStorage.removeItem(k));
+    return false;
+  }
+  return true;
+}
+function currentUser() {
+  return localStorage.getItem('cal_auth_name') || localStorage.getItem(SESSION_UID) || '(알 수 없음)';
+}
+
+window.tryAuth = async function() {
+  const idEl  = document.getElementById('authId');
+  const pwEl  = document.getElementById('authPw');
+  const errEl = document.getElementById('authError');
+  const userId = idEl.value.trim();
+  const userPw = pwEl.value;
+  idEl.classList.remove('error'); pwEl.classList.remove('error');
+  if (!userId) { idEl.classList.add('error'); idEl.focus(); errEl.textContent='아이디를 입력하세요.'; return; }
+  if (!userPw) { pwEl.classList.add('error'); pwEl.focus(); errEl.textContent='비밀번호를 입력하세요.'; return; }
+  const btn = document.getElementById('authBtn');
+  btn.disabled = true; btn.textContent = '확인 중…';
+  try {
+    const pwHash  = await sha256(userPw);
+    const userDoc = await getDoc(doc(db, 'users', userId));
+    if (userDoc.exists() && userDoc.data().passwordHash === pwHash) {
+      const exp = Date.now() + 30*24*60*60*1000;
+      localStorage.setItem(SESSION_KEY, '1');
+      localStorage.setItem(SESSION_UID, userId);
+      localStorage.setItem('cal_auth_name', userDoc.data().displayName || userId);
+      localStorage.setItem(SESSION_EXP, exp);
+      document.getElementById('authOverlay').classList.add('hidden');
+      init();
+    } else {
+      errEl.textContent = '아이디 또는 비밀번호가 틀렸습니다.';
+      pwEl.value = '';
+    }
+  } catch(e) {
+    errEl.textContent = '오류: ' + e.message;
+  }
+  btn.disabled = false; btn.textContent = '로그인';
+};
+
+/* ── STATE ── */
+let counselSessions = [];     // 상담 건 목록
+let globalItems     = [];     // 공통 체크리스트 항목 [{id, text, order}]
+let currentId       = null;   // 현재 열린 상담 id
+let currentData     = null;   // 현재 상담 데이터
+let filterType      = 'all';
+let logOpen         = true;
+let memoTimer       = null;
+let editingId       = null;   // 모달에서 편집 중인 id
+
+/* ── TOAST ── */
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2000);
+}
+
+/* ── INIT ── */
+async function init() {
+  document.getElementById('loginUserBadge').textContent = currentUser();
+  await loadGlobalItems();
+  subscribeList();
+}
+
+/* ── GLOBAL ITEMS (공통 체크리스트) ── */
+async function loadGlobalItems() {
+  const snap = await getDocs(query(collection(db, 'counsel_global_checklist'), orderBy('order')));
+  globalItems = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+  renderGlobalEditor();
+}
+
+async function saveGlobalItem(text) {
+  const order = globalItems.length;
+  const ref = await addDoc(collection(db, 'counsel_global_checklist'), { text, order, createdAt: serverTimestamp() });
+  globalItems.push({ id: ref.id, text, order });
+  renderGlobalEditor();
+  toast('공통 항목 추가됨');
+}
+
+async function deleteGlobalItem(id) {
+  await deleteDoc(doc(db, 'counsel_global_checklist', id));
+  globalItems = globalItems.filter(i=>i.id!==id);
+  renderGlobalEditor();
+  // 모든 상담의 globalChecks에서도 해당 항목 제거
+  toast('공통 항목 삭제됨');
+}
+
+window.addGlobalItem = async function() {
+  const inp = document.getElementById('globalNewItem');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  await saveGlobalItem(text);
+  if (currentId) renderDetail();
+};
+
+function renderGlobalEditor() {
+  const el = document.getElementById('globalEditorList');
+  if (!el) return;
+  if (globalItems.length === 0) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--text-dim);text-align:center;padding:12px;">항목이 없습니다</div>';
+    return;
+  }
+  el.innerHTML = globalItems.map(item=>`
+    <div class="global-cl-item" data-id="${item.id}">
+      <span class="drag-handle">⠿</span>
+      <span class="gc-text">${escHtml(item.text)}</span>
+      <button class="gc-del" onclick="deleteGlobalItem('${item.id}')">✕</button>
+    </div>
+  `).join('');
+}
+
+/* ── COUNSEL LIST (subscribeList) ── */
+function subscribeList() {
+  onSnapshot(query(collection(db,'counsel_sessions'), orderBy('createdAt','desc')), snap=>{
+    counselSessions = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    renderList();
+    if (currentId) {
+      const found = counselSessions.find(c=>c.id===currentId);
+      if (found) { currentData = found; renderDetail(); }
+    }
+  });
+}
+
+window.setFilter = function(type, btn) {
+  filterType = type;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderList();
+};
+
+window.renderList = function() {
+  const q    = document.getElementById('searchInput').value.trim().toLowerCase();
+  const list = document.getElementById('counselList');
+  let items  = counselSessions;
+  if (filterType !== 'all') items = items.filter(c=>c.type===filterType);
+  if (q) items = items.filter(c=>(c.title||'').toLowerCase().includes(q)||(c.name||'').toLowerCase().includes(q));
+  if (items.length === 0) {
+    list.innerHTML = '<div class="counsel-empty">상담 건이 없습니다</div>';
+    return;
+  }
+  list.innerHTML = items.map(c=>{
+    const badgeClass = c.type==='crm'?'badge-crm':c.type==='rent'?'badge-rent':'badge-other';
+    const typeLabel  = c.type==='crm'?'CRM':c.type==='rent'?'렌탈':'기타';
+    const progress   = getProgress(c);
+    const isActive   = c.id === currentId ? 'active' : '';
+    return `
+      <div class="counsel-item ${isActive}" onclick="selectCounsel('${c.id}')">
+        <div class="counsel-item-title">${escHtml(c.title||'(제목 없음)')}</div>
+        <div class="counsel-item-meta">
+          <span class="counsel-item-badge ${badgeClass}">${typeLabel}</span>
+          <span>${escHtml(c.name||'')}</span>
+          ${c.assignee ? `<span>· ${escHtml(c.assignee)}</span>` : ''}
+        </div>
+        <div class="counsel-item-progress">${progress}</div>
+      </div>
+    `;
+  }).join('');
+};
+
+function getProgress(c) {
+  const gItems = globalItems;
+  const gChecks = c.globalChecks || {};
+  const pItems  = c.personalItems || [];
+  const gTotal  = gItems.length;
+  const gDone   = gItems.filter(i=>gChecks[i.id]).length;
+  const pTotal  = pItems.length;
+  const pDone   = pItems.filter(i=>i.checked).length;
+  const total   = gTotal + pTotal;
+  const done    = gDone + pDone;
+  if (total === 0) return '';
+  return `${done}/${total}`;
+}
+
+/* ── SELECT COUNSEL ── */
+window.selectCounsel = function(id) {
+  currentId   = id;
+  currentData = counselSessions.find(c=>c.id===id);
+  renderList();
+  renderDetail();
+  document.getElementById('detailEmpty').style.display = 'none';
+  const dp = document.getElementById('detailPane');
+  dp.style.display = 'flex';
+};
+
+/* ── RENDER DETAIL ── */
+async function renderDetail() {
+  if (!currentData) return;
+  const c = currentData;
+
+  document.getElementById('dpName').textContent = c.title || '(제목 없음)';
+  const typeLabel = c.type==='crm'?'CRM 고객':c.type==='rent'?'렌탈/방송룸':'기타';
+  document.getElementById('dpMeta').innerHTML = `
+    <span>${typeLabel}</span>
+    ${c.name ? `<span>👤 ${escHtml(c.name)}</span>` : ''}
+    ${c.phone ? `<span>📞 ${escHtml(c.phone)}</span>` : ''}
+    ${c.assignee ? `<span>담당: ${escHtml(c.assignee)}</span>` : ''}
+    <span style="color:var(--text-dim);">${fmtDate(c.createdAt)}</span>
+  `;
+
+  // memo
+  const memoArea = document.getElementById('memoArea');
+  memoArea.value = c.memo || '';
+  document.getElementById('memoSaveBtn').style.display = 'none';
+
+  // 공통 체크리스트
+  renderGlobalCl(c);
+
+  // 개별 체크리스트
+  renderPersonalCl(c);
+
+  // 로그
+  await renderLog();
+}
+
+function renderGlobalCl(c) {
+  const gChecks = c.globalChecks || {};
+  const done  = globalItems.filter(i=>gChecks[i.id]).length;
+  document.getElementById('globalProgress').textContent = globalItems.length ? `${done}/${globalItems.length}` : '';
+
+  const el = document.getElementById('globalClList');
+  if (globalItems.length === 0) {
+    el.innerHTML = '<div style="padding:12px 14px;font-size:12px;color:var(--text-dim);">공통 항목이 없습니다. 우측 패널에서 추가하세요.</div>';
+    return;
+  }
+  el.innerHTML = globalItems.map(item=>{
+    const checked = !!gChecks[item.id];
+    return `
+      <div class="cl-item${checked?' checked':''}" data-id="${item.id}">
+        <div class="cl-checkbox${checked?' checked':''}" onclick="toggleGlobalCheck('${item.id}', ${!checked})"></div>
+        <div class="cl-item-content">
+          <div class="cl-item-text">${escHtml(item.text)}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderPersonalCl(c) {
+  const items = c.personalItems || [];
+  const done  = items.filter(i=>i.checked).length;
+  document.getElementById('personalProgress').textContent = items.length ? `${done}/${items.length}` : '';
+
+  const el = document.getElementById('personalClList');
+  if (items.length === 0) {
+    el.innerHTML = '<div style="padding:10px 14px;font-size:12px;color:var(--text-dim);">개별 항목을 추가하세요.</div>';
+    return;
+  }
+  el.innerHTML = items.map((item,idx)=>`
+    <div class="cl-item${item.checked?' checked':''}" data-idx="${idx}">
+      <div class="cl-checkbox${item.checked?' checked':''}" onclick="togglePersonalCheck(${idx}, ${!item.checked})"></div>
+      <div class="cl-item-content">
+        <div class="cl-item-text">${escHtml(item.text)}</div>
+      </div>
+      <div class="cl-item-actions">
+        <button class="cl-icon-btn" onclick="deletePersonalItem(${idx})">🗑</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ── TOGGLE GLOBAL CHECK ── */
+window.toggleGlobalCheck = async function(itemId, checked) {
+  if (!currentId) return;
+  const item = globalItems.find(i=>i.id===itemId);
+  const fieldPath = `globalChecks.${itemId}`;
+  await updateDoc(doc(db,'counsel_sessions',currentId), { [fieldPath]: checked });
+  await addLog(currentId, checked ? 'check' : 'uncheck', `공통 항목 "${item?.text||itemId}" ${checked?'체크':'체크 해제'}`);
+  toast(checked ? '✅ 체크 완료' : '체크 해제');
+};
+
+/* ── TOGGLE PERSONAL CHECK ── */
+window.togglePersonalCheck = async function(idx, checked) {
+  if (!currentId || !currentData) return;
+  const items = [...(currentData.personalItems || [])];
+  const itemText = items[idx]?.text || '';
+  items[idx] = { ...items[idx], checked };
+  await updateDoc(doc(db,'counsel_sessions',currentId), { personalItems: items });
+  await addLog(currentId, checked ? 'check' : 'uncheck', `개별 항목 "${itemText}" ${checked?'체크':'체크 해제'}`);
+  toast(checked ? '✅ 체크 완료' : '체크 해제');
+};
+
+/* ── ADD PERSONAL ITEM ── */
+window.addPersonalItem = async function() {
+  if (!currentId || !currentData) return;
+  const inp  = document.getElementById('personalNewItem');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  const items = [...(currentData.personalItems||[]), { text, checked: false }];
+  await updateDoc(doc(db,'counsel_sessions',currentId), { personalItems: items });
+  await addLog(currentId, 'add', `개별 항목 추가: "${text}"`);
+  toast('항목 추가됨');
+};
+
+/* ── DELETE PERSONAL ITEM ── */
+window.deletePersonalItem = async function(idx) {
+  if (!currentId || !currentData) return;
+  const items = [...(currentData.personalItems||[])];
+  const text  = items[idx]?.text || '';
+  items.splice(idx, 1);
+  await updateDoc(doc(db,'counsel_sessions',currentId), { personalItems: items });
+  await addLog(currentId, 'delete', `개별 항목 삭제: "${text}"`);
+  toast('항목 삭제됨');
+};
+
+/* ── MEMO ── */
+window.onMemoInput = function() {
+  document.getElementById('memoSaveBtn').style.display = '';
+  clearTimeout(memoTimer);
+  memoTimer = setTimeout(saveMemo, 3000);
+};
+window.saveMemo = async function() {
+  if (!currentId) return;
+  const memo = document.getElementById('memoArea').value;
+  await updateDoc(doc(db,'counsel_sessions',currentId), { memo });
+  await addLog(currentId, 'memo', '메모 수정');
+  document.getElementById('memoSaveBtn').style.display = 'none';
+  toast('메모 저장됨');
+};
+
+/* ── LOG ── */
+async function addLog(counselId, type, text) {
+  const who = currentUser();
+  await addDoc(collection(db,'counsel_sessions',counselId,'logs'), {
+    type, text, who,
+    createdAt: serverTimestamp()
+  });
+}
+
+async function renderLog() {
+  if (!currentId) return;
+  const snap = await getDocs(query(collection(db,'counsel_sessions',currentId,'logs'), orderBy('createdAt','desc')));
+  const logs = snap.docs.map(d=>d.data());
+  const body = document.getElementById('logBody');
+  if (logs.length === 0) {
+    body.innerHTML = '<div class="log-empty">변경 내역이 없습니다</div>';
+    return;
+  }
+  body.innerHTML = logs.map(l=>`
+    <div class="log-entry">
+      <div class="log-dot ${l.type||''}"></div>
+      <div class="log-content">
+        <div class="log-text">${escHtml(l.text||'')}</div>
+        <div class="log-who-time">${escHtml(l.who||'')} · ${fmtDate(l.createdAt)}</div>
+      </div>
+    </div>
+  `).join('');
+  if (!logOpen) body.classList.add('collapsed');
+}
+
+window.toggleLog = function() {
+  logOpen = !logOpen;
+  document.getElementById('logBody').classList.toggle('collapsed', !logOpen);
+  document.getElementById('logToggle').classList.toggle('open', logOpen);
+};
+
+/* ── NEW / EDIT COUNSEL MODAL ── */
+window.openNewCounselModal = function() {
+  editingId = null;
+  document.getElementById('counselModalTitle').textContent = '상담 등록';
+  document.getElementById('mTitle').value    = '';
+  document.getElementById('mName').value     = '';
+  document.getElementById('mPhone').value    = '';
+  document.getElementById('mType').value     = 'crm';
+  document.getElementById('mAssignee').value = '';
+  document.getElementById('counselModal').classList.add('show');
+};
+
+window.openEditCounselModal = function() {
+  if (!currentData) return;
+  editingId = currentId;
+  const c = currentData;
+  document.getElementById('counselModalTitle').textContent = '상담 편집';
+  document.getElementById('mTitle').value    = c.title || '';
+  document.getElementById('mName').value     = c.name || '';
+  document.getElementById('mPhone').value    = c.phone || '';
+  document.getElementById('mType').value     = c.type || 'crm';
+  document.getElementById('mAssignee').value = c.assignee || '';
+  document.getElementById('counselModal').classList.add('show');
+};
+
+window.closeCounselModal = function() {
+  document.getElementById('counselModal').classList.remove('show');
+};
+
+window.saveCounsel = async function() {
+  const title    = document.getElementById('mTitle').value.trim();
+  const name     = document.getElementById('mName').value.trim();
+  const phone    = document.getElementById('mPhone').value.trim();
+  const type     = document.getElementById('mType').value;
+  const assignee = document.getElementById('mAssignee').value.trim();
+  if (!title) { toast('제목을 입력하세요'); return; }
+
+  if (editingId) {
+    await updateDoc(doc(db,'counsel_sessions',editingId), { title, name, phone, type, assignee });
+    await addLog(editingId, 'memo', '상담 정보 수정');
+    toast('수정 완료');
+  } else {
+    const ref = await addDoc(collection(db,'counsel_sessions'), {
+      title, name, phone, type, assignee,
+      memo: '', globalChecks: {}, personalItems: [],
+      createdAt: serverTimestamp()
+    });
+    await addLog(ref.id, 'create', `상담 등록: "${title}"${name?' ('+name+')':''}`);
+    toast('상담 등록됨');
+    selectCounsel(ref.id);
+  }
+  closeCounselModal();
+};
+
+/* ── DELETE COUNSEL ── */
+window.deleteCounsel = async function() {
+  if (!currentId) return;
+  if (!confirm('이 상담 건을 삭제하시겠습니까?')) return;
+  await deleteDoc(doc(db,'counsel_sessions',currentId));
+  currentId   = null;
+  currentData = null;
+  document.getElementById('detailEmpty').style.display = '';
+  document.getElementById('detailPane').style.display  = 'none';
+  toast('삭제됨');
+};
+
+/* ── GLOBAL PANEL TOGGLE ── */
+window.toggleGlobalPanel = function() {
+  const p = document.getElementById('rightPanel');
+  const show = p.style.display === 'none' || p.style.display === '';
+  p.style.display = show ? 'flex' : 'none';
+  p.style.flexDirection = 'column';
+};
+
+/* ── HELPERS ── */
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function fmtDate(ts) {
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  if (isNaN(d)) return '';
+  return d.toLocaleDateString('ko-KR',{month:'2-digit',day:'2-digit'}) + ' ' +
+         d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+}
+
+/* ── BOOT ── */
+window.addEventListener('keydown', e=>{
+  if (e.key==='Enter' && document.getElementById('authOverlay') &&
+      !document.getElementById('authOverlay').classList.contains('hidden')) {
+    tryAuth();
+  }
+});
+
+if (isAuth()) {
+  document.getElementById('authOverlay').classList.add('hidden');
+  init();
+} else {
+  // theme sync from parent
+  try {
+    if (window.parent && window.parent.document.documentElement.classList.contains('light'))
+      document.documentElement.classList.add('light');
+  } catch(e){}
+}
+</script>
+</body>
+</html>
