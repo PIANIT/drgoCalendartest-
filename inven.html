@@ -1080,7 +1080,7 @@ function renderPagination(total) {
 function subscribeItems() {
   onSnapshot(
     query(itemsCol, orderBy('createdAt', 'asc')),
-    snap => { items = snap.docs.map(d => ({ _id: d.id, ...d.data() })); renderTable(); },
+    snap => { items = snap.docs.map(d => ({ _id: d.id, ...d.data() })); renderTable(); if (rackInited) renderRackCanvas(); },
     err  => { console.error('items 오류:', err); showToast('데이터 연결 오류'); }
   );
 }
