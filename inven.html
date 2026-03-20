@@ -1763,8 +1763,9 @@ function renderRackCanvas() {
   hint.style.display = rackState.racks.length === 0 ? 'flex' : 'none';
 
   rackState.racks.forEach(rack => renderRackUnit(rack));
-  canvas.style.transform = `scale(${rackZoom})`;
-  canvas.style.transformOrigin = 'top left';
+  canvas.style.transform = '';
+  canvas.style.transformOrigin = '';
+  canvas.style.zoom = rackZoom;
   document.getElementById('rackZoomLabel').textContent = Math.round(rackZoom*100) + '%';
 }
 
