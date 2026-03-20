@@ -58,6 +58,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-main);min-hei
 .cell-item:hover .cell-item-drag-handle{opacity:.5;}
 .ci-edit-btn{position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,.5);border:none;border-radius:3px;font-size:9px;line-height:1;padding:2px 3px;cursor:pointer;opacity:0;color:#fff;}
 .cell-item:hover .ci-edit-btn{opacity:1;}
+.ci-resize-handle{position:absolute;bottom:-1px;right:-1px;width:12px;height:12px;cursor:se-resize;z-index:20;opacity:0;border-right:3px solid rgba(255,255,255,.8);border-bottom:3px solid rgba(255,255,255,.8);border-radius:0 0 3px 0;}
+.cell-item:hover .ci-resize-handle{opacity:.8;}
+.cell-item.selected-item .ci-resize-handle{opacity:1;}
 .palette-cell{background:var(--surface2);border:1px dashed var(--border);border-radius:6px;padding:8px 10px;font-size:11px;cursor:grab;display:flex;align-items:center;gap:8px;transition:background .12s;}
 .palette-cell:hover{background:var(--surface);border-color:var(--accent);}
 .pc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
@@ -1758,6 +1761,25 @@ function buildRackUnit(rack) {
     ci.style.background = cd.color || rack.color || '#d4bc96';
     ci.style.opacity = '.85';
 
+    // colSpan/rowSpan 크기 적용 (절대 위치로 여러 셀 차지)
+    const cs = cd.colSpan || 1;
+    const rs = cd.rowSpan || 1;
+    if (cs > 1 || rs > 1) {
+      const w = cs * (rack.cellW + 3) - 3;
+      const h = rs * (rack.cellH + 3) - 3;
+      ci.style.width  = w + 'px';
+      ci.style.height = h + 'px';
+      ci.style.zIndex = '5';
+      // 차지하는 다른 셀들도 occupied 표시
+      for (let dr = 0; dr < rs; dr++) {
+        for (let dc = 0; dc < cs; dc++) {
+          if (dr === 0 && dc === 0) continue;
+          const oc = grid.querySelector('[data-row="' + (cd.row+dr) + '"][data-col="' + (cd.col+dc) + '"]');
+          if (oc) oc.classList.add('occupied');
+        }
+      }
+    }
+
     const qty = item.qty ?? 0;
     const dot = qty <= 0 ? '🔴' : (qty <= (item.minQty || 1) ? '🟡' : '🟢');
     const nameEl = document.createElement('div');
@@ -1775,10 +1797,18 @@ function buildRackUnit(rack) {
     editCi.title = '품목 수정 (더블클릭도 가능)';
     editCi.addEventListener('click', e => { e.stopPropagation(); openEdit(cd.itemId); });
 
-    ci.append(nameEl, qtyEl, dragHand, editCi);
+    // 셀 리사이즈 핸들 (우하단)
+    const ciResize = document.createElement('div');
+    ciResize.className = 'ci-resize-handle';
+    ciResize.addEventListener('mousedown', e => onCellItemResizeStart(e, cd.id, rack));
+
+    ci.append(nameEl, qtyEl, dragHand, editCi, ciResize);
     ci.addEventListener('click',     e => { e.stopPropagation(); selectCell(cd.id); });
     ci.addEventListener('dblclick',  e => { e.stopPropagation(); openEdit(cd.itemId); });
-    ci.addEventListener('dragstart', e => { _draggingCellId = cd.id; _draggingItemId = null; e.dataTransfer.effectAllowed = 'move'; });
+    ci.addEventListener('dragstart', e => {
+      if (e.target.classList.contains('ci-resize-handle')) { e.preventDefault(); return; }
+      _draggingCellId = cd.id; _draggingItemId = null; e.dataTransfer.effectAllowed = 'move';
+    });
     gridCell.appendChild(ci);
   });
 
@@ -1849,6 +1879,54 @@ function onRackResizeStart(e, rackId) {
   const mu = () => { document.removeEventListener('mousemove', mm); document.removeEventListener('mouseup', mu); };
   document.addEventListener('mousemove', mm);
   document.addEventListener('mouseup', mu);
+}
+
+/* ── 셀 아이템 크기 조정 (colSpan/rowSpan) ── */
+function onCellItemResizeStart(e, cellId, rack) {
+  e.preventDefault(); e.stopPropagation();
+  const cd = rackState.cells.find(c => c.id === cellId);
+  if (!cd) return;
+  const startX = e.clientX, startY = e.clientY;
+  const startCS = cd.colSpan || 1, startRS = cd.rowSpan || 1;
+  const maxCols = rack.cols - cd.col;
+  const maxRows = rack.rows - cd.row;
+
+  const preview = document.getElementById('ci-' + cellId);
+
+  const mm = e2 => {
+    const dx = e2.clientX - startX;
+    const dy = e2.clientY - startY;
+    const newCS = Math.max(1, Math.min(maxCols, Math.round(startCS + dx / (rack.cellW + 3))));
+    const newRS = Math.max(1, Math.min(maxRows, Math.round(startRS + dy / (rack.cellH + 3))));
+    // 실시간 미리보기
+    if (preview) {
+      preview.style.width  = (newCS * (rack.cellW + 3) - 3) + 'px';
+      preview.style.height = (newRS * (rack.cellH + 3) - 3) + 'px';
+      if (newCS > 1 || newRS > 1) { preview.style.zIndex = '5'; } else { preview.style.width = ''; preview.style.height = ''; preview.style.zIndex = ''; }
+    }
+  };
+  const mu = e2 => {
+    document.removeEventListener('mousemove', mm);
+    document.removeEventListener('mouseup',   mu);
+    const dx = e2.clientX - startX;
+    const dy = e2.clientY - startY;
+    const newCS = Math.max(1, Math.min(maxCols, Math.round(startCS + dx / (rack.cellW + 3))));
+    const newRS = Math.max(1, Math.min(maxRows, Math.round(startRS + dy / (rack.cellH + 3))));
+    // 겹치는 다른 셀 확인
+    let conflict = false;
+    for (let dr = 0; dr < newRS && !conflict; dr++) {
+      for (let dc = 0; dc < newCS && !conflict; dc++) {
+        if (dr === 0 && dc === 0) continue;
+        const other = rackState.cells.find(c => c.rackId === cd.rackId && c.id !== cellId && c.row === cd.row+dr && c.col === cd.col+dc);
+        if (other) { conflict = true; showToast('다른 제품과 겹칩니다.'); }
+      }
+    }
+    if (!conflict) { cd.colSpan = newCS; cd.rowSpan = newRS; }
+    rackMarkDirty();
+    renderRackCanvas();
+  };
+  document.addEventListener('mousemove', mm);
+  document.addEventListener('mouseup',   mu);
 }
 
 /* ── 선택 ── */
