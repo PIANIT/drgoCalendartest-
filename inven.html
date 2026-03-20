@@ -22,6 +22,83 @@ html.light {
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:var(--bg);color:var(--text);font-family:var(--font-main);min-height:100vh;display:flex;flex-direction:column;}
 
+/* ── PAGE TABS ── */
+.page-tabs{display:flex;gap:2px;padding:0 20px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:57px;z-index:99;}
+.page-tab{padding:10px 18px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:none;color:var(--text-muted);border-bottom:2px solid transparent;transition:all .15s;letter-spacing:.03em;font-family:var(--font-main);}
+.page-tab:hover{color:var(--text);}
+.page-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.page-section{display:none;flex:1;flex-direction:column;}
+.page-section.active{display:flex;}
+
+/* ── RACK EDITOR ── */
+.rack-layout{display:flex;gap:16px;flex:1;padding:16px 20px;overflow:hidden;min-height:0;}
+.rack-sidebar{width:260px;flex-shrink:0;display:flex;flex-direction:column;gap:12px;overflow-y:auto;}
+.rack-canvas-wrap{flex:1;overflow:auto;background:var(--bg);border:1px solid var(--border);border-radius:12px;position:relative;min-height:400px;}
+.rack-canvas{position:relative;min-width:600px;min-height:400px;padding:20px;}
+
+/* 사이드바 패널 */
+.rack-panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.rack-panel-hd{padding:10px 14px;background:var(--surface2);font-size:10px;font-family:var(--font-mono);letter-spacing:.12em;color:var(--text-muted);text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}
+.rack-panel-body{padding:12px;}
+
+/* 중량랙 */
+.rack-unit{position:absolute;background:var(--surface);border:2px solid var(--border);border-radius:8px;overflow:visible;cursor:move;user-select:none;box-shadow:0 2px 8px rgba(0,0,0,.3);}
+.rack-unit.selected{border-color:var(--accent);}
+.rack-unit-title{background:var(--surface2);padding:5px 10px;font-size:10px;font-family:var(--font-mono);color:var(--text-muted);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;border-radius:6px 6px 0 0;cursor:move;}
+.rack-unit-title span{font-weight:600;color:var(--text);font-size:11px;}
+.rack-unit-title .rack-actions{display:flex;gap:4px;opacity:0;transition:opacity .15s;}
+.rack-unit:hover .rack-actions{opacity:1;}
+.rack-unit-title .rack-act-btn{background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:12px;padding:2px 4px;border-radius:4px;line-height:1;}
+.rack-unit-title .rack-act-btn:hover{background:var(--surface);color:var(--text);}
+
+/* 랙 그리드 */
+.rack-grid{display:grid;gap:3px;padding:8px;position:relative;}
+.rack-cell{border:1px dashed rgba(255,255,255,.1);border-radius:4px;min-width:60px;min-height:50px;position:relative;transition:background .1s;}
+.rack-cell.drag-over{background:rgba(212,188,150,.15);border-color:var(--accent);}
+.rack-cell.occupied{border-style:solid;border-color:rgba(255,255,255,.08);}
+
+/* 셀 아이템 */
+.cell-item{position:absolute;inset:2px;border-radius:4px;padding:4px 6px;font-size:10px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;transition:filter .15s;border:1px solid rgba(255,255,255,.15);}
+.cell-item:hover{filter:brightness(1.2);}
+.cell-item.selected-item{outline:2px solid var(--accent);outline-offset:1px;}
+.cell-item-name{font-weight:600;font-size:10px;line-height:1.2;word-break:break-all;}
+.cell-item-qty{font-family:var(--font-mono);font-size:9px;color:rgba(255,255,255,.7);margin-top:2px;}
+.cell-item-drag-handle{position:absolute;top:2px;right:3px;font-size:8px;opacity:.5;cursor:grab;}
+
+/* 떠다니는 팔레트 셀 */
+.palette-cell{background:var(--surface2);border:1px dashed var(--border);border-radius:6px;padding:8px 10px;font-size:11px;cursor:grab;display:flex;align-items:center;gap:8px;transition:background .12s;}
+.palette-cell:hover{background:var(--surface);border-color:var(--accent);}
+.palette-cell .pc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.palette-cell .pc-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.palette-cell .pc-qty{font-family:var(--font-mono);font-size:10px;color:var(--text-muted);}
+.palette-drag-ghost{position:fixed;pointer-events:none;z-index:9999;padding:6px 10px;background:var(--surface);border:1px solid var(--accent);border-radius:6px;font-size:11px;color:var(--accent);box-shadow:0 4px 16px rgba(0,0,0,.5);opacity:.9;}
+
+/* 랙 크기 조정 핸들 */
+.rack-resize-handle{position:absolute;background:transparent;z-index:10;}
+.rack-resize-handle.se{bottom:-4px;right:-4px;width:14px;height:14px;cursor:se-resize;border-right:3px solid var(--border);border-bottom:3px solid var(--border);border-radius:0 0 4px 0;}
+.rack-unit:hover .rack-resize-handle.se{border-color:var(--accent);}
+
+/* 폼 컨트롤 */
+.rack-form-row{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;}
+.rack-form-row label{font-size:10px;color:var(--text-muted);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.08em;}
+.rack-form-row input,.rack-form-row select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--text);font-family:var(--font-main);width:100%;}
+.rack-form-row input:focus,.rack-form-row select:focus{outline:none;border-color:var(--accent);}
+.rack-row-2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+
+/* 선택 정보 패널 */
+.sel-info{font-size:11px;color:var(--text-muted);line-height:1.6;}
+.sel-info strong{color:var(--text);}
+.sel-info .si-name{font-size:12px;font-weight:600;color:var(--accent);margin-bottom:4px;}
+
+/* 셀 스팬 드래그 핸들 */
+.cell-span-handle{position:absolute;bottom:-1px;right:-1px;width:10px;height:10px;background:var(--accent);border-radius:2px;cursor:se-resize;opacity:0;z-index:20;}
+.cell-item:hover .cell-span-handle{opacity:.7;}
+
+/* 저장 상태 */
+.rack-save-bar{padding:8px 20px;background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.rack-dirty-badge{font-size:11px;color:var(--yellow);display:none;}
+.rack-dirty-badge.show{display:inline;}
+
 /* ── HEADER ── */
 .page-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:8px;}
 .page-title{display:flex;align-items:center;gap:10px;font-family:var(--font-mono);font-size:14px;font-weight:500;letter-spacing:.12em;color:var(--accent);}
@@ -252,6 +329,15 @@ tr.selected-row{background:rgba(212,188,150,.08);}
   </div>
 </div>
 
+<!-- PAGE TABS -->
+<div class="page-tabs">
+  <button class="page-tab active" data-tab="inventory">📦 재고 목록</button>
+  <button class="page-tab" data-tab="rack">🗄 재고 위치 (랙)</button>
+</div>
+
+<!-- ═══ SECTION: 재고 목록 ═══ -->
+<div class="page-section active" id="sec-inventory">
+
 <!-- STATS -->
 <div class="stats-bar">
   <div class="stat-card ok"><div class="stat-label">전체 품목</div><div class="stat-value" id="statTotal">0</div><div class="stat-sub">등록된 품목</div></div>
@@ -318,6 +404,155 @@ tr.selected-row{background:rgba(212,188,150,.08);}
   <span class="pg-info" id="pgInfo"></span>
   <div class="pg-btns" id="pgBtns"></div>
 </div>
+
+</div><!-- /sec-inventory -->
+
+<!-- ═══ SECTION: 재고 위치 (랙 에디터) ═══ -->
+<div class="page-section" id="sec-rack" style="flex:1;flex-direction:column;overflow:hidden;">
+
+  <!-- 랙 툴바 -->
+  <div class="toolbar" style="flex-shrink:0;">
+    <button class="btn btn-primary" id="rackAddRackBtn">＋ 중량랙 추가</button>
+    <button class="btn btn-ghost" id="rackAddItemBtn">📦 제품 위치 추가</button>
+    <div style="flex:1;"></div>
+    <button class="btn btn-ghost" id="rackZoomOut">－</button>
+    <span style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono);min-width:40px;text-align:center;" id="rackZoomLabel">100%</span>
+    <button class="btn btn-ghost" id="rackZoomIn">＋</button>
+    <button class="btn btn-ghost" id="rackResetView">↺ 초기화</button>
+  </div>
+
+  <!-- 랙 레이아웃 -->
+  <div class="rack-layout" style="flex:1;overflow:hidden;">
+
+    <!-- 사이드바 -->
+    <div class="rack-sidebar">
+
+      <!-- 미배치 제품 팔레트 -->
+      <div class="rack-panel">
+        <div class="rack-panel-hd">
+          <span>미배치 제품</span>
+          <span id="paletteCnt" style="color:var(--accent);font-size:10px;"></span>
+        </div>
+        <div class="rack-panel-body" style="padding:8px;max-height:240px;overflow-y:auto;" id="itemPalette">
+          <div style="font-size:11px;color:var(--text-muted);text-align:center;padding:16px 0;">제품을 추가하세요</div>
+        </div>
+      </div>
+
+      <!-- 선택 정보 -->
+      <div class="rack-panel" id="selInfoPanel">
+        <div class="rack-panel-hd"><span>선택 항목</span></div>
+        <div class="rack-panel-body">
+          <div class="sel-info" id="selInfoBody">
+            <div style="text-align:center;padding:12px 0;color:var(--text-muted);font-size:11px;">항목을 클릭하세요</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 랙 목록 -->
+      <div class="rack-panel">
+        <div class="rack-panel-hd"><span>랙 목록</span></div>
+        <div class="rack-panel-body" style="padding:8px;max-height:200px;overflow-y:auto;" id="rackList">
+          <div style="font-size:11px;color:var(--text-muted);text-align:center;padding:12px 0;">랙을 추가하세요</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 캔버스 -->
+    <div class="rack-canvas-wrap" id="rackCanvasWrap">
+      <div class="rack-canvas" id="rackCanvas">
+        <!-- 랙들이 여기에 동적으로 추가됨 -->
+        <div id="rackEmptyHint" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;pointer-events:none;">
+          <div style="font-size:40px;opacity:.2;">🗄</div>
+          <div style="font-size:13px;color:var(--text-muted);opacity:.5;">＋ 중량랙 추가 버튼으로 랙을 배치하세요</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 저장 바 -->
+  <div class="rack-save-bar">
+    <span class="rack-dirty-badge" id="rackDirtyBadge">● 저장되지 않은 변경사항</span>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost" id="rackDiscardBtn">되돌리기</button>
+      <button class="btn btn-primary" id="rackSaveBtn">💾 저장</button>
+    </div>
+  </div>
+
+</div><!-- /sec-rack -->
+
+<!-- 랙 추가 모달 -->
+<div class="modal-overlay" id="rackModal" style="z-index:1100;">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-header">
+      <div class="modal-title" id="rackModalTitle">중량랙 추가</div>
+      <button class="modal-close" id="rackModalClose">✕</button>
+    </div>
+    <div class="modal-body" style="padding:20px;">
+      <div class="rack-form-row"><label>랙 이름</label><input type="text" id="rmName" placeholder="예: A-랙, 1번 랙"></div>
+      <div class="rack-form-row rack-row-2">
+        <div class="rack-form-row" style="margin-bottom:0;"><label>열 수 (가로)</label><input type="number" id="rmCols" value="4" min="1" max="20"></div>
+        <div class="rack-form-row" style="margin-bottom:0;"><label>단 수 (세로)</label><input type="number" id="rmRows" value="5" min="1" max="20"></div>
+      </div>
+      <div class="rack-form-row rack-row-2">
+        <div class="rack-form-row" style="margin-bottom:0;"><label>셀 너비(px)</label><input type="number" id="rmCellW" value="80" min="40" max="200"></div>
+        <div class="rack-form-row" style="margin-bottom:0;"><label>셀 높이(px)</label><input type="number" id="rmCellH" value="60" min="30" max="160"></div>
+      </div>
+      <div class="rack-form-row"><label>색상</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;" id="rmColorPicker">
+          <div class="color-swatch selected" data-color="#d4bc96" style="background:#d4bc96;"></div>
+          <div class="color-swatch" data-color="#90bcd4" style="background:#90bcd4;"></div>
+          <div class="color-swatch" data-color="#88d488" style="background:#88d488;"></div>
+          <div class="color-swatch" data-color="#d48888" style="background:#d48888;"></div>
+          <div class="color-swatch" data-color="#c488d4" style="background:#c488d4;"></div>
+          <div class="color-swatch" data-color="#d4c488" style="background:#d4c488;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="rackModalCancel">취소</button>
+      <button class="btn btn-primary" id="rackModalSave">추가</button>
+    </div>
+  </div>
+</div>
+
+<!-- 제품 위치 추가 모달 -->
+<div class="modal-overlay" id="itemLocModal" style="z-index:1100;">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <div class="modal-title">제품 위치 추가</div>
+      <button class="modal-close" id="itemLocClose">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px;">
+      <div class="rack-form-row">
+        <label>제품 검색</label>
+        <input type="text" id="ilocSearch" placeholder="품목명 또는 코드 검색…">
+      </div>
+      <div style="max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;" id="ilocItemList">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="ilocCancel">취소</button>
+      <button class="btn btn-primary" id="ilocConfirm">선택한 제품 팔레트에 추가</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.color-swatch{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .1s;}
+.color-swatch:hover{transform:scale(1.15);}
+.color-swatch.selected{border-color:var(--text);transform:scale(1.15);}
+.rack-list-item{padding:6px 8px;border-radius:6px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .1s;}
+.rack-list-item:hover{background:var(--surface2);}
+.rack-list-item.active{background:rgba(212,188,150,.1);color:var(--accent);}
+.rack-list-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
+.iloc-item{padding:8px 10px;border-radius:6px;border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .1s;}
+.iloc-item:hover{background:var(--surface2);}
+.iloc-item.selected{background:rgba(212,188,150,.1);border-color:var(--accent);}
+.iloc-item-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.iloc-check{margin-left:auto;font-size:14px;color:var(--accent);}
+</style>
 
 <!-- ═══ ADD / EDIT MODAL ═══ -->
 <div class="modal-overlay" id="itemModal">
@@ -1437,6 +1672,600 @@ function showToast(msg) {
   subscribeItems();       // 품목 실시간 구독
   subscribeHistory();     // 입출고기록 실시간 구독
 })();
+
+/* ══════════════════════════════════════
+   PAGE TAB SWITCH
+══════════════════════════════════════ */
+document.querySelectorAll('.page-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.page-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+    btn.classList.add('active');
+    const sec = document.getElementById('sec-' + btn.dataset.tab);
+    if (sec) sec.classList.add('active');
+    if (btn.dataset.tab === 'rack') {
+      rackInitIfNeeded();
+    }
+  });
+});
+
+/* ══════════════════════════════════════
+   RACK EDITOR
+══════════════════════════════════════ */
+let rackState = {
+  racks: [],      // [{id, name, cols, rows, cellW, cellH, color, x, y}]
+  cells: [],      // [{id, rackId, col, row, colSpan, rowSpan, itemId, color}]
+  palette: [],    // [{itemId, color}]  — 미배치
+};
+let rackSaved = null;   // JSON snapshot for dirty check
+let rackInited = false;
+let rackZoom = 1;
+let rackSelectedId = null;   // selected rack or cell id
+let rackSelectedType = null; // 'rack' | 'cell'
+
+const rackLayoutDocRef = () => doc(db, 'settings', 'rack_layout');
+
+function rackMarkDirty() {
+  document.getElementById('rackDirtyBadge').classList.add('show');
+}
+function rackClearDirty() {
+  document.getElementById('rackDirtyBadge').classList.remove('show');
+}
+function rackIsClean() {
+  return JSON.stringify(rackState) === rackSaved;
+}
+
+/* ── 초기화 (탭 첫 진입 시) ── */
+async function rackInitIfNeeded() {
+  if (rackInited) { renderRackCanvas(); return; }
+  rackInited = true;
+  try {
+    const snap = await getDoc(rackLayoutDocRef());
+    if (snap.exists()) {
+      const d = snap.data();
+      rackState.racks   = d.racks   || [];
+      rackState.cells   = d.cells   || [];
+      rackState.palette = d.palette || [];
+    }
+  } catch(e) { console.warn('rack layout load:', e); }
+  rackSaved = JSON.stringify(rackState);
+  renderRackCanvas();
+  renderRackSidebar();
+  renderItemPalette();
+}
+
+/* ── Firestore 저장 ── */
+async function rackSave() {
+  try {
+    await setDoc(rackLayoutDocRef(), {
+      racks:   rackState.racks,
+      cells:   rackState.cells,
+      palette: rackState.palette,
+      updatedAt: serverTimestamp(),
+    });
+    rackSaved = JSON.stringify(rackState);
+    rackClearDirty();
+    showToast('랙 레이아웃이 저장되었습니다.');
+  } catch(e) { showToast('저장 실패: ' + e.message); }
+}
+
+/* ── 캔버스 렌더 ── */
+function renderRackCanvas() {
+  const canvas = document.getElementById('rackCanvas');
+  // 기존 랙들만 제거 (힌트는 유지)
+  canvas.querySelectorAll('.rack-unit').forEach(el => el.remove());
+
+  const hint = document.getElementById('rackEmptyHint');
+  hint.style.display = rackState.racks.length === 0 ? 'flex' : 'none';
+
+  rackState.racks.forEach(rack => renderRackUnit(rack));
+  canvas.style.transform = `scale(${rackZoom})`;
+  canvas.style.transformOrigin = 'top left';
+  document.getElementById('rackZoomLabel').textContent = Math.round(rackZoom*100) + '%';
+}
+
+function renderRackUnit(rack) {
+  const canvas = document.getElementById('rackCanvas');
+  const el = document.createElement('div');
+  el.className = 'rack-unit';
+  el.id = 'rack-' + rack.id;
+  el.style.left   = (rack.x || 20) + 'px';
+  el.style.top    = (rack.y || 20) + 'px';
+  el.style.width  = (rack.cols * (rack.cellW + 3) + 16) + 'px';
+
+  // 타이틀
+  const title = document.createElement('div');
+  title.className = 'rack-unit-title';
+  title.innerHTML = `
+    <span>${rack.name}</span>
+    <div class="rack-actions">
+      <button class="rack-act-btn" data-action="edit" data-id="${rack.id}" title="편집">✏️</button>
+      <button class="rack-act-btn" data-action="delete" data-id="${rack.id}" title="삭제">🗑</button>
+    </div>`;
+  // 상단 색상 바
+  const colorBar = document.createElement('div');
+  colorBar.style.cssText = `height:3px;background:${rack.color||'var(--accent)'};border-radius:6px 6px 0 0;margin:-2px -2px 0;`;
+
+  // 그리드
+  const grid = document.createElement('div');
+  grid.className = 'rack-grid';
+  grid.style.gridTemplateColumns = `repeat(${rack.cols}, ${rack.cellW}px)`;
+  grid.style.gridTemplateRows    = `repeat(${rack.rows}, ${rack.cellH}px)`;
+
+  for (let r=0; r<rack.rows; r++) {
+    for (let c=0; c<rack.cols; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'rack-cell';
+      cell.dataset.rackId = rack.id;
+      cell.dataset.row = r;
+      cell.dataset.col = c;
+      // 드롭 타깃
+      cell.addEventListener('dragover', onCellDragOver);
+      cell.addEventListener('dragleave', onCellDragLeave);
+      cell.addEventListener('drop', onCellDrop);
+      grid.appendChild(cell);
+    }
+  }
+
+  // 배치된 셀 아이템 렌더
+  const cellsInRack = rackState.cells.filter(c => c.rackId === rack.id);
+  cellsInRack.forEach(cellData => {
+    const item = items.find(i => i._id === cellData.itemId);
+    if (!item) return;
+    const gridCell = grid.querySelector(`[data-row="${cellData.row}"][data-col="${cellData.col}"]`);
+    if (!gridCell) return;
+
+    gridCell.classList.add('occupied');
+    const ci = document.createElement('div');
+    ci.className = 'cell-item';
+    ci.id = 'ci-' + cellData.id;
+    ci.dataset.cellId = cellData.id;
+    ci.draggable = true;
+    ci.style.background = cellData.color || rack.color || 'var(--accent)';
+    ci.style.setProperty('--ci-bg', cellData.color || rack.color);
+    ci.style.opacity = '.85';
+
+    // colSpan / rowSpan
+    if ((cellData.colSpan||1) > 1 || (cellData.rowSpan||1) > 1) {
+      ci.style.position = 'absolute';
+      const w = (cellData.colSpan||1) * (rack.cellW+3) - 3;
+      const h = (cellData.rowSpan||1) * (rack.cellH+3) - 3;
+      ci.style.width  = w + 'px';
+      ci.style.height = h + 'px';
+      ci.style.zIndex = '5';
+    }
+
+    const qty = item.qty ?? item.quantity ?? 0;
+    const statusDot = qty <= 0 ? '🔴' : (qty <= (item.minQty||1) ? '🟡' : '🟢');
+    ci.innerHTML = `
+      <div class="cell-item-name">${item.name||item.code||'?'}</div>
+      <div class="cell-item-qty">${statusDot} ${qty}${item.unit||''}</div>
+      <span class="cell-item-drag-handle">⠿</span>`;
+    ci.addEventListener('click', e => { e.stopPropagation(); selectCell(cellData.id); });
+    ci.addEventListener('dragstart', e => onCellItemDragStart(e, cellData.id));
+    gridCell.appendChild(ci);
+  });
+
+  // 크기 조정 핸들 (SE)
+  const resizeHandle = document.createElement('div');
+  resizeHandle.className = 'rack-resize-handle se';
+  resizeHandle.addEventListener('mousedown', e => onRackResizeStart(e, rack.id));
+
+  el.appendChild(colorBar);
+  el.appendChild(title);
+  el.appendChild(grid);
+  el.appendChild(resizeHandle);
+  canvas.appendChild(el);
+
+  // 랙 드래그 이동
+  makeRackDraggable(el, rack.id);
+
+  // 버튼 이벤트
+  el.querySelector('[data-action="edit"]').addEventListener('click', e => { e.stopPropagation(); openRackModal(rack.id); });
+  el.querySelector('[data-action="delete"]').addEventListener('click', e => { e.stopPropagation(); deleteRack(rack.id); });
+
+  if (rackSelectedId === rack.id && rackSelectedType === 'rack') el.classList.add('selected');
+}
+
+/* ── 랙 이동 드래그 ── */
+function makeRackDraggable(el, rackId) {
+  const title = el.querySelector('.rack-unit-title');
+  let ox, oy, startX, startY, moving=false;
+  title.addEventListener('mousedown', e => {
+    if (e.target.closest('.rack-act-btn')) return;
+    e.preventDefault();
+    const rack = rackState.racks.find(r => r.id === rackId);
+    if (!rack) return;
+    ox = rack.x||0; oy = rack.y||0;
+    startX = e.clientX; startY = e.clientY;
+    moving = true;
+    el.style.zIndex = 50;
+    const mm = e2 => {
+      if (!moving) return;
+      const dx = (e2.clientX - startX) / rackZoom;
+      const dy = (e2.clientY - startY) / rackZoom;
+      const nx = Math.max(0, ox + dx);
+      const ny = Math.max(0, oy + dy);
+      el.style.left = nx + 'px';
+      el.style.top  = ny + 'px';
+    };
+    const mu = e2 => {
+      if (!moving) return;
+      moving = false;
+      el.style.zIndex = '';
+      const dx = (e2.clientX - startX) / rackZoom;
+      const dy = (e2.clientY - startY) / rackZoom;
+      const rack2 = rackState.racks.find(r => r.id === rackId);
+      if (rack2) { rack2.x = Math.max(0, ox + dx); rack2.y = Math.max(0, oy + dy); }
+      document.removeEventListener('mousemove', mm);
+      document.removeEventListener('mouseup', mu);
+      rackMarkDirty();
+    };
+    document.addEventListener('mousemove', mm);
+    document.addEventListener('mouseup', mu);
+  });
+  el.addEventListener('click', e => {
+    if (e.target.closest('.rack-act-btn')) return;
+    selectRack(rackId);
+  });
+}
+
+/* ── 랙 크기 조정 ── */
+function onRackResizeStart(e, rackId) {
+  e.preventDefault(); e.stopPropagation();
+  const rack = rackState.racks.find(r => r.id === rackId);
+  if (!rack) return;
+  const startX = e.clientX, startY = e.clientY;
+  const startCols = rack.cols, startRows = rack.rows;
+  const mm = e2 => {
+    const dx = (e2.clientX - startX) / rackZoom;
+    const dy = (e2.clientY - startY) / rackZoom;
+    const newCols = Math.max(1, Math.round(startCols + dx / (rack.cellW+3)));
+    const newRows = Math.max(1, Math.round(startRows + dy / (rack.cellH+3)));
+    if (newCols !== rack.cols || newRows !== rack.rows) {
+      rack.cols = newCols; rack.rows = newRows;
+      const el = document.getElementById('rack-' + rackId);
+      if (el) el.remove();
+      renderRackUnit(rack);
+      rackMarkDirty();
+    }
+  };
+  const mu = () => { document.removeEventListener('mousemove', mm); document.removeEventListener('mouseup', mu); };
+  document.addEventListener('mousemove', mm);
+  document.addEventListener('mouseup', mu);
+}
+
+/* ── 선택 ── */
+function selectRack(id) {
+  rackSelectedId = id; rackSelectedType = 'rack';
+  document.querySelectorAll('.rack-unit').forEach(el => el.classList.remove('selected'));
+  document.getElementById('rack-' + id)?.classList.add('selected');
+  const rack = rackState.racks.find(r => r.id === id);
+  updateSelInfo(rack ? `<div class="si-name">🗄 ${rack.name}</div>
+    <div class="sel-info">
+      <strong>크기:</strong> ${rack.cols}열 × ${rack.rows}단<br>
+      <strong>셀 크기:</strong> ${rack.cellW}×${rack.cellH}px
+    </div>` : '');
+}
+function selectCell(cellId) {
+  rackSelectedId = cellId; rackSelectedType = 'cell';
+  document.querySelectorAll('.cell-item').forEach(el => el.classList.remove('selected-item'));
+  document.getElementById('ci-' + cellId)?.classList.add('selected-item');
+  const cell = rackState.cells.find(c => c.id === cellId);
+  const rack = cell ? rackState.racks.find(r => r.id === cell.rackId) : null;
+  const item = cell ? items.find(i => i._id === cell.itemId) : null;
+  if (item && cell) {
+    const qty = item.qty ?? item.quantity ?? 0;
+    updateSelInfo(`<div class="si-name">📦 ${item.name||item.code}</div>
+      <div class="sel-info">
+        <strong>랙:</strong> ${rack?.name||'-'}<br>
+        <strong>위치:</strong> ${cell.col+1}열 ${cell.row+1}단<br>
+        <strong>재고:</strong> ${qty}${item.unit||''}<br>
+        <strong>코드:</strong> ${item.code||'-'}
+      </div>
+      <div style="margin-top:10px;display:flex;gap:6px;">
+        <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;" onclick="removeCellItem('${cellId}')">🗑 제거</button>
+      </div>`);
+  }
+}
+function updateSelInfo(html) {
+  document.getElementById('selInfoBody').innerHTML = html ||
+    '<div style="text-align:center;padding:12px 0;color:var(--text-muted);font-size:11px;">항목을 클릭하세요</div>';
+}
+
+/* ── 셀 아이템 제거 (팔레트로 복귀) ── */
+function removeCellItem(cellId) {
+  const idx = rackState.cells.findIndex(c => c.id === cellId);
+  if (idx < 0) return;
+  const cell = rackState.cells[idx];
+  // 팔레트에 없는 경우에만 복귀
+  if (!rackState.palette.find(p => p.itemId === cell.itemId)) {
+    rackState.palette.push({ itemId: cell.itemId, color: cell.color });
+  }
+  rackState.cells.splice(idx, 1);
+  rackMarkDirty();
+  updateSelInfo('');
+  renderRackCanvas();
+  renderItemPalette();
+  renderRackSidebar();
+}
+
+/* ── 드롭 이벤트 (팔레트 → 셀) ── */
+let _draggingItemId = null;   // 팔레트에서 드래그
+let _draggingCellId = null;   // 셀에서 드래그
+
+function onCellDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function onCellDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+function onCellDrop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const rackId = e.currentTarget.dataset.rackId;
+  const row    = parseInt(e.currentTarget.dataset.row);
+  const col    = parseInt(e.currentTarget.dataset.col);
+
+  if (_draggingItemId) {
+    // 팔레트 → 셀
+    const pIdx = rackState.palette.findIndex(p => p.itemId === _draggingItemId);
+    const color = pIdx >= 0 ? rackState.palette[pIdx].color : itemColor(_draggingItemId);
+    if (pIdx >= 0) rackState.palette.splice(pIdx, 1);
+    // 이미 같은 위치에 있으면 스킵
+    const existing = rackState.cells.find(c => c.rackId===rackId && c.row===row && c.col===col);
+    if (existing) { showToast('이미 다른 제품이 배치되어 있습니다.'); _draggingItemId=null; return; }
+    rackState.cells.push({ id: uid(), rackId, row, col, colSpan:1, rowSpan:1, itemId: _draggingItemId, color });
+    _draggingItemId = null;
+  } else if (_draggingCellId) {
+    // 셀 → 셀 이동
+    const cell = rackState.cells.find(c => c.id === _draggingCellId);
+    if (!cell) { _draggingCellId=null; return; }
+    const existing = rackState.cells.find(c => c.rackId===rackId && c.row===row && c.col===col && c.id!==_draggingCellId);
+    if (existing) { showToast('이미 다른 제품이 배치되어 있습니다.'); _draggingCellId=null; return; }
+    cell.rackId = rackId; cell.row = row; cell.col = col;
+    _draggingCellId = null;
+  }
+  rackMarkDirty();
+  renderRackCanvas();
+  renderItemPalette();
+}
+
+function onCellItemDragStart(e, cellId) {
+  _draggingCellId = cellId;
+  _draggingItemId = null;
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+/* ── 팔레트 드래그 시작 ── */
+function onPaletteDragStart(e, itemId) {
+  _draggingItemId = itemId;
+  _draggingCellId = null;
+  e.dataTransfer.effectAllowed = 'move';
+  // 고스트
+  const ghost = document.createElement('div');
+  ghost.className = 'palette-drag-ghost';
+  const item = items.find(i => i._id === itemId);
+  ghost.textContent = item?.name || item?.code || '제품';
+  document.body.appendChild(ghost);
+  e.dataTransfer.setDragImage(ghost, 0, 0);
+  setTimeout(() => ghost.remove(), 0);
+}
+
+/* ── 팔레트 렌더 ── */
+function renderItemPalette() {
+  const wrap = document.getElementById('itemPalette');
+  const cnt  = document.getElementById('paletteCnt');
+  if (!rackState.palette.length) {
+    wrap.innerHTML = '<div style="font-size:11px;color:var(--text-muted);text-align:center;padding:16px 0;">제품을 추가하세요</div>';
+    cnt.textContent = '';
+    return;
+  }
+  cnt.textContent = rackState.palette.length + '개';
+  wrap.innerHTML = '';
+  rackState.palette.forEach(p => {
+    const item = items.find(i => i._id === p.itemId);
+    if (!item) return;
+    const qty = item.qty ?? item.quantity ?? 0;
+    const el = document.createElement('div');
+    el.className = 'palette-cell';
+    el.draggable = true;
+    el.innerHTML = `
+      <div class="pc-dot" style="background:${p.color};"></div>
+      <span class="pc-name" title="${item.name||''}">${item.name||item.code||'?'}</span>
+      <span class="pc-qty">${qty}${item.unit||''}</span>`;
+    el.addEventListener('dragstart', e => onPaletteDragStart(e, p.itemId));
+    wrap.appendChild(el);
+  });
+}
+
+/* ── 사이드바 랙 목록 ── */
+function renderRackSidebar() {
+  const list = document.getElementById('rackList');
+  if (!rackState.racks.length) {
+    list.innerHTML = '<div style="font-size:11px;color:var(--text-muted);text-align:center;padding:12px 0;">랙을 추가하세요</div>';
+    return;
+  }
+  list.innerHTML = '';
+  rackState.racks.forEach(rack => {
+    const el = document.createElement('div');
+    el.className = 'rack-list-item' + (rackSelectedId===rack.id ? ' active' : '');
+    el.innerHTML = `<div class="rack-list-dot" style="background:${rack.color||'var(--accent)'}"></div>${rack.name}`;
+    el.addEventListener('click', () => {
+      selectRack(rack.id);
+      document.getElementById('rack-'+rack.id)?.scrollIntoView({behavior:'smooth',block:'nearest'});
+    });
+    list.appendChild(el);
+  });
+}
+
+/* ── 색상 자동 배정 ── */
+const ITEM_COLORS = ['#d4bc96','#90bcd4','#88d488','#d48888','#c488d4','#d4c488','#88c4d4','#d4a088'];
+function itemColor(itemId) {
+  const idx = (items.findIndex(i => i._id === itemId) || 0) % ITEM_COLORS.length;
+  return ITEM_COLORS[idx];
+}
+
+/* ── 랙 추가/편집 모달 ── */
+let _editingRackId = null;
+let _selectedColor = '#d4bc96';
+
+function openRackModal(editId = null) {
+  _editingRackId = editId;
+  const modal = document.getElementById('rackModal');
+  const rack  = editId ? rackState.racks.find(r => r.id === editId) : null;
+  document.getElementById('rackModalTitle').textContent = editId ? '중량랙 편집' : '중량랙 추가';
+  document.getElementById('rmName').value  = rack?.name  || '';
+  document.getElementById('rmCols').value  = rack?.cols  || 4;
+  document.getElementById('rmRows').value  = rack?.rows  || 5;
+  document.getElementById('rmCellW').value = rack?.cellW || 80;
+  document.getElementById('rmCellH').value = rack?.cellH || 60;
+  _selectedColor = rack?.color || '#d4bc96';
+  document.querySelectorAll('#rmColorPicker .color-swatch').forEach(sw => {
+    sw.classList.toggle('selected', sw.dataset.color === _selectedColor);
+  });
+  modal.classList.add('open');
+  document.getElementById('rmName').focus();
+}
+
+document.getElementById('rackAddRackBtn').addEventListener('click', () => openRackModal());
+document.getElementById('rackModalClose').addEventListener('click', () => document.getElementById('rackModal').classList.remove('open'));
+document.getElementById('rackModalCancel').addEventListener('click', () => document.getElementById('rackModal').classList.remove('open'));
+
+document.getElementById('rmColorPicker').addEventListener('click', e => {
+  const sw = e.target.closest('.color-swatch'); if (!sw) return;
+  document.querySelectorAll('#rmColorPicker .color-swatch').forEach(s => s.classList.remove('selected'));
+  sw.classList.add('selected');
+  _selectedColor = sw.dataset.color;
+});
+
+document.getElementById('rackModalSave').addEventListener('click', () => {
+  const name  = document.getElementById('rmName').value.trim() || '랙';
+  const cols  = Math.max(1, parseInt(document.getElementById('rmCols').value)||4);
+  const rows  = Math.max(1, parseInt(document.getElementById('rmRows').value)||5);
+  const cellW = Math.max(40, parseInt(document.getElementById('rmCellW').value)||80);
+  const cellH = Math.max(30, parseInt(document.getElementById('rmCellH').value)||60);
+
+  if (_editingRackId) {
+    const rack = rackState.racks.find(r => r.id === _editingRackId);
+    if (rack) { Object.assign(rack, { name, cols, rows, cellW, cellH, color: _selectedColor }); }
+  } else {
+    const existing = rackState.racks;
+    const xOff = 20 + (existing.length % 3) * 340;
+    const yOff = 20 + Math.floor(existing.length / 3) * 360;
+    rackState.racks.push({ id: uid(), name, cols, rows, cellW, cellH, color: _selectedColor, x: xOff, y: yOff });
+  }
+
+  document.getElementById('rackModal').classList.remove('open');
+  rackMarkDirty();
+  renderRackCanvas();
+  renderRackSidebar();
+});
+
+/* ── 랙 삭제 ── */
+function deleteRack(rackId) {
+  if (!confirm('이 랙을 삭제하면 배치된 제품이 모두 팔레트로 돌아갑니다. 계속하시겠습니까?')) return;
+  const cells = rackState.cells.filter(c => c.rackId === rackId);
+  cells.forEach(cell => {
+    if (!rackState.palette.find(p => p.itemId === cell.itemId)) {
+      rackState.palette.push({ itemId: cell.itemId, color: cell.color });
+    }
+  });
+  rackState.cells   = rackState.cells.filter(c => c.rackId !== rackId);
+  rackState.racks   = rackState.racks.filter(r => r.id !== rackId);
+  if (rackSelectedId === rackId) { rackSelectedId = null; rackSelectedType = null; updateSelInfo(''); }
+  rackMarkDirty();
+  renderRackCanvas();
+  renderItemPalette();
+  renderRackSidebar();
+}
+
+/* ── 제품 위치 추가 모달 ── */
+let _ilocSelected = new Set();
+
+document.getElementById('rackAddItemBtn').addEventListener('click', openItemLocModal);
+function openItemLocModal() {
+  _ilocSelected.clear();
+  document.getElementById('ilocSearch').value = '';
+  renderIlocList('');
+  document.getElementById('itemLocModal').classList.add('open');
+}
+document.getElementById('itemLocClose').addEventListener('click',  () => document.getElementById('itemLocModal').classList.remove('open'));
+document.getElementById('ilocCancel').addEventListener('click',   () => document.getElementById('itemLocModal').classList.remove('open'));
+document.getElementById('ilocSearch').addEventListener('input', e => renderIlocList(e.target.value));
+
+function renderIlocList(q) {
+  const list = document.getElementById('ilocItemList');
+  const q2 = q.toLowerCase();
+  const already = new Set([
+    ...rackState.cells.map(c => c.itemId),
+    ...rackState.palette.map(p => p.itemId),
+  ]);
+  const filtered = items.filter(i => {
+    if (already.has(i._id) && !_ilocSelected.has(i._id)) return false;
+    if (!q2) return true;
+    return (i.name||'').toLowerCase().includes(q2) || (i.code||'').toLowerCase().includes(q2);
+  });
+  if (!filtered.length) {
+    list.innerHTML = '<div style="font-size:11px;color:var(--text-muted);text-align:center;padding:20px 0;">결과 없음</div>';
+    return;
+  }
+  list.innerHTML = '';
+  filtered.forEach(item => {
+    const qty = item.qty ?? item.quantity ?? 0;
+    const sel = _ilocSelected.has(item._id);
+    const el = document.createElement('div');
+    el.className = 'iloc-item' + (sel ? ' selected' : '');
+    el.innerHTML = `
+      <div class="iloc-item-dot" style="background:${itemColor(item._id)};"></div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:600;">${item.name||item.code||'?'}</div>
+        <div style="font-size:10px;color:var(--text-muted);">${item.code||''} · 재고 ${qty}${item.unit||''}</div>
+      </div>
+      ${sel ? '<span class="iloc-check">✓</span>' : ''}`;
+    el.addEventListener('click', () => {
+      if (_ilocSelected.has(item._id)) _ilocSelected.delete(item._id);
+      else _ilocSelected.add(item._id);
+      renderIlocList(document.getElementById('ilocSearch').value);
+    });
+    list.appendChild(el);
+  });
+}
+
+document.getElementById('ilocConfirm').addEventListener('click', () => {
+  if (!_ilocSelected.size) { showToast('제품을 선택해주세요.'); return; }
+  _ilocSelected.forEach(itemId => {
+    if (!rackState.palette.find(p => p.itemId === itemId)) {
+      rackState.palette.push({ itemId, color: itemColor(itemId) });
+    }
+  });
+  document.getElementById('itemLocModal').classList.remove('open');
+  rackMarkDirty();
+  renderItemPalette();
+  showToast(`${_ilocSelected.size}개 제품이 팔레트에 추가되었습니다.`);
+});
+
+/* ── 저장 / 되돌리기 ── */
+document.getElementById('rackSaveBtn').addEventListener('click', rackSave);
+document.getElementById('rackDiscardBtn').addEventListener('click', () => {
+  if (!rackSaved) return;
+  rackState = JSON.parse(rackSaved);
+  rackClearDirty();
+  renderRackCanvas();
+  renderItemPalette();
+  renderRackSidebar();
+});
+
+/* ── 줌 ── */
+document.getElementById('rackZoomIn').addEventListener('click',  () => { rackZoom = Math.min(2,   rackZoom + 0.1); renderRackCanvas(); });
+document.getElementById('rackZoomOut').addEventListener('click', () => { rackZoom = Math.max(0.3, rackZoom - 0.1); renderRackCanvas(); });
+document.getElementById('rackResetView').addEventListener('click', () => { rackZoom = 1; renderRackCanvas(); });
+
+/* ── 캔버스 클릭 (선택 해제) ── */
+document.getElementById('rackCanvas').addEventListener('click', e => {
+  if (e.target === document.getElementById('rackCanvas')) {
+    rackSelectedId = null; rackSelectedType = null;
+    document.querySelectorAll('.rack-unit').forEach(el => el.classList.remove('selected'));
+    document.querySelectorAll('.cell-item').forEach(el => el.classList.remove('selected-item'));
+    updateSelInfo('');
+  }
+});
 
 </script>
 <!-- ═══ 선택 삭제 액션바 ═══ -->
