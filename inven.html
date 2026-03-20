@@ -64,6 +64,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-main);min-hei
 .cell-item-name{font-weight:600;font-size:10px;line-height:1.2;word-break:break-all;}
 .cell-item-qty{font-family:var(--font-mono);font-size:9px;color:rgba(255,255,255,.7);margin-top:2px;}
 .cell-item-drag-handle{position:absolute;top:2px;right:3px;font-size:8px;opacity:.5;cursor:grab;}
+.ci-edit-btn{position:absolute;bottom:3px;right:3px;background:rgba(0,0,0,.45);border:none;border-radius:3px;font-size:9px;line-height:1;padding:2px 3px;cursor:pointer;opacity:0;transition:opacity .15s;color:#fff;}
+.cell-item:hover .ci-edit-btn{opacity:1;}
+.cell-item:hover .cell-item-drag-handle{top:2px;right:18px;}
 
 /* 떠다니는 팔레트 셀 */
 .palette-cell{background:var(--surface2);border:1px dashed var(--border);border-radius:6px;padding:8px 10px;font-size:11px;cursor:grab;display:flex;align-items:center;gap:8px;transition:background .12s;}
@@ -1284,8 +1287,9 @@ document.getElementById('itemModal').addEventListener('click', e => { if (e.targ
 
 /* ── 나가기 확인 팝업 버튼 ── */
 document.getElementById('confirmLeave').addEventListener('click', () => {
+  const cb = _confirmCallback;
   _closeLeaveConfirm();
-  if (_confirmCallback) { _confirmCallback(); _confirmCallback = null; }
+  if (cb) cb();
 });
 document.getElementById('confirmStay').addEventListener('click', _closeLeaveConfirm);
 document.getElementById('confirmOverlay').addEventListener('click', e => {
@@ -1837,14 +1841,24 @@ function renderRackUnit(rack) {
 
     const qty = item.qty ?? item.quantity ?? 0;
     const statusDot = qty <= 0 ? '🔴' : (qty <= (item.minQty||1) ? '🟡' : '🟢');
+
     ci.innerHTML = `
       <div class="cell-item-name">${item.name||item.code||'?'}</div>
       <div class="cell-item-qty">${statusDot} ${qty}${item.unit||''}</div>
+      <button class="ci-edit-btn" data-iid="${cellData.itemId}" title="품목 수정 (더블클릭도 가능)">✏️</button>
       <span class="cell-item-drag-handle">⠿</span>`;
     ci.addEventListener('click', e => { e.stopPropagation(); selectCell(cellData.id); });
+    ci.addEventListener('dblclick', e => { e.stopPropagation(); openEdit(cellData.itemId); });
+    ci.querySelector('.ci-edit-btn').addEventListener('click', e => { e.stopPropagation(); openEdit(cellData.itemId); });
     ci.addEventListener('dragstart', e => onCellItemDragStart(e, cellData.id));
     gridCell.appendChild(ci);
-  });
+
+
+
+
+
+
+
 
   // 크기 조정 핸들 (SE)
   const resizeHandle = document.createElement('div');
