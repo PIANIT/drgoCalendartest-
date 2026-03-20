@@ -1972,7 +1972,7 @@ function selectCell(cellId) {
   const item = cell ? items.find(i => i._id === cell.itemId) : null;
   if (item && cell) {
     const qty = item.qty ?? item.quantity ?? 0;
-    updateSelInfo(`<div class="si-name">📦 ${item.name||item.code}</div>
+    const html = `<div class="si-name">📦 ${item.name||item.code}</div>
       <div class="sel-info">
         <strong>랙:</strong> ${rack?.name||'-'}<br>
         <strong>위치:</strong> ${cell.col+1}열 ${cell.row+1}단<br>
@@ -1980,8 +1980,10 @@ function selectCell(cellId) {
         <strong>코드:</strong> ${item.code||'-'}
       </div>
       <div style="margin-top:10px;display:flex;gap:6px;">
-        <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;" onclick="removeCellItem('${cellId}')">🗑 제거</button>
-      </div>`);
+        <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;" id="selRemoveBtn">🗑 제거</button>
+      </div>`;
+    updateSelInfo(html);
+    document.getElementById('selRemoveBtn')?.addEventListener('click', () => removeCellItem(cellId));
   }
 }
 function updateSelInfo(html) {
