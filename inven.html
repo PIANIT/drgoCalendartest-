@@ -1763,9 +1763,10 @@ function renderRackCanvas() {
   hint.style.display = rackState.racks.length === 0 ? 'flex' : 'none';
 
   rackState.racks.forEach(rack => renderRackUnit(rack));
+  // rack-canvas-wrap에만 zoom을 적용해 클릭 좌표계 보존
+  document.getElementById('rackCanvasWrap').style.zoom = rackZoom;
   canvas.style.transform = '';
   canvas.style.transformOrigin = '';
-  canvas.style.zoom = rackZoom;
   document.getElementById('rackZoomLabel').textContent = Math.round(rackZoom*100) + '%';
 }
 
@@ -1897,8 +1898,8 @@ function makeRackDraggable(el, rackId) {
     el.style.zIndex = 50;
     const mm = e2 => {
       if (!moving) return;
-      const dx = (e2.clientX - startX) / rackZoom;
-      const dy = (e2.clientY - startY) / rackZoom;
+      const dx = (e2.clientX - startX);
+      const dy = (e2.clientY - startY);
       const nx = Math.max(0, ox + dx);
       const ny = Math.max(0, oy + dy);
       el.style.left = nx + 'px';
@@ -1908,8 +1909,8 @@ function makeRackDraggable(el, rackId) {
       if (!moving) return;
       moving = false;
       el.style.zIndex = '';
-      const dx = (e2.clientX - startX) / rackZoom;
-      const dy = (e2.clientY - startY) / rackZoom;
+      const dx = (e2.clientX - startX);
+      const dy = (e2.clientY - startY);
       const rack2 = rackState.racks.find(r => r.id === rackId);
       if (rack2) { rack2.x = Math.max(0, ox + dx); rack2.y = Math.max(0, oy + dy); }
       document.removeEventListener('mousemove', mm);
@@ -1933,8 +1934,8 @@ function onRackResizeStart(e, rackId) {
   const startX = e.clientX, startY = e.clientY;
   const startCols = rack.cols, startRows = rack.rows;
   const mm = e2 => {
-    const dx = (e2.clientX - startX) / rackZoom;
-    const dy = (e2.clientY - startY) / rackZoom;
+    const dx = (e2.clientX - startX);
+    const dy = (e2.clientY - startY);
     const newCols = Math.max(1, Math.round(startCols + dx / (rack.cellW+3)));
     const newRows = Math.max(1, Math.round(startRows + dy / (rack.cellH+3)));
     if (newCols !== rack.cols || newRows !== rack.rows) {
