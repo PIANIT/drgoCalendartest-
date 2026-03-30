@@ -675,9 +675,9 @@
   .rp-item:hover { background:var(--surface2); }
   .rp-item.rp-selected { background:rgba(249,224,0,0.07); }
   .rp-dist {
-    min-width:46px; text-align:center; padding:2px 6px;
+    min-width:64px; text-align:center; padding:2px 6px;
     border-radius:6px; font-size:10px; font-weight:700; flex-shrink:0;
-    font-family:var(--font-mono);
+    font-family:var(--font-mono); white-space:nowrap;
   }
   .rp-dist-near { background:rgba(100,200,120,0.15); color:#64c878; }
   .rp-dist-mid  { background:rgba(200,180,80,0.15);  color:#c8b450; }
@@ -6089,16 +6089,18 @@ function initKakaoRoute() {
 
     function renderItems(list) {
       return list.map(({ ev, addr, dist, distKm, coord }) => {
-        const isSel = _selected.some(s => s.id === ev._id);
-        let distLabel, distClass;
+        const isSel = _selected.length > 0 && _selected[0].id === ev._id;
+        let distBadge, distClass;
         if (distKm !== null) {
-          distLabel = distKm < 1 ? `${Math.round(distKm*1000)}m` : `${distKm.toFixed(1)}km`;
+          const kmStr = distKm < 1 ? `${Math.round(distKm*1000)}m` : `${distKm.toFixed(1)}km`;
+          const label = distKm < 1 ? '근처' : distKm < 5 ? '중간' : '멀리';
+          distBadge = `${label} ${kmStr}`;
           distClass = distKm < 1 ? 'rp-dist-near' : distKm < 5 ? 'rp-dist-mid' : 'rp-dist-far';
         } else if (dist !== null && dist < 9999) {
-          distLabel = dist <= 1 ? '근처' : dist <= 5 ? '중간' : '멀리';
+          distBadge = dist <= 1 ? '근처' : dist <= 5 ? '중간' : '멀리';
           distClass = dist <= 1 ? 'rp-dist-near' : dist <= 5 ? 'rp-dist-mid' : 'rp-dist-far';
         } else {
-          distLabel = '?'; distClass = 'rp-dist-unk';
+          distBadge = '?'; distClass = 'rp-dist-unk';
         }
         const dot = COLOR_MAP[ev.color||'gold'] || '#c8b08a';
         const dateStr = ev.startDate ? ev.startDate.slice(5).replace('-','/') : '';
@@ -6106,7 +6108,7 @@ function initKakaoRoute() {
         const metaStr = [dateStr, timeStr, addr].filter(Boolean).join(' · ');
         const coordStr = coord ? `${coord.lat},${coord.lng}` : '';
         return `<div class="rp-item${isSel?' rp-selected':''}" data-id="${ev._id}" data-addr="${addr.replace(/"/g,'&quot;')}" data-title="${(ev.title||'').replace(/"/g,'&quot;')}" data-coord="${coordStr}">
-          <span class="rp-dist ${distClass}">${distLabel}</span>
+          <span class="rp-dist ${distClass}">${distBadge}</span>
           <span class="rp-color-dot" style="background:${dot}"></span>
           <div class="rp-info">
             <div class="rp-title">${ev.title || '(제목 없음)'}</div>
@@ -6127,21 +6129,26 @@ function initKakaoRoute() {
     if (!html) html = `<div class="route-popup-empty">📭 주소가 있는 다른 일정이 없습니다</div>`;
     bodyEl.innerHTML = html;
 
-    /* 클릭 이벤트 */
+    /* 클릭 이벤트 — 단일 선택(라디오) */
     bodyEl.querySelectorAll('.rp-item').forEach(el => {
       el.addEventListener('click', () => {
         const id = el.dataset.id;
-        const idx = _selected.findIndex(s => s.id === id);
-        if (idx === -1) {
+        const alreadySel = _selected.length > 0 && _selected[0].id === id;
+
+        /* 이전 선택 해제 */
+        bodyEl.querySelectorAll('.rp-item.rp-selected').forEach(prev => {
+          prev.classList.remove('rp-selected');
+          prev.querySelector('.rp-check').textContent = '';
+        });
+        _selected = [];
+
+        if (!alreadySel) {
+          /* 새 항목 선택 */
           const coordStr = el.dataset.coord || '';
           const coord = coordStr ? { lat: parseFloat(coordStr.split(',')[0]), lng: parseFloat(coordStr.split(',')[1]) } : null;
-          _selected.push({ id, title: el.dataset.title, addr: el.dataset.addr, coord });
+          _selected = [{ id, title: el.dataset.title, addr: el.dataset.addr, coord }];
           el.classList.add('rp-selected');
           el.querySelector('.rp-check').textContent = '✓';
-        } else {
-          _selected.splice(idx, 1);
-          el.classList.remove('rp-selected');
-          el.querySelector('.rp-check').textContent = '';
         }
         updateFooter();
       });
@@ -6149,100 +6156,69 @@ function initKakaoRoute() {
   }
 
   function updateFooter() {
-    const n = _selected.length;
-    if (n === 0) {
-      selInfoEl.innerHTML = '경유할 일정을 선택하세요';
+    if (_selected.length === 0) {
+      selInfoEl.innerHTML = '도착지를 선택하세요';
       kakaoBtn.disabled = true;
     } else {
-      const names = _selected.map(s => `<strong>${s.title||s.addr}</strong>`).join(', ');
-      selInfoEl.innerHTML = `${names} 포함 (${n}개)`;
+      const s = _selected[0];
+      selInfoEl.innerHTML = `<strong>현재 주소</strong> → <strong>${s.title || s.addr}</strong>`;
       kakaoBtn.disabled = false;
     }
   }
 
-  /* ── 카카오맵 열기 ── */
+  /* ── 카카오맵 열기 — 출발지(현재 일정) → 도착지(선택 일정) 길찾기 ── */
   kakaoBtn.addEventListener('click', async () => {
     const myAddr = locTA.value.trim();
-    if (!myAddr) return;
+    if (!myAddr || _selected.length === 0) return;
 
     kakaoBtn.disabled = true;
     kakaoBtn.textContent = '좌표 변환 중…';
 
-    /* 출발지 좌표 */
-    let myCoord = await geocode(myAddr);
-
-    /* 경유지+도착지: 이미 coord 있으면 재사용, 없으면 재변환 */
-    const wayList = await Promise.all(_selected.map(async s => {
-      const coord = s.coord || await geocode(s.addr);
-      return { addr: s.addr, title: s.title, coord };
-    }));
+    const dest = _selected[0];
+    /* 출발지 좌표 변환 */
+    let originCoord = await geocode(myAddr);
+    /* 도착지 좌표 (이미 있으면 재사용) */
+    let destCoord = dest.coord || await geocode(dest.addr);
 
     kakaoBtn.disabled = false;
     kakaoBtn.textContent = '카카오맵으로 열기';
 
-    openKakaoRoute(myAddr, myCoord, wayList);
+    openKakaoRoute(myAddr, originCoord, dest.addr, destCoord);
   });
 
-  function openKakaoRoute(originAddr, originCoord, wayList) {
+  function openKakaoRoute(originAddr, originCoord, destAddr, destCoord) {
     const enc = encodeURIComponent;
 
-    /* 좌표 없으면 주소 텍스트 검색으로 fallback */
-    if (!originCoord && wayList.length === 0) {
-      window.open(`https://map.kakao.com/link/search/${enc(originAddr)}`, '_blank');
-      return;
-    }
-
-    const dest = wayList.length > 0 ? wayList[wayList.length - 1] : null;
-    const vias = wayList.length > 1 ? wayList.slice(0, -1) : [];
-
-    if (!dest) {
-      /* 경유지 없음 — 출발지만 검색 */
-      if (originCoord) {
-        window.open(`https://map.kakao.com/link/map/${enc(originAddr)},${originCoord.lat},${originCoord.lng}`, '_blank');
-      } else {
-        window.open(`https://map.kakao.com/link/search/${enc(originAddr)}`, '_blank');
-      }
-      return;
-    }
-
     if (isMobile()) {
-      /* 모바일: 카카오맵 앱 딥링크 — 좌표 기반 */
-      let appLink = `kakaomap://route?`;
-      if (originCoord) {
-        appLink += `sp=${originCoord.lat},${originCoord.lng}&sn=${enc(originAddr)}`;
-      } else {
-        appLink += `sn=${enc(originAddr)}`;
-      }
-      if (dest.coord) {
-        appLink += `&ep=${dest.coord.lat},${dest.coord.lng}&en=${enc(dest.addr)}`;
-      } else {
-        appLink += `&en=${enc(dest.addr)}`;
-      }
-      if (vias.length > 0) {
-        const viaStr = vias.map(v => v.coord ? `${v.coord.lat},${v.coord.lng}` : enc(v.addr)).join(',');
-        appLink += `&via=${enc(viaStr)}`;
-      }
-      appLink += `&by=CAR`;
+      /* 모바일: 카카오맵 앱 딥링크 */
+      let appLink = 'kakaomap://route?';
+      appLink += originCoord
+        ? `sp=${originCoord.lat},${originCoord.lng}&sn=${enc(originAddr)}`
+        : `sn=${enc(originAddr)}`;
+      appLink += destCoord
+        ? `&ep=${destCoord.lat},${destCoord.lng}&en=${enc(destAddr)}`
+        : `&en=${enc(destAddr)}`;
+      appLink += '&by=CAR';
+
       window.location.href = appLink;
-      /* fallback: 도착지 좌표 지도 */
+      /* 앱 없을 경우 웹 fallback */
       setTimeout(() => {
-        if (dest.coord) {
-          window.open(`https://map.kakao.com/link/map/${enc(dest.addr)},${dest.coord.lat},${dest.coord.lng}`, '_blank');
-        } else {
-          window.open(`https://map.kakao.com/link/search/${enc(dest.addr)}`, '_blank');
-        }
+        const webUrl = (originCoord && destCoord)
+          ? `https://map.kakao.com/link/from/${enc(originAddr)},${originCoord.lat},${originCoord.lng}/to/${enc(destAddr)},${destCoord.lat},${destCoord.lng}`
+          : `https://map.kakao.com/link/search/${enc(destAddr)}`;
+        window.open(webUrl, '_blank');
       }, 800);
     } else {
-      /* PC 웹: 좌표 기반 길찾기 URL */
-      if (originCoord && dest.coord) {
-        /* 출발지,도착지 모두 좌표 있을 때 */
-        const url = `https://map.kakao.com/link/from/${enc(originAddr)},${originCoord.lat},${originCoord.lng}/to/${enc(dest.addr)},${dest.coord.lat},${dest.coord.lng}`;
-        window.open(url, '_blank');
-      } else if (dest.coord) {
-        /* 도착지만 좌표 있을 때 */
-        window.open(`https://map.kakao.com/link/to/${enc(dest.addr)},${dest.coord.lat},${dest.coord.lng}`, '_blank');
+      /* PC 웹: 좌표 기반 출발→도착 길찾기 */
+      if (originCoord && destCoord) {
+        window.open(
+          `https://map.kakao.com/link/from/${enc(originAddr)},${originCoord.lat},${originCoord.lng}/to/${enc(destAddr)},${destCoord.lat},${destCoord.lng}`,
+          '_blank'
+        );
+      } else if (destCoord) {
+        window.open(`https://map.kakao.com/link/to/${enc(destAddr)},${destCoord.lat},${destCoord.lng}`, '_blank');
       } else {
-        window.open(`https://map.kakao.com/link/search/${enc(dest.addr)}`, '_blank');
+        window.open(`https://map.kakao.com/link/search/${enc(destAddr)}`, '_blank');
       }
     }
   }
