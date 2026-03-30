@@ -2442,8 +2442,10 @@
 </div>
 
 <script type="module">
-/* ── 카카오 REST API 키 ── */
-window.KAKAO_REST_KEY = 'dea8690e4858641844887cfb3dfc6c94';
+/* ── 카카오 API 키 ── */
+window.KAKAO_REST_KEY   = 'dea8690e4858641844887cfb3dfc6c94';
+window.KAKAO_JS_KEY     = '918f860c8a970b36c0c499a235c70985';
+window.KAKAO_NATIVE_KEY = 'd8574e5dbdda110664d1fa3d5c7e7a48';
 
 const isMobile = () => window.innerWidth <= 600;
 
@@ -5967,14 +5969,12 @@ function initKakaoRoute() {
   let _selected = []; /* { id, title, addr, date, time } */
 
   /* ── 카카오맵 JS SDK lazy load ── */
-  const KAKAO_JS_KEY = window.KAKAO_REST_KEY || '';
+  const KAKAO_JS_KEY = window.KAKAO_JS_KEY || window.KAKAO_REST_KEY || '';
   let _sdkReady = false;
   function loadKakaoSdk() {
     return new Promise((resolve) => {
-      if (_sdkReady && window.kakao && window.kakao.maps && window.kakao.maps.services) {
-        resolve(); return;
-      }
-      if (window.kakao && window.kakao.maps && window.kakao.maps.load) {
+      if (_sdkReady && window.kakao?.maps?.services) { resolve(); return; }
+      if (window.kakao?.maps?.load) {
         window.kakao.maps.load(() => { _sdkReady = true; resolve(); });
         return;
       }
@@ -5983,7 +5983,7 @@ function initKakaoRoute() {
       s.onload = () => {
         window.kakao.maps.load(() => { _sdkReady = true; resolve(); });
       };
-      s.onerror = () => resolve(); /* SDK 실패해도 fallback으로 진행 */
+      s.onerror = () => resolve();
       document.head.appendChild(s);
     });
   }
@@ -6190,7 +6190,7 @@ function initKakaoRoute() {
     const enc = encodeURIComponent;
 
     if (isMobile()) {
-      /* 모바일: 카카오맵 앱 딥링크 */
+      /* 모바일: 카카오맵 앱 딥링크 (좌표 기반) */
       let appLink = 'kakaomap://route?';
       appLink += originCoord
         ? `sp=${originCoord.lat},${originCoord.lng}&sn=${enc(originAddr)}`
@@ -6199,27 +6199,21 @@ function initKakaoRoute() {
         ? `&ep=${destCoord.lat},${destCoord.lng}&en=${enc(destAddr)}`
         : `&en=${enc(destAddr)}`;
       appLink += '&by=CAR';
-
       window.location.href = appLink;
-      /* 앱 없을 경우 웹 fallback */
+
+      /* 앱 미설치 시 웹으로 fallback */
       setTimeout(() => {
-        const webUrl = (originCoord && destCoord)
-          ? `https://map.kakao.com/link/from/${enc(originAddr)},${originCoord.lat},${originCoord.lng}/to/${enc(destAddr)},${destCoord.lat},${destCoord.lng}`
-          : `https://map.kakao.com/link/search/${enc(destAddr)}`;
-        window.open(webUrl, '_blank');
-      }, 800);
-    } else {
-      /* PC 웹: 좌표 기반 출발→도착 길찾기 */
-      if (originCoord && destCoord) {
         window.open(
-          `https://map.kakao.com/link/from/${enc(originAddr)},${originCoord.lat},${originCoord.lng}/to/${enc(destAddr)},${destCoord.lat},${destCoord.lng}`,
+          `https://map.kakao.com/?sName=${enc(originAddr)}&eName=${enc(destAddr)}`,
           '_blank'
         );
-      } else if (destCoord) {
-        window.open(`https://map.kakao.com/link/to/${enc(destAddr)},${destCoord.lat},${destCoord.lng}`, '_blank');
-      } else {
-        window.open(`https://map.kakao.com/link/search/${enc(destAddr)}`, '_blank');
-      }
+      }, 800);
+    } else {
+      /* PC 웹: sName + eName 파라미터로 출발지+도착지 길찾기 */
+      window.open(
+        `https://map.kakao.com/?sName=${enc(originAddr)}&eName=${enc(destAddr)}`,
+        '_blank'
+      );
     }
   }
 
