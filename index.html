@@ -6189,6 +6189,18 @@ function initKakaoRoute() {
   function openKakaoRoute(originAddr, originCoord, destAddr, destCoord) {
     const enc = encodeURIComponent;
 
+    /* 좌표 기반 공식 URL: map.kakao.com/link/from/{이름},{위도},{경도}/to/{이름},{위도},{경도} */
+    const buildWebUrl = () => {
+      if (originCoord && destCoord) {
+        return `https://map.kakao.com/link/from/${enc(originAddr)},${originCoord.lat},${originCoord.lng}/to/${enc(destAddr)},${destCoord.lat},${destCoord.lng}`;
+      } else if (destCoord) {
+        return `https://map.kakao.com/link/to/${enc(destAddr)},${destCoord.lat},${destCoord.lng}`;
+      } else {
+        /* 좌표 변환 실패 시 최후 fallback — 도착지 검색 */
+        return `https://map.kakao.com/link/search/${enc(destAddr)}`;
+      }
+    };
+
     if (isMobile()) {
       /* 모바일: 카카오맵 앱 딥링크 (좌표 기반) */
       let appLink = 'kakaomap://route?';
@@ -6200,20 +6212,10 @@ function initKakaoRoute() {
         : `&en=${enc(destAddr)}`;
       appLink += '&by=CAR';
       window.location.href = appLink;
-
-      /* 앱 미설치 시 웹으로 fallback */
-      setTimeout(() => {
-        window.open(
-          `https://map.kakao.com/?sName=${enc(originAddr)}&eName=${enc(destAddr)}`,
-          '_blank'
-        );
-      }, 800);
+      /* 앱 미설치 시 웹 fallback */
+      setTimeout(() => { window.open(buildWebUrl(), '_blank'); }, 800);
     } else {
-      /* PC 웹: sName + eName 파라미터로 출발지+도착지 길찾기 */
-      window.open(
-        `https://map.kakao.com/?sName=${enc(originAddr)}&eName=${enc(destAddr)}`,
-        '_blank'
-      );
+      window.open(buildWebUrl(), '_blank');
     }
   }
 
