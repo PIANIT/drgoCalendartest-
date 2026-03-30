@@ -6025,8 +6025,8 @@ function initKakaoRoute() {
     document.body.style.overflow = 'hidden';
 
     /* 후보 일정 수집: 같은 날 + 이후 일정, 주소 있는 것만 */
-    const allEvs = (window.events || []).filter(ev => {
-      if (ev._id === window.editingId) return false;
+    const allEvs = (events || []).filter(ev => {
+      if (ev._id === editingId) return false;
       const evAddr = (ev.location || ev.address || '').trim();
       if (!evAddr) return false;
       if (!dateVal) return true; /* 날짜 미정이면 전체 */
