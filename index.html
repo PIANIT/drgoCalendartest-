@@ -601,72 +601,119 @@
   .addr-search-btn:hover { border-color:var(--accent); color:var(--accent); background:rgba(200,176,138,.1); }
   .addr-search-btn:disabled { opacity:0.4; cursor:not-allowed; }
 
-  /* ── 카카오 길찾기 버튼 ── */
-  .kakao-nav-btn {
+  /* ── 동선 검색 버튼 ── */
+  .route-search-btn {
     display:none; align-items:center; gap:5px; align-self:flex-start;
     padding:5px 12px; border-radius:8px; font-size:12px; cursor:pointer;
     border:1px solid #F9E000; background:rgba(249,224,0,0.08);
     color:#c8b020; font-family:var(--font-main);
     transition:all 0.15s; white-space:nowrap;
   }
-  .kakao-nav-btn.visible { display:inline-flex; }
-  .kakao-nav-btn:hover { background:rgba(249,224,0,0.18); border-color:#F9E000; color:#e8cc10; }
+  .route-search-btn.visible { display:inline-flex; }
+  .route-search-btn:hover { background:rgba(249,224,0,0.18); border-color:#F9E000; color:#e8cc10; }
 
-  /* ── 동선 패널 (같은 날 일정 목록) ── */
-  .route-panel {
-    display:none; margin-top:8px;
-    border:1px solid var(--border); border-radius:10px; overflow:hidden;
+  /* ── 동선 검색 팝업 오버레이 ── */
+  #routePopupOverlay {
+    display:none; position:fixed; inset:0; z-index:6000;
+    background:rgba(0,0,0,0.72); backdrop-filter:blur(4px);
+    align-items:center; justify-content:center; padding:16px;
   }
-  .route-panel.visible { display:block; }
-  .route-panel-header {
+  #routePopupOverlay.open { display:flex; }
+  .route-popup {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:14px; width:100%; max-width:520px;
+    max-height:88vh; display:flex; flex-direction:column;
+    overflow:hidden; animation:routePopIn 0.22s cubic-bezier(.34,1.3,.64,1);
+  }
+  @keyframes routePopIn {
+    from { opacity:0; transform:scale(0.94) translateY(12px); }
+    to   { opacity:1; transform:scale(1) translateY(0); }
+  }
+  .route-popup-header {
     display:flex; align-items:center; justify-content:space-between;
-    padding:7px 12px; background:rgba(249,224,0,0.06);
-    border-bottom:1px solid var(--border);
+    padding:14px 16px 12px; border-bottom:1px solid var(--border); flex-shrink:0;
   }
-  .route-panel-title { font-size:11px; font-weight:600; color:#c8b020; letter-spacing:0.04em; }
-  .route-panel-sub   { font-size:10px; color:var(--text-muted); }
-  .route-panel-list  { max-height:220px; overflow-y:auto; }
-  .route-item {
-    display:flex; align-items:center; gap:8px;
-    padding:8px 12px; border-bottom:1px solid var(--border);
-    cursor:pointer; transition:background 0.12s;
+  .route-popup-title { font-size:14px; font-weight:700; color:var(--text); }
+  .route-popup-close {
+    background:none; border:none; font-size:18px; cursor:pointer;
+    color:var(--text-muted); padding:2px 6px; border-radius:6px;
+    transition:color 0.12s;
   }
-  .route-item:last-child { border-bottom:none; }
-  .route-item:hover { background:var(--surface2); }
-  .route-item.selected { background:rgba(249,224,0,0.08); }
-  .route-item-dist {
-    min-width:40px; text-align:center; padding:2px 5px;
-    border-radius:5px; font-size:10px; font-weight:600; flex-shrink:0;
+  .route-popup-close:hover { color:var(--red); }
+  .route-popup-origin {
+    padding:10px 16px; background:rgba(249,224,0,0.06);
+    border-bottom:1px solid var(--border); flex-shrink:0;
   }
+  .route-popup-origin-label { font-size:10px; color:var(--text-muted); margin-bottom:3px; letter-spacing:0.04em; }
+  .route-popup-origin-addr  { font-size:13px; font-weight:600; color:#c8b020; }
+  .route-popup-loading {
+    padding:32px 16px; text-align:center;
+    font-size:12px; color:var(--text-muted); flex-shrink:0;
+  }
+  .route-popup-loading-spinner {
+    width:22px; height:22px; border:2px solid rgba(200,176,138,0.2);
+    border-top-color:#c8b08a; border-radius:50%;
+    animation:spin 0.8s linear infinite; margin:0 auto 10px;
+  }
+  .route-popup-empty {
+    padding:32px 16px; text-align:center;
+    font-size:12px; color:var(--text-muted);
+  }
+  .route-popup-list { flex:1; overflow-y:auto; }
+  .route-section-head {
+    padding:6px 14px 4px; font-size:10px; font-weight:700;
+    color:var(--text-muted); letter-spacing:0.06em; text-transform:uppercase;
+    background:var(--surface2); border-bottom:1px solid var(--border);
+    position:sticky; top:0; z-index:1;
+  }
+  .rp-item {
+    display:flex; align-items:center; gap:10px;
+    padding:9px 14px; border-bottom:1px solid var(--border);
+    cursor:pointer; transition:background 0.1s; user-select:none;
+  }
+  .rp-item:last-child { border-bottom:none; }
+  .rp-item:hover { background:var(--surface2); }
+  .rp-item.rp-selected { background:rgba(249,224,0,0.07); }
+  .rp-dist {
+    min-width:46px; text-align:center; padding:2px 6px;
+    border-radius:6px; font-size:10px; font-weight:700; flex-shrink:0;
+    font-family:var(--font-mono);
+  }
+  .rp-dist-near { background:rgba(100,200,120,0.15); color:#64c878; }
+  .rp-dist-mid  { background:rgba(200,180,80,0.15);  color:#c8b450; }
+  .rp-dist-far  { background:rgba(200,110,110,0.15); color:#c86e6e; }
+  .rp-dist-unk  { background:rgba(140,140,140,0.12); color:var(--text-muted); }
+  .rp-info { flex:1; min-width:0; }
+  .rp-title { font-size:13px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rp-meta  { font-size:11px; color:var(--text-muted); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rp-color-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .rp-check {
+    width:18px; height:18px; border-radius:5px; border:1px solid var(--border);
+    background:var(--surface2); flex-shrink:0; display:flex; align-items:center;
+    justify-content:center; font-size:11px; font-weight:700; transition:all 0.12s; color:transparent;
+  }
+  .rp-item.rp-selected .rp-check { background:#F9E000; border-color:#c8b000; color:#1a1207; }
+  .route-popup-footer {
+    padding:10px 14px; border-top:1px solid var(--border);
+    display:flex; align-items:center; gap:8px; flex-shrink:0;
+    background:var(--surface2);
+  }
+  .route-sel-info { flex:1; font-size:11px; color:var(--text-muted); line-height:1.4; }
+  .route-sel-info strong { color:var(--text); font-weight:700; }
+  .route-kakao-btn {
+    display:inline-flex; align-items:center; gap:5px;
+    padding:8px 16px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer;
+    border:none; background:#F9E000; color:#1a1207;
+    font-family:var(--font-main); transition:all 0.15s; white-space:nowrap; flex-shrink:0;
+  }
+  .route-kakao-btn:hover { background:#ffe500; }
+  .route-kakao-btn:disabled { opacity:0.35; cursor:not-allowed; background:#F9E000; }
   .dist-near { background:rgba(122,200,122,0.15); color:#7ac87a; }
   .dist-mid  { background:rgba(200,176,100,0.15); color:#c8b064; }
   .dist-far  { background:rgba(200,122,122,0.15); color:#c87a7a; }
-  .route-item-info { flex:1; min-width:0; }
-  .route-item-title { font-size:12px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .route-item-meta  { font-size:10px; color:var(--text-muted); margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .route-item-check {
-    width:16px; height:16px; border-radius:4px; border:1px solid var(--border);
-    background:var(--surface2); flex-shrink:0; display:flex; align-items:center; justify-content:center;
-    font-size:10px; transition:all 0.12s;
-  }
-  .route-item.selected .route-item-check { background:#F9E000; border-color:#F9E000; color:#1a1207; }
-  .route-panel-footer {
-    padding:8px 12px; border-top:1px solid var(--border);
-    display:flex; align-items:center; gap:8px; justify-content:space-between;
-    background:var(--surface2);
-  }
-  .route-selected-count { font-size:11px; color:var(--text-muted); }
-  .route-open-btn {
-    display:inline-flex; align-items:center; gap:5px;
-    padding:5px 14px; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer;
-    border:1px solid #F9E000; background:#F9E000; color:#1a1207;
-    font-family:var(--font-main); transition:all 0.15s; white-space:nowrap;
-  }
-  .route-open-btn:hover { background:#ffe000; }
-  .route-open-btn:disabled { opacity:0.4; cursor:not-allowed; }
 
   @media (max-width:600px) {
-    .addr-search-btn, .kakao-nav-btn {
+    .addr-search-btn, .route-search-btn {
       align-self: stretch;
       justify-content: center;
       padding: 10px 12px;
@@ -1789,19 +1836,7 @@
           <textarea class="field-input field-textarea" id="modalLocation" placeholder="장소를 입력하세요" autocomplete="off" rows="2" style="min-height:40px;resize:none;"></textarea>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
             <button type="button" class="addr-search-btn" id="addrSearchBtn" title="주소 검색">🔍 주소 검색</button>
-            <button type="button" class="kakao-nav-btn" id="kakaoNavBtn" title="카카오맵 길찾기">🗺️ 카카오 길찾기</button>
-          </div>
-        </div>
-        <!-- 동선 패널: 같은 날 주소 있는 일정 목록 -->
-        <div class="route-panel" id="routePanel">
-          <div class="route-panel-header">
-            <span class="route-panel-title">📍 같은 날 일정 — 동선 길찾기</span>
-            <span class="route-panel-sub" id="routePanelSub">거리순 정렬</span>
-          </div>
-          <div class="route-panel-list" id="routePanelList"></div>
-          <div class="route-panel-footer">
-            <span class="route-selected-count" id="routeSelectedCount">0개 선택</span>
-            <button type="button" class="route-open-btn" id="routeOpenBtn" disabled>🗺️ 카카오맵으로 열기</button>
+            <button type="button" class="route-search-btn" id="routeSearchBtn">🗺️ 동선 검색</button>
           </div>
         </div>
       </div>
@@ -2359,6 +2394,30 @@
   </div>
 </div>
 
+<!-- ═══ 동선 검색 팝업 ═══ -->
+<div id="routePopupOverlay">
+  <div class="route-popup">
+    <div class="route-popup-header">
+      <span class="route-popup-title">🗺️ 동선 검색</span>
+      <button class="route-popup-close" id="routePopupClose">✕</button>
+    </div>
+    <div class="route-popup-origin">
+      <div class="route-popup-origin-label">현재 일정 주소 (출발지)</div>
+      <div class="route-popup-origin-addr" id="routeOriginAddr">—</div>
+    </div>
+    <div id="routePopupBody" class="route-popup-list">
+      <div class="route-popup-loading">
+        <div class="route-popup-loading-spinner"></div>
+        주변 일정을 불러오는 중…
+      </div>
+    </div>
+    <div class="route-popup-footer">
+      <div class="route-sel-info" id="routeSelInfo">경유할 일정을 선택하세요</div>
+      <button class="route-kakao-btn" id="routeKakaoBtn" disabled>카카오맵으로 열기</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ 나가기 확인 팝업 ═══ -->
 <!-- 삭제 확인 다이얼로그 -->
 <div class="confirm-overlay" id="deleteConfirmOverlay" style="z-index:4100;">
@@ -2383,6 +2442,9 @@
 </div>
 
 <script type="module">
+/* ── 카카오 REST API 키 ── */
+window.KAKAO_REST_KEY = 'dea8690e4858641844887cfb3dfc6c94';
+
 const isMobile = () => window.innerWidth <= 600;
 
 /* ── 모바일 뒤로가기: 모달 닫기 ── */
@@ -5888,45 +5950,197 @@ function initAddrSearch() {
 /* ═══════════════════════════════════════════
    카카오 길찾기 + 동선 패널
 ═══════════════════════════════════════════ */
+/* ═══════════════════════════════════════════
+   동선 검색 팝업
+═══════════════════════════════════════════ */
 function initKakaoRoute() {
-  const locTA    = document.getElementById('modalLocation');
-  const navBtn   = document.getElementById('kakaoNavBtn');
-  const panel    = document.getElementById('routePanel');
-  const listEl   = document.getElementById('routePanelList');
-  const subEl    = document.getElementById('routePanelSub');
-  const countEl  = document.getElementById('routeSelectedCount');
-  const openBtn  = document.getElementById('routeOpenBtn');
-  if (!locTA || !navBtn || !panel) return;
+  const locTA      = document.getElementById('modalLocation');
+  const routeBtn   = document.getElementById('routeSearchBtn');
+  const overlay    = document.getElementById('routePopupOverlay');
+  const closeBtn   = document.getElementById('routePopupClose');
+  const originEl   = document.getElementById('routeOriginAddr');
+  const bodyEl     = document.getElementById('routePopupBody');
+  const selInfoEl  = document.getElementById('routeSelInfo');
+  const kakaoBtn   = document.getElementById('routeKakaoBtn');
+  if (!locTA || !routeBtn || !overlay) return;
 
-  /* 선택된 경유 일정 목록 (순서 있음) */
-  let _selectedRouteIds = [];
+  let _selected = []; /* { id, title, addr, date, time } */
 
-  /* 카카오맵 길찾기 URL 생성 */
-  function buildKakaoUrl(origin, waypoints, destination) {
-    /* 카카오맵 웹 길찾기: 출발지→경유지→도착지
-       https://map.kakao.com/link/to/도착지이름,위도,경도  (단일)
-       https://map.kakao.com/link/multi/경유포함 형식은 앱 딥링크 사용 */
-    if (!destination) return null;
-    const enc = encodeURIComponent;
-    if (waypoints.length === 0 && !origin) {
-      /* 도착지만 있을 때 — 카카오맵 장소 검색 */
-      return `https://map.kakao.com/link/search/${enc(destination)}`;
-    }
-    if (waypoints.length === 0 && origin) {
-      /* 출발→도착 2점 */
-      return `https://map.kakao.com/link/from/${enc(origin)}/to/${enc(destination)}`;
-    }
-    /* 다중 경유: 카카오맵 앱 딥링크 (모바일) + 웹 fallback */
-    const stops = [origin || '', ...waypoints, destination].filter(Boolean);
-    /* 카카오맵 앱 딥링크: kakaomap://route?sp=출발&ep=도착&via=경유1,경유2 */
-    const appUrl = `kakaomap://route?ep=${enc(stops[stops.length - 1])}&via=${enc(stops.slice(1, -1).join(','))}&by=CAR`;
-    /* 웹 fallback: 도착지 검색 페이지 */
-    const webUrl = `https://map.kakao.com/link/search/${enc(stops[stops.length - 1])}`;
-    /* UA로 모바일 판단해서 앱/웹 분기 */
-    return { appUrl, webUrl, stops };
+  /* ── 카카오 로컬 API로 주소 → 좌표 변환 ── */
+  const KAKAO_KEY = window.KAKAO_REST_KEY || '';
+  async function geocode(addr) {
+    if (!addr) return null;
+    try {
+      const url = `https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(addr)}`;
+      const res = await fetch(url, { headers: { Authorization: `KakaoAK ${KAKAO_KEY}` } });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const doc = data.documents?.[0];
+      if (!doc) return null;
+      return { lat: parseFloat(doc.y), lng: parseFloat(doc.x) };
+    } catch { return null; }
   }
 
-  /* 길찾기 실행 */
+  /* Haversine 거리 (km) */
+  function haversine(a, b) {
+    if (!a || !b) return null;
+    const R = 6371, dLat = (b.lat - a.lat) * Math.PI / 180;
+    const dLng = (b.lng - a.lng) * Math.PI / 180;
+    const s = Math.sin(dLat/2)**2 + Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1-s));
+  }
+
+  /* 텍스트 유사도 fallback (API 키 없을 때) */
+  function textDist(a, b) {
+    if (!a || !b) return 9999;
+    const norm = s => s.replace(/\s/g,'').toLowerCase();
+    const na = norm(a), nb = norm(b);
+    if (na === nb) return 0;
+    let c = 0; const m = Math.min(na.length, nb.length);
+    for (let i=0;i<m;i++) { if(na[i]===nb[i]) c++; else break; }
+    if (c>=10) return 0.3; if (c>=7) return 1; if (c>=5) return 3; if (c>=3) return 7;
+    return 15;
+  }
+
+  /* 이벤트 타입 색상 */
+  const COLOR_MAP = {
+    gold:'#c8b08a', blue:'#8ab4c8', red:'#c87a7a',
+    green:'#7ac87a', purple:'#9b70c8', teal:'#e8894a'
+  };
+
+  /* ── 팝업 열기 ── */
+  async function openPopup() {
+    const myAddr = locTA.value.trim();
+    if (!myAddr) return;
+
+    /* 날짜 기준 */
+    const dateVal = (document.getElementById('startDate')?.value ||
+                     document.getElementById('goldStartDate')?.value || '').trim();
+
+    originEl.textContent = myAddr;
+    bodyEl.innerHTML = `<div class="route-popup-loading"><div class="route-popup-loading-spinner"></div>주변 일정을 불러오는 중…</div>`;
+    _selected = [];
+    updateFooter();
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+
+    /* 후보 일정 수집: 같은 날 + 이후 일정, 주소 있는 것만 */
+    const allEvs = (window.events || []).filter(ev => {
+      if (ev._id === window.editingId) return false;
+      const evAddr = (ev.location || ev.address || '').trim();
+      if (!evAddr) return false;
+      if (!dateVal) return true; /* 날짜 미정이면 전체 */
+      return (ev.startDate || '') >= dateVal;
+    });
+
+    if (allEvs.length === 0) {
+      bodyEl.innerHTML = `<div class="route-popup-empty">📭 주소가 있는 다른 일정이 없습니다</div>`;
+      return;
+    }
+
+    /* 좌표 변환 (API 키 있으면 실제 거리, 없으면 텍스트 유사도) */
+    let myCoord = null;
+    if (KAKAO_KEY) myCoord = await geocode(myAddr);
+
+    const items = await Promise.all(allEvs.map(async ev => {
+      const addr = (ev.location || ev.address || '').trim();
+      let dist = null, distKm = null;
+      if (KAKAO_KEY && myCoord) {
+        const coord = await geocode(addr);
+        distKm = haversine(myCoord, coord);
+        dist = distKm;
+      } else {
+        dist = textDist(myAddr, addr);
+        distKm = null;
+      }
+      return { ev, addr, dist, distKm };
+    }));
+
+    /* 거리순 정렬 */
+    items.sort((a, b) => (a.dist ?? 9999) - (b.dist ?? 9999));
+
+    /* 날짜 기준으로 섹션 분리 */
+    const sameDay = items.filter(it => dateVal && (it.ev.startDate||'').startsWith(dateVal));
+    const after   = items.filter(it => !dateVal || !(it.ev.startDate||'').startsWith(dateVal));
+
+    function renderItems(list) {
+      return list.map(({ ev, addr, dist, distKm }) => {
+        const isSel = _selected.some(s => s.id === ev._id);
+        let distLabel, distClass;
+        if (distKm !== null) {
+          distLabel = distKm < 1 ? `${Math.round(distKm*1000)}m` : `${distKm.toFixed(1)}km`;
+          distClass = distKm < 1 ? 'rp-dist-near' : distKm < 5 ? 'rp-dist-mid' : 'rp-dist-far';
+        } else if (dist !== null && dist < 9999) {
+          distLabel = dist <= 1 ? '근처' : dist <= 5 ? '중간' : '멀리';
+          distClass = dist <= 1 ? 'rp-dist-near' : dist <= 5 ? 'rp-dist-mid' : 'rp-dist-far';
+        } else {
+          distLabel = '?'; distClass = 'rp-dist-unk';
+        }
+        const dot = COLOR_MAP[ev.color||'gold'] || '#c8b08a';
+        const dateStr = ev.startDate ? ev.startDate.slice(5).replace('-','/') : '';
+        const timeStr = ev.startTime || '';
+        const metaStr = [dateStr, timeStr, addr].filter(Boolean).join(' · ');
+        return `<div class="rp-item${isSel?' rp-selected':''}" data-id="${ev._id}" data-addr="${addr.replace(/"/g,'&quot;')}" data-title="${(ev.title||'').replace(/"/g,'&quot;')}">
+          <span class="rp-dist ${distClass}">${distLabel}</span>
+          <span class="rp-color-dot" style="background:${dot}"></span>
+          <div class="rp-info">
+            <div class="rp-title">${ev.title || '(제목 없음)'}</div>
+            <div class="rp-meta">${metaStr}</div>
+          </div>
+          <div class="rp-check">${isSel ? '✓' : ''}</div>
+        </div>`;
+      }).join('');
+    }
+
+    let html = '';
+    if (sameDay.length > 0) {
+      html += `<div class="route-section-head">📅 같은 날 일정 (${sameDay.length})</div>${renderItems(sameDay)}`;
+    }
+    if (after.length > 0) {
+      html += `<div class="route-section-head">📆 이후 일정 (${after.length})</div>${renderItems(after)}`;
+    }
+    if (!html) html = `<div class="route-popup-empty">📭 주소가 있는 다른 일정이 없습니다</div>`;
+    bodyEl.innerHTML = html;
+
+    /* 클릭 이벤트 */
+    bodyEl.querySelectorAll('.rp-item').forEach(el => {
+      el.addEventListener('click', () => {
+        const id = el.dataset.id;
+        const idx = _selected.findIndex(s => s.id === id);
+        if (idx === -1) {
+          _selected.push({ id, title: el.dataset.title, addr: el.dataset.addr });
+          el.classList.add('rp-selected');
+          el.querySelector('.rp-check').textContent = '✓';
+        } else {
+          _selected.splice(idx, 1);
+          el.classList.remove('rp-selected');
+          el.querySelector('.rp-check').textContent = '';
+        }
+        updateFooter();
+      });
+    });
+  }
+
+  function updateFooter() {
+    const n = _selected.length;
+    if (n === 0) {
+      selInfoEl.innerHTML = '경유할 일정을 선택하세요';
+      kakaoBtn.disabled = true;
+    } else {
+      const names = _selected.map(s => `<strong>${s.title||s.addr}</strong>`).join(', ');
+      selInfoEl.innerHTML = `${names} 포함 (${n}개)`;
+      kakaoBtn.disabled = false;
+    }
+  }
+
+  /* ── 카카오맵 열기 ── */
+  kakaoBtn.addEventListener('click', () => {
+    const myAddr = locTA.value.trim();
+    if (!myAddr) return;
+    const stops = [myAddr, ..._selected.map(s => s.addr)];
+    openKakaoRoute(stops);
+  });
+
   function openKakaoRoute(stops) {
     if (!stops || stops.length === 0) return;
     const enc = encodeURIComponent;
@@ -5934,180 +6148,49 @@ function initKakaoRoute() {
       window.open(`https://map.kakao.com/link/search/${enc(stops[0])}`, '_blank');
       return;
     }
-    const origin = stops[0];
-    const dest   = stops[stops.length - 1];
-    const vias   = stops.slice(1, -1);
+    const origin = stops[0], dest = stops[stops.length-1];
+    const vias = stops.slice(1, -1);
     if (isMobile()) {
-      /* 모바일: 카카오맵 앱 딥링크 먼저, 실패 시 웹 */
       const appLink = `kakaomap://route?sp=${enc(origin)}&ep=${enc(dest)}` +
         (vias.length ? `&via=${vias.map(enc).join(',')}` : '') + `&by=CAR`;
-      const webLink = `https://map.kakao.com/link/to/${enc(dest)}`;
-      /* 앱 딥링크 시도 후 500ms 뒤에도 탭이 살아있으면 웹으로 fallback */
-      const t = Date.now();
       window.location.href = appLink;
       setTimeout(() => {
-        if (Date.now() - t < 1500) window.open(webLink, '_blank');
+        window.open(`https://map.kakao.com/link/to/${enc(dest)}`, '_blank');
       }, 700);
     } else {
-      /* PC: 카카오맵 웹 길찾기 */
       if (stops.length === 2) {
         window.open(`https://map.kakao.com/link/from/${enc(origin)}/to/${enc(dest)}`, '_blank');
       } else {
-        /* PC 다중 경유: 카카오맵은 최대 출발+3경유+도착 지원 (웹 URL 파라미터) */
-        const base = `https://map.kakao.com/link/to/${enc(dest)}`;
-        window.open(base, '_blank');
-        /* PC에서는 경유지까지 URL 방식이 제한적이라 도착지 검색으로 안내 */
-        if (vias.length > 0) {
-          setTimeout(() => showToast(`💡 PC에서는 카카오맵 앱이나 모바일에서 경유지(${vias.join(', ')})를 포함한 전체 동선을 확인하세요`, 'info'), 400);
-        }
+        /* PC: 다중 경유는 도착지 기준으로 열고 토스트 안내 */
+        window.open(`https://map.kakao.com/link/to/${enc(dest)}`, '_blank');
       }
     }
   }
 
-  /* 단일 주소 → 카카오맵 검색 버튼 표시/숨김 */
-  function updateNavBtn() {
-    const addr = locTA.value.trim();
-    if (addr) { navBtn.classList.add('visible'); }
-    else      { navBtn.classList.remove('visible'); panel.classList.remove('visible'); }
+  /* ── 팝업 닫기 ── */
+  function closePopup() {
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
   }
+  closeBtn.addEventListener('click', closePopup);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closePopup(); });
 
-  /* 같은 날 다른 일정 불러와서 동선 패널 렌더링 */
-  async function loadRouteSameDay() {
+  /* ── 동선 검색 버튼 표시/숨김 ── */
+  function updateRouteBtn() {
     const addr = locTA.value.trim();
-    if (!addr) { panel.classList.remove('visible'); return; }
-
-    /* 현재 편집 중인 일정의 날짜 가져오기 */
-    const dateVal = (document.getElementById('startDate')?.value ||
-                     document.getElementById('goldStartDate')?.value || '').trim();
-    if (!dateVal) { panel.classList.remove('visible'); return; }
-
-    /* Firestore에서 같은 날 일정 조회 (events 컬렉션) */
-    let sameDayEvents = [];
-    try {
-      sameDayEvents = (window.events || []).filter(ev => {
-        if (ev._id === window.editingId) return false; /* 본인 제외 */
-        const evDate = ev.startDate || '';
-        if (!evDate.startsWith(dateVal)) return false;
-        const evAddr = (ev.location || ev.address || '').trim();
-        return evAddr.length > 0;
-      });
-    } catch(e) { /* events 전역 없으면 skip */ }
-
-    if (sameDayEvents.length === 0) {
-      panel.classList.remove('visible');
-      return;
-    }
-
-    /* 간단한 텍스트 유사도 기반 거리 추정
-       (실제 좌표 없이 주소 공통 구(구 단위) 매칭) */
-    function estimateDist(a, b) {
-      if (!a || !b) return 9999;
-      const norm = s => s.replace(/\s/g,'').toLowerCase();
-      const na = norm(a), nb = norm(b);
-      /* 완전 일치 */
-      if (na === nb) return 0;
-      /* 앞 10글자 공통 구간 길이로 점수 */
-      let common = 0;
-      const minL = Math.min(na.length, nb.length);
-      for (let i = 0; i < minL; i++) { if (na[i] === nb[i]) common++; else break; }
-      /* 공통 길이가 길수록 가까운 것으로 추정 */
-      if (common >= 10) return 0.5;
-      if (common >= 7)  return 1.5;
-      if (common >= 5)  return 3;
-      if (common >= 3)  return 6;
-      return 10;
-    }
-
-    const myAddr = addr;
-    const sorted = sameDayEvents
-      .map(ev => ({ ev, dist: estimateDist(myAddr, ev.location || ev.address || '') }))
-      .sort((a, b) => a.dist - b.dist);
-
-    /* 패널 렌더링 */
-    subEl.textContent = `${sorted.length}개 일정 · 주소 유사도순`;
-    listEl.innerHTML = sorted.map(({ ev, dist }) => {
-      const evAddr = ev.location || ev.address || '';
-      const distLabel = dist <= 1 ? '근처' : dist <= 4 ? '중간' : '원거리';
-      const distClass = dist <= 1 ? 'dist-near' : dist <= 4 ? 'dist-mid' : 'dist-far';
-      const time = ev.startTime ? `${ev.startTime} ` : '';
-      const sel  = _selectedRouteIds.includes(ev._id) ? 'selected' : '';
-      return `<div class="route-item ${sel}" data-id="${ev._id}" data-addr="${evAddr.replace(/"/g,'&quot;')}">
-        <span class="route-item-dist ${distClass}">${distLabel}</span>
-        <div class="route-item-info">
-          <div class="route-item-title">${ev.title || '(제목 없음)'}</div>
-          <div class="route-item-meta">${time}${evAddr}</div>
-        </div>
-        <div class="route-item-check">${_selectedRouteIds.includes(ev._id) ? '✓' : ''}</div>
-      </div>`;
-    }).join('');
-
-    /* 클릭 이벤트 */
-    listEl.querySelectorAll('.route-item').forEach(item => {
-      item.addEventListener('click', () => {
-        const id = item.dataset.id;
-        const idx = _selectedRouteIds.indexOf(id);
-        if (idx === -1) _selectedRouteIds.push(id);
-        else _selectedRouteIds.splice(idx, 1);
-        updateRouteFooter();
-        item.classList.toggle('selected', _selectedRouteIds.includes(id));
-        item.querySelector('.route-item-check').textContent = _selectedRouteIds.includes(id) ? '✓' : '';
-      });
-    });
-
-    panel.classList.add('visible');
-    updateRouteFooter();
+    routeBtn.classList.toggle('visible', addr.length > 0);
   }
+  locTA.addEventListener('input', updateRouteBtn);
+  locTA.addEventListener('change', updateRouteBtn);
+  routeBtn.addEventListener('click', openPopup);
 
-  function updateRouteFooter() {
-    const n = _selectedRouteIds.length;
-    countEl.textContent = n > 0 ? `${n}개 선택됨` : '일정을 선택하면 동선을 구성합니다';
-    openBtn.disabled = n === 0;
-  }
-
-  /* 단일 길찾기 버튼 */
-  navBtn.addEventListener('click', () => {
-    const addr = locTA.value.trim();
-    if (!addr) return;
-    openKakaoRoute([addr]);
-  });
-
-  /* 동선 열기 버튼 */
-  openBtn.addEventListener('click', () => {
-    const myAddr = locTA.value.trim();
-    /* 선택된 경유지 주소 수집 */
-    const wayAddrs = _selectedRouteIds.map(id => {
-      const el = listEl.querySelector(`[data-id="${id}"]`);
-      return el ? el.dataset.addr : '';
-    }).filter(Boolean);
-    /* 현재 일정 주소를 출발지로, 선택된 경유지를 포함한 동선 */
-    const stops = [myAddr, ...wayAddrs];
-    openKakaoRoute(stops);
-  });
-
-  /* 주소 변경 시 버튼/패널 업데이트 */
-  locTA.addEventListener('input', () => {
-    updateNavBtn();
-    _selectedRouteIds = [];
-    clearTimeout(locTA._routeTimer);
-    locTA._routeTimer = setTimeout(loadRouteSameDay, 600);
-  });
-
-  /* 주소 검색으로 선택됐을 때도 트리거 (onAddrSelected 이후 input 이벤트 발생) */
-  locTA.addEventListener('change', () => { updateNavBtn(); loadRouteSameDay(); });
-
-  /* 모달 열릴 때마다 초기화 */
+  /* ── 모달 훅 ── */
   window._resetKakaoRoutePanel = () => {
-    _selectedRouteIds = [];
-    panel.classList.remove('visible');
-    navBtn.classList.remove('visible');
-    listEl.innerHTML = '';
-    updateRouteFooter();
+    _selected = [];
+    routeBtn.classList.remove('visible');
+    closePopup();
   };
-  /* 모달 열 때 주소 있으면 버튼/패널 복원 */
-  window._refreshKakaoRoutePanel = () => {
-    updateNavBtn();
-    if (locTA.value.trim()) loadRouteSameDay();
-  };
+  window._refreshKakaoRoutePanel = () => { updateRouteBtn(); };
 }
 
 function init(){
