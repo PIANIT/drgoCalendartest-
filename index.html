@@ -5989,20 +5989,34 @@ function initKakaoRoute() {
   }
 
   /* 주소 → 좌표 (JS SDK Geocoder 사용 — CORS 없음) */
+  /* 주소 문자열 정제 — "주소 :", "주소:", 특수문자 접두어 등 제거 */
+  function cleanAddr(addr) {
+    if (!addr) return '';
+    return addr
+      .replace(/^주소\s*:\s*/i, '')   /* "주소 : " 접두어 제거 */
+      .replace(/^주소지\s*:\s*/i, '')
+      .replace(/^\s*[-·•]\s*/, '')     /* 앞에 붙은 특수문자 제거 */
+      .trim();
+  }
+
   async function geocode(addr) {
-    if (!addr) return null;
+    const cleaned = cleanAddr(addr);
+    if (!cleaned) return null;
     try {
       await loadKakaoSdk();
       if (!window.kakao?.maps?.services) return null;
       return await new Promise(resolve => {
         const gc = new kakao.maps.services.Geocoder();
-        gc.addressSearch(addr, (result, status) => {
+        gc.addressSearch(cleaned, (result, status) => {
           if (status === kakao.maps.services.Status.OK && result[0]) {
             resolve({ lat: parseFloat(result[0].y), lng: parseFloat(result[0].x) });
-          } else resolve(null);
+          } else {
+            console.warn('[동선검색] 좌표 변환 실패:', cleaned, status);
+            resolve(null);
+          }
         });
       });
-    } catch { return null; }
+    } catch(e) { console.warn('[동선검색] geocode 오류:', e); return null; }
   }
 
   /* Haversine 거리 (km) */
@@ -6067,7 +6081,7 @@ function initKakaoRoute() {
     if (KAKAO_JS_KEY) myCoord = await geocode(myAddr);
 
     const items = await Promise.all(allEvs.map(async ev => {
-      const addr = (ev.location || ev.address || '').trim();
+      const addr = cleanAddr((ev.location || ev.address || '').trim());
       let dist = null, distKm = null, coord = null;
       if (KAKAO_JS_KEY && myCoord) {
         coord = await geocode(addr);
@@ -6168,22 +6182,27 @@ function initKakaoRoute() {
 
   /* ── 카카오맵 열기 — 출발지(현재 일정) → 도착지(선택 일정) 길찾기 ── */
   kakaoBtn.addEventListener('click', async () => {
-    const myAddr = locTA.value.trim();
+    const myAddr = cleanAddr(locTA.value.trim());
     if (!myAddr || _selected.length === 0) return;
 
     kakaoBtn.disabled = true;
     kakaoBtn.textContent = '좌표 변환 중…';
 
     const dest = _selected[0];
+    const destAddr = cleanAddr(dest.addr);
+
     /* 출발지 좌표 변환 */
     let originCoord = await geocode(myAddr);
     /* 도착지 좌표 (이미 있으면 재사용) */
-    let destCoord = dest.coord || await geocode(dest.addr);
+    let destCoord = dest.coord || await geocode(destAddr);
+
+    console.log('[동선검색] 출발:', myAddr, originCoord);
+    console.log('[동선검색] 도착:', destAddr, destCoord);
 
     kakaoBtn.disabled = false;
     kakaoBtn.textContent = '카카오맵으로 열기';
 
-    openKakaoRoute(myAddr, originCoord, dest.addr, destCoord);
+    openKakaoRoute(myAddr, originCoord, destAddr, destCoord);
   });
 
   function openKakaoRoute(originAddr, originCoord, destAddr, destCoord) {
