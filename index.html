@@ -601,9 +601,73 @@
   .addr-search-btn:hover { border-color:var(--accent); color:var(--accent); background:rgba(200,176,138,.1); }
   .addr-search-btn:disabled { opacity:0.4; cursor:not-allowed; }
 
+  /* ── 카카오 길찾기 버튼 ── */
+  .kakao-nav-btn {
+    display:none; align-items:center; gap:5px; align-self:flex-start;
+    padding:5px 12px; border-radius:8px; font-size:12px; cursor:pointer;
+    border:1px solid #F9E000; background:rgba(249,224,0,0.08);
+    color:#c8b020; font-family:var(--font-main);
+    transition:all 0.15s; white-space:nowrap;
+  }
+  .kakao-nav-btn.visible { display:inline-flex; }
+  .kakao-nav-btn:hover { background:rgba(249,224,0,0.18); border-color:#F9E000; color:#e8cc10; }
+
+  /* ── 동선 패널 (같은 날 일정 목록) ── */
+  .route-panel {
+    display:none; margin-top:8px;
+    border:1px solid var(--border); border-radius:10px; overflow:hidden;
+  }
+  .route-panel.visible { display:block; }
+  .route-panel-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:7px 12px; background:rgba(249,224,0,0.06);
+    border-bottom:1px solid var(--border);
+  }
+  .route-panel-title { font-size:11px; font-weight:600; color:#c8b020; letter-spacing:0.04em; }
+  .route-panel-sub   { font-size:10px; color:var(--text-muted); }
+  .route-panel-list  { max-height:220px; overflow-y:auto; }
+  .route-item {
+    display:flex; align-items:center; gap:8px;
+    padding:8px 12px; border-bottom:1px solid var(--border);
+    cursor:pointer; transition:background 0.12s;
+  }
+  .route-item:last-child { border-bottom:none; }
+  .route-item:hover { background:var(--surface2); }
+  .route-item.selected { background:rgba(249,224,0,0.08); }
+  .route-item-dist {
+    min-width:40px; text-align:center; padding:2px 5px;
+    border-radius:5px; font-size:10px; font-weight:600; flex-shrink:0;
+  }
+  .dist-near { background:rgba(122,200,122,0.15); color:#7ac87a; }
+  .dist-mid  { background:rgba(200,176,100,0.15); color:#c8b064; }
+  .dist-far  { background:rgba(200,122,122,0.15); color:#c87a7a; }
+  .route-item-info { flex:1; min-width:0; }
+  .route-item-title { font-size:12px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .route-item-meta  { font-size:10px; color:var(--text-muted); margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .route-item-check {
+    width:16px; height:16px; border-radius:4px; border:1px solid var(--border);
+    background:var(--surface2); flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    font-size:10px; transition:all 0.12s;
+  }
+  .route-item.selected .route-item-check { background:#F9E000; border-color:#F9E000; color:#1a1207; }
+  .route-panel-footer {
+    padding:8px 12px; border-top:1px solid var(--border);
+    display:flex; align-items:center; gap:8px; justify-content:space-between;
+    background:var(--surface2);
+  }
+  .route-selected-count { font-size:11px; color:var(--text-muted); }
+  .route-open-btn {
+    display:inline-flex; align-items:center; gap:5px;
+    padding:5px 14px; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer;
+    border:1px solid #F9E000; background:#F9E000; color:#1a1207;
+    font-family:var(--font-main); transition:all 0.15s; white-space:nowrap;
+  }
+  .route-open-btn:hover { background:#ffe000; }
+  .route-open-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
   @media (max-width:600px) {
-    .addr-search-btn {
-      align-self: stretch;        /* 전체 너비 */
+    .addr-search-btn, .kakao-nav-btn {
+      align-self: stretch;
       justify-content: center;
       padding: 10px 12px;
       font-size: 13px;
@@ -1723,7 +1787,22 @@
         <label class="field-label" for="modalLocation">장소</label>
         <div class="location-input-wrap">
           <textarea class="field-input field-textarea" id="modalLocation" placeholder="장소를 입력하세요" autocomplete="off" rows="2" style="min-height:40px;resize:none;"></textarea>
-          <button type="button" class="addr-search-btn" id="addrSearchBtn" title="주소 검색">🔍 주소 검색</button>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button type="button" class="addr-search-btn" id="addrSearchBtn" title="주소 검색">🔍 주소 검색</button>
+            <button type="button" class="kakao-nav-btn" id="kakaoNavBtn" title="카카오맵 길찾기">🗺️ 카카오 길찾기</button>
+          </div>
+        </div>
+        <!-- 동선 패널: 같은 날 주소 있는 일정 목록 -->
+        <div class="route-panel" id="routePanel">
+          <div class="route-panel-header">
+            <span class="route-panel-title">📍 같은 날 일정 — 동선 길찾기</span>
+            <span class="route-panel-sub" id="routePanelSub">거리순 정렬</span>
+          </div>
+          <div class="route-panel-list" id="routePanelList"></div>
+          <div class="route-panel-footer">
+            <span class="route-selected-count" id="routeSelectedCount">0개 선택</span>
+            <button type="button" class="route-open-btn" id="routeOpenBtn" disabled>🗺️ 카카오맵으로 열기</button>
+          </div>
         </div>
       </div>
       <div class="datetime-section">
@@ -3783,6 +3862,7 @@ function openNewModal(dk){
   document.getElementById('modalOverlay').classList.add('open');
   applyLockState();
   if (!isMobile() && pcView==='month') document.getElementById('modalTitle').focus();
+  if (window._resetKakaoRoutePanel) window._resetKakaoRoutePanel();
   setTimeout(()=>{ refreshAutoResize(); if(window._resizeTitle) window._resizeTitle(); _takeSnapshot(); }, 30);
 }
 
@@ -3835,7 +3915,7 @@ function openModal(evIdx){
   if (!isLocked && !isMobile() && pcView==='month') document.getElementById('modalTitle').focus();
   /* 편집 시 textarea 기존 내용 높이 반영 */
   setTimeout(()=>{ document.querySelectorAll('.field-textarea').forEach(ta=>{ if(!isLocked){ ta.style.height='auto'; ta.style.height=(ta.scrollHeight+4)+'px'; } }); },50);
-  setTimeout(()=>{ refreshAutoResize(); if(window._resizeTitle) window._resizeTitle(); _takeSnapshot(); }, 30);
+  setTimeout(()=>{ refreshAutoResize(); if(window._resizeTitle) window._resizeTitle(); _takeSnapshot(); if(window._refreshKakaoRoutePanel) window._refreshKakaoRoutePanel(); }, 60);
 }
 
 function formatDateBadge(dk){
@@ -5805,8 +5885,233 @@ function initAddrSearch() {
   });
 }
 
+/* ═══════════════════════════════════════════
+   카카오 길찾기 + 동선 패널
+═══════════════════════════════════════════ */
+function initKakaoRoute() {
+  const locTA    = document.getElementById('modalLocation');
+  const navBtn   = document.getElementById('kakaoNavBtn');
+  const panel    = document.getElementById('routePanel');
+  const listEl   = document.getElementById('routePanelList');
+  const subEl    = document.getElementById('routePanelSub');
+  const countEl  = document.getElementById('routeSelectedCount');
+  const openBtn  = document.getElementById('routeOpenBtn');
+  if (!locTA || !navBtn || !panel) return;
+
+  /* 선택된 경유 일정 목록 (순서 있음) */
+  let _selectedRouteIds = [];
+
+  /* 카카오맵 길찾기 URL 생성 */
+  function buildKakaoUrl(origin, waypoints, destination) {
+    /* 카카오맵 웹 길찾기: 출발지→경유지→도착지
+       https://map.kakao.com/link/to/도착지이름,위도,경도  (단일)
+       https://map.kakao.com/link/multi/경유포함 형식은 앱 딥링크 사용 */
+    if (!destination) return null;
+    const enc = encodeURIComponent;
+    if (waypoints.length === 0 && !origin) {
+      /* 도착지만 있을 때 — 카카오맵 장소 검색 */
+      return `https://map.kakao.com/link/search/${enc(destination)}`;
+    }
+    if (waypoints.length === 0 && origin) {
+      /* 출발→도착 2점 */
+      return `https://map.kakao.com/link/from/${enc(origin)}/to/${enc(destination)}`;
+    }
+    /* 다중 경유: 카카오맵 앱 딥링크 (모바일) + 웹 fallback */
+    const stops = [origin || '', ...waypoints, destination].filter(Boolean);
+    /* 카카오맵 앱 딥링크: kakaomap://route?sp=출발&ep=도착&via=경유1,경유2 */
+    const appUrl = `kakaomap://route?ep=${enc(stops[stops.length - 1])}&via=${enc(stops.slice(1, -1).join(','))}&by=CAR`;
+    /* 웹 fallback: 도착지 검색 페이지 */
+    const webUrl = `https://map.kakao.com/link/search/${enc(stops[stops.length - 1])}`;
+    /* UA로 모바일 판단해서 앱/웹 분기 */
+    return { appUrl, webUrl, stops };
+  }
+
+  /* 길찾기 실행 */
+  function openKakaoRoute(stops) {
+    if (!stops || stops.length === 0) return;
+    const enc = encodeURIComponent;
+    if (stops.length === 1) {
+      window.open(`https://map.kakao.com/link/search/${enc(stops[0])}`, '_blank');
+      return;
+    }
+    const origin = stops[0];
+    const dest   = stops[stops.length - 1];
+    const vias   = stops.slice(1, -1);
+    if (isMobile()) {
+      /* 모바일: 카카오맵 앱 딥링크 먼저, 실패 시 웹 */
+      const appLink = `kakaomap://route?sp=${enc(origin)}&ep=${enc(dest)}` +
+        (vias.length ? `&via=${vias.map(enc).join(',')}` : '') + `&by=CAR`;
+      const webLink = `https://map.kakao.com/link/to/${enc(dest)}`;
+      /* 앱 딥링크 시도 후 500ms 뒤에도 탭이 살아있으면 웹으로 fallback */
+      const t = Date.now();
+      window.location.href = appLink;
+      setTimeout(() => {
+        if (Date.now() - t < 1500) window.open(webLink, '_blank');
+      }, 700);
+    } else {
+      /* PC: 카카오맵 웹 길찾기 */
+      if (stops.length === 2) {
+        window.open(`https://map.kakao.com/link/from/${enc(origin)}/to/${enc(dest)}`, '_blank');
+      } else {
+        /* PC 다중 경유: 카카오맵은 최대 출발+3경유+도착 지원 (웹 URL 파라미터) */
+        const base = `https://map.kakao.com/link/to/${enc(dest)}`;
+        window.open(base, '_blank');
+        /* PC에서는 경유지까지 URL 방식이 제한적이라 도착지 검색으로 안내 */
+        if (vias.length > 0) {
+          setTimeout(() => showToast(`💡 PC에서는 카카오맵 앱이나 모바일에서 경유지(${vias.join(', ')})를 포함한 전체 동선을 확인하세요`, 'info'), 400);
+        }
+      }
+    }
+  }
+
+  /* 단일 주소 → 카카오맵 검색 버튼 표시/숨김 */
+  function updateNavBtn() {
+    const addr = locTA.value.trim();
+    if (addr) { navBtn.classList.add('visible'); }
+    else      { navBtn.classList.remove('visible'); panel.classList.remove('visible'); }
+  }
+
+  /* 같은 날 다른 일정 불러와서 동선 패널 렌더링 */
+  async function loadRouteSameDay() {
+    const addr = locTA.value.trim();
+    if (!addr) { panel.classList.remove('visible'); return; }
+
+    /* 현재 편집 중인 일정의 날짜 가져오기 */
+    const dateVal = (document.getElementById('startDate')?.value ||
+                     document.getElementById('goldStartDate')?.value || '').trim();
+    if (!dateVal) { panel.classList.remove('visible'); return; }
+
+    /* Firestore에서 같은 날 일정 조회 (events 컬렉션) */
+    let sameDayEvents = [];
+    try {
+      sameDayEvents = (window.events || []).filter(ev => {
+        if (ev._id === window.editingId) return false; /* 본인 제외 */
+        const evDate = ev.startDate || '';
+        if (!evDate.startsWith(dateVal)) return false;
+        const evAddr = (ev.location || ev.address || '').trim();
+        return evAddr.length > 0;
+      });
+    } catch(e) { /* events 전역 없으면 skip */ }
+
+    if (sameDayEvents.length === 0) {
+      panel.classList.remove('visible');
+      return;
+    }
+
+    /* 간단한 텍스트 유사도 기반 거리 추정
+       (실제 좌표 없이 주소 공통 구(구 단위) 매칭) */
+    function estimateDist(a, b) {
+      if (!a || !b) return 9999;
+      const norm = s => s.replace(/\s/g,'').toLowerCase();
+      const na = norm(a), nb = norm(b);
+      /* 완전 일치 */
+      if (na === nb) return 0;
+      /* 앞 10글자 공통 구간 길이로 점수 */
+      let common = 0;
+      const minL = Math.min(na.length, nb.length);
+      for (let i = 0; i < minL; i++) { if (na[i] === nb[i]) common++; else break; }
+      /* 공통 길이가 길수록 가까운 것으로 추정 */
+      if (common >= 10) return 0.5;
+      if (common >= 7)  return 1.5;
+      if (common >= 5)  return 3;
+      if (common >= 3)  return 6;
+      return 10;
+    }
+
+    const myAddr = addr;
+    const sorted = sameDayEvents
+      .map(ev => ({ ev, dist: estimateDist(myAddr, ev.location || ev.address || '') }))
+      .sort((a, b) => a.dist - b.dist);
+
+    /* 패널 렌더링 */
+    subEl.textContent = `${sorted.length}개 일정 · 주소 유사도순`;
+    listEl.innerHTML = sorted.map(({ ev, dist }) => {
+      const evAddr = ev.location || ev.address || '';
+      const distLabel = dist <= 1 ? '근처' : dist <= 4 ? '중간' : '원거리';
+      const distClass = dist <= 1 ? 'dist-near' : dist <= 4 ? 'dist-mid' : 'dist-far';
+      const time = ev.startTime ? `${ev.startTime} ` : '';
+      const sel  = _selectedRouteIds.includes(ev._id) ? 'selected' : '';
+      return `<div class="route-item ${sel}" data-id="${ev._id}" data-addr="${evAddr.replace(/"/g,'&quot;')}">
+        <span class="route-item-dist ${distClass}">${distLabel}</span>
+        <div class="route-item-info">
+          <div class="route-item-title">${ev.title || '(제목 없음)'}</div>
+          <div class="route-item-meta">${time}${evAddr}</div>
+        </div>
+        <div class="route-item-check">${_selectedRouteIds.includes(ev._id) ? '✓' : ''}</div>
+      </div>`;
+    }).join('');
+
+    /* 클릭 이벤트 */
+    listEl.querySelectorAll('.route-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const id = item.dataset.id;
+        const idx = _selectedRouteIds.indexOf(id);
+        if (idx === -1) _selectedRouteIds.push(id);
+        else _selectedRouteIds.splice(idx, 1);
+        updateRouteFooter();
+        item.classList.toggle('selected', _selectedRouteIds.includes(id));
+        item.querySelector('.route-item-check').textContent = _selectedRouteIds.includes(id) ? '✓' : '';
+      });
+    });
+
+    panel.classList.add('visible');
+    updateRouteFooter();
+  }
+
+  function updateRouteFooter() {
+    const n = _selectedRouteIds.length;
+    countEl.textContent = n > 0 ? `${n}개 선택됨` : '일정을 선택하면 동선을 구성합니다';
+    openBtn.disabled = n === 0;
+  }
+
+  /* 단일 길찾기 버튼 */
+  navBtn.addEventListener('click', () => {
+    const addr = locTA.value.trim();
+    if (!addr) return;
+    openKakaoRoute([addr]);
+  });
+
+  /* 동선 열기 버튼 */
+  openBtn.addEventListener('click', () => {
+    const myAddr = locTA.value.trim();
+    /* 선택된 경유지 주소 수집 */
+    const wayAddrs = _selectedRouteIds.map(id => {
+      const el = listEl.querySelector(`[data-id="${id}"]`);
+      return el ? el.dataset.addr : '';
+    }).filter(Boolean);
+    /* 현재 일정 주소를 출발지로, 선택된 경유지를 포함한 동선 */
+    const stops = [myAddr, ...wayAddrs];
+    openKakaoRoute(stops);
+  });
+
+  /* 주소 변경 시 버튼/패널 업데이트 */
+  locTA.addEventListener('input', () => {
+    updateNavBtn();
+    _selectedRouteIds = [];
+    clearTimeout(locTA._routeTimer);
+    locTA._routeTimer = setTimeout(loadRouteSameDay, 600);
+  });
+
+  /* 주소 검색으로 선택됐을 때도 트리거 (onAddrSelected 이후 input 이벤트 발생) */
+  locTA.addEventListener('change', () => { updateNavBtn(); loadRouteSameDay(); });
+
+  /* 모달 열릴 때마다 초기화 */
+  window._resetKakaoRoutePanel = () => {
+    _selectedRouteIds = [];
+    panel.classList.remove('visible');
+    navBtn.classList.remove('visible');
+    listEl.innerHTML = '';
+    updateRouteFooter();
+  };
+  /* 모달 열 때 주소 있으면 버튼/패널 복원 */
+  window._refreshKakaoRoutePanel = () => {
+    updateNavBtn();
+    if (locTA.value.trim()) loadRouteSameDay();
+  };
+}
+
 function init(){
-  applyThemeBtn(); initAutoResize(); initTitleResize(); initAddrSearch();
+  applyThemeBtn(); initAutoResize(); initTitleResize(); initAddrSearch(); initKakaoRoute();
   currentYear=today.getFullYear(); currentMonth=today.getMonth();
   /* 앱 시작 시 담당자 목록 미리 로드 + 실시간 동기화 */
   loadAssigneePool(true);
