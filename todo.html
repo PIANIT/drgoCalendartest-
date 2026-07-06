@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>할일 - 사내 캘린더</title>
+<style>
+  :root{
+    --bg:#1e1f23; --panel:#26282e; --card:#2d2f36; --card-hover:#34373f;
+    --border:#3a3d45; --text:#e4e6eb; --muted:#9aa0aa; --accent:#4c8bf5;
+    --accent-dim:#2f4a73; --danger:#e15b5b;
+    --prio-high:#e15b5b; --prio-mid:#e0992f; --prio-low:#48b884;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Pretendard','Apple SD Gothic Neo',-apple-system,sans-serif;
+    background:var(--bg);color:var(--text);font-size:14px;}
+  header{padding:14px 20px;border-bottom:1px solid var(--border);
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:var(--panel);}
+  header h1{font-size:18px;margin:0;display:flex;align-items:center;gap:8px;}
+  .toggles{display:flex;gap:8px;flex-wrap:wrap;}
+  .emp-toggle{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;
+    border:1px solid var(--border);background:var(--card);color:var(--text);cursor:pointer;
+    font-size:13px;transition:.15s;user-select:none;}
+  .emp-toggle .dot{width:10px;height:10px;border-radius:50%;}
+  .emp-toggle.off{opacity:.4;background:transparent;}
+  .emp-toggle.off .label{text-decoration:line-through;}
+  .legend{display:flex;gap:12px;margin-left:auto;align-items:center;font-size:12px;color:var(--muted);}
+  .legend .lg{display:flex;align-items:center;gap:5px;}
+  .legend .swatch{width:12px;height:12px;border-radius:3px;border:2px solid;}
+  .board{display:flex;gap:14px;padding:18px;overflow-x:auto;align-items:flex-start;
+    height:calc(100vh - 64px);}
+  .column{background:var(--panel);border-radius:10px;min-width:280px;max-width:280px;
+    display:flex;flex-direction:column;max-height:100%;border:1px solid var(--border);}
+  .column.unassigned{border:1px solid var(--accent-dim);}
+  .col-head{padding:12px 14px;display:flex;align-items:center;gap:8px;
+    border-bottom:1px solid var(--border);font-weight:600;}
+  .col-head .avatar{width:26px;height:26px;border-radius:50%;display:flex;
+    align-items:center;justify-content:center;font-size:12px;color:#fff;flex-shrink:0;}
+  .col-head .role{color:var(--muted);font-weight:400;font-size:12px;}
+  .col-head .count{margin-left:auto;color:var(--muted);font-weight:400;font-size:12px;}
+  .col-head .add-btn{width:24px;height:24px;border-radius:6px;border:1px solid var(--border);
+    background:var(--card);color:var(--text);cursor:pointer;font-size:16px;line-height:1;
+    display:flex;align-items:center;justify-content:center;transition:.12s;flex-shrink:0;}
+  .col-head .add-btn:hover{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .col-body{padding:10px;overflow-y:auto;flex:1;min-height:60px;}
+  .col-body.drag-over{background:rgba(76,139,245,.08);outline:2px dashed var(--accent);
+    outline-offset:-4px;border-radius:6px;}
+  .task{background:var(--card);border:1px solid var(--border);border-radius:8px;
+    padding:10px 12px;margin-bottom:8px;cursor:pointer;transition:.12s;position:relative;
+    border-left-width:4px;}
+  .task:hover{background:var(--card-hover);}
+  .task.dragging{opacity:.5;}
+  .task.prio-high{border-color:var(--prio-high);}
+  .task.prio-mid{border-color:var(--prio-mid);}
+  .task.prio-low{border-color:var(--prio-low);}
+  .task.done{opacity:.45;border-left-color:var(--muted);background:#23252b;}
+  .task.done .title{text-decoration:line-through;color:var(--muted);}
+  .task.overdue:not(.done){box-shadow:0 0 0 1px var(--danger), 0 0 10px rgba(225,91,91,.25);}
+  .task .cat{font-size:11px;color:var(--muted);margin-bottom:4px;display:flex;
+    align-items:center;gap:6px;}
+  .task .prio-badge{font-size:10px;padding:1px 6px;border-radius:10px;color:#fff;}
+  .prio-badge.prio-high{background:var(--prio-high);}
+  .prio-badge.prio-mid{background:var(--prio-mid);}
+  .prio-badge.prio-low{background:var(--prio-low);}
+  .task .done-check{margin-left:auto;font-size:11px;color:var(--prio-low);}
+  .task .title{line-height:1.4;}
+  .task .meta{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap;}
+  .task .due{font-size:11px;padding:2px 8px;border-radius:10px;background:#33363d;
+    color:var(--muted);display:inline-flex;align-items:center;gap:4px;}
+  .task .due.soon{background:rgba(224,153,47,.18);color:var(--prio-mid);}
+  .task .due.overdue{background:rgba(225,91,91,.2);color:var(--danger);font-weight:600;}
+  .task .assignees{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap;}
+  .mini-avatar{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;
+    justify-content:center;font-size:10px;color:#fff;}
+  .hidden{display:none !important;}
+  /* modal */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;
+    align-items:center;justify-content:center;z-index:50;}
+  .overlay.show{display:flex;}
+  .modal{background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    width:440px;max-width:92vw;max-height:88vh;overflow-y:auto;padding:22px;}
+  .modal h2{margin:0 0 6px;font-size:18px;}
+  .modal .modal-cat{color:var(--muted);font-size:13px;margin-bottom:18px;}
+  .modal label{display:block;font-size:12px;color:var(--muted);margin:16px 0 8px;
+    text-transform:uppercase;letter-spacing:.5px;}
+  .modal input[type=text],.modal input[type=date]{width:100%;background:var(--card);
+    border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px;
+    font-family:inherit;font-size:14px;color-scheme:dark;}
+  .assignee-picker{display:flex;gap:8px;flex-wrap:wrap;}
+  .pick{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;
+    border:1px solid var(--border);background:var(--card);cursor:pointer;font-size:13px;
+    transition:.12s;}
+  .pick.active{background:var(--accent-dim);border-color:var(--accent);}
+  .pick .dot{width:9px;height:9px;border-radius:50%;}
+  .prio-picker{display:flex;gap:8px;flex-wrap:wrap;}
+  .prio-opt{padding:6px 14px;border-radius:20px;border:1px solid var(--border);
+    background:var(--card);cursor:pointer;font-size:13px;transition:.12s;}
+  .prio-opt[data-p="high"].active{background:var(--prio-high);border-color:var(--prio-high);color:#fff;}
+  .prio-opt[data-p="mid"].active{background:var(--prio-mid);border-color:var(--prio-mid);color:#fff;}
+  .prio-opt[data-p="low"].active{background:var(--prio-low);border-color:var(--prio-low);color:#fff;}
+  .modal textarea{width:100%;background:var(--card);border:1px solid var(--border);
+    border-radius:8px;color:var(--text);padding:10px;font-family:inherit;resize:vertical;
+    min-height:70px;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:24px;align-items:center;}
+  .modal-actions .spacer{margin-right:auto;}
+  .btn{padding:9px 18px;border-radius:8px;border:none;cursor:pointer;font-size:14px;}
+  .btn.primary{background:var(--accent);color:#fff;}
+  .btn.ghost{background:transparent;color:var(--muted);border:1px solid var(--border);}
+  .btn.done{background:var(--prio-low);color:#fff;}
+  .btn.undone{background:transparent;color:var(--prio-low);border:1px solid var(--prio-low);}
+</style>
+</head>
+<body>
+<header>
+  <h1>📋 할일</h1>
+  <div class="toggles" id="toggles"></div>
+  <div class="legend">
+    <span class="lg"><span class="swatch" style="border-color:var(--prio-high)"></span>높음</span>
+    <span class="lg"><span class="swatch" style="border-color:var(--prio-mid)"></span>중간</span>
+    <span class="lg"><span class="swatch" style="border-color:var(--prio-low)"></span>낮음</span>
+  </div>
+</header>
+
+<div class="board" id="board"></div>
+
+<!-- 상세 모달 -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2 id="m-title"></h2>
+    <div class="modal-cat" id="m-cat"></div>
+    <label>우선순위</label>
+    <div class="prio-picker" id="m-prio">
+      <div class="prio-opt" data-p="high">높음</div>
+      <div class="prio-opt" data-p="mid">중간</div>
+      <div class="prio-opt" data-p="low">낮음</div>
+    </div>
+    <label>마감기한</label>
+    <input type="date" id="m-due">
+    <label>담당자 (여러 명 지정 가능)</label>
+    <div class="assignee-picker" id="m-picker"></div>
+    <label>메모</label>
+    <textarea id="m-memo" placeholder="상세 내용을 입력하세요..."></textarea>
+    <div class="modal-actions">
+      <button class="btn done" id="m-done-btn" onclick="toggleDone()">완료</button>
+      <span class="spacer"></span>
+      <button class="btn ghost" onclick="closeModal()">닫기</button>
+      <button class="btn primary" onclick="saveModal()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 추가 모달 -->
+<div class="overlay" id="add-overlay">
+  <div class="modal">
+    <h2>할일 추가</h2>
+    <div class="modal-cat" id="add-target"></div>
+    <label>제목</label>
+    <input type="text" id="a-title" placeholder="할일 제목을 입력하세요...">
+    <label>카테고리</label>
+    <input type="text" id="a-cat" placeholder="예: 개발, 물류, 영상, 마케팅">
+    <label>우선순위</label>
+    <div class="prio-picker" id="a-prio">
+      <div class="prio-opt" data-p="high">높음</div>
+      <div class="prio-opt active" data-p="mid">중간</div>
+      <div class="prio-opt" data-p="low">낮음</div>
+    </div>
+    <label>마감기한</label>
+    <input type="date" id="a-due">
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeAddModal()">닫기</button>
+      <button class="btn primary" onclick="saveAddModal()">추가</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- 데이터 ---------- */
+const employees = [
+  {id:'e1', name:'유진', role:'개발',   color:'#5b8def'},
+  {id:'e2', name:'광래', role:'물류',   color:'#e0a93b'},
+  {id:'e3', name:'우중', role:'영상',   color:'#48b884'},
+  {id:'e4', name:'유신', role:'마케팅', color:'#9b6fe0'},
+];
+
+// 데모용 마감일: 오늘 기준 상대적으로 계산
+function dateOffset(days){
+  const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+days);
+  return d.toISOString().slice(0,10);
+}
+
+let tasks = [
+  {id:'t1',  title:'서비스 의뢰 페이지 개편',    cat:'개발',   assignees:['e1'], prio:'high', done:false, due:dateOffset(-2)},
+  {id:'t2',  title:'메인 페이지 반응형 수정',     cat:'개발',   assignees:['e1'], prio:'mid',  done:false, due:dateOffset(5)},
+  {id:'t3',  title:'시그저장소 SSL 인증서 갱신',  cat:'개발',   assignees:['e1'], prio:'high', done:false, due:dateOffset(1)},
+  {id:'t4',  title:'채널톡 연동 테스트',          cat:'개발',   assignees:[],     prio:'low',  done:false, due:''},
+  {id:'t5',  title:'분기 재고 실사 정리',         cat:'물류',   assignees:['e2'], prio:'mid',  done:false, due:dateOffset(0)},
+  {id:'t6',  title:'택배사 단가 재계약 검토',     cat:'물류',   assignees:['e2'], prio:'high', done:false, due:dateOffset(-5)},
+  {id:'t7',  title:'창고 입출고 동선 개선',       cat:'물류',   assignees:[],     prio:'low',  done:false, due:dateOffset(14)},
+  {id:'t8',  title:'금병영 체육대회 영상 편집',   cat:'영상',   assignees:['e3'], prio:'mid',  done:false, due:dateOffset(3)},
+  {id:'t9',  title:'외부 중계 장비 점검',         cat:'영상',   assignees:['e3'], prio:'high', done:false, due:dateOffset(-1)},
+  {id:'t10', title:'제품 촬영용 카메라 거치대 제작',cat:'영상', assignees:[],     prio:'low',  done:false, due:''},
+  {id:'t11', title:'야외 방송 키워드 광고 수정',  cat:'마케팅', assignees:['e4'], prio:'high', done:false, due:dateOffset(2)},
+  {id:'t12', title:'구글 애즈 캠페인 정산',       cat:'마케팅', assignees:['e4'], prio:'mid',  done:false, due:dateOffset(7)},
+  {id:'t13', title:'YY 리셀러 시장 조사',         cat:'마케팅', assignees:[],     prio:'low',  done:false, due:''},
+];
+
+let taskSeq = 100;
+const empById = id => employees.find(e=>e.id===id);
+const PRIO_LABEL = {high:'높음', mid:'중간', low:'낮음'};
+const PRIO_RANK  = {high:0, mid:1, low:2};
+
+// 오늘 기준 마감까지 남은 일수 (음수면 지남). 마감 없으면 null
+function daysLeft(due){
+  if(!due) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const d = new Date(due+'T00:00:00');
+  return Math.round((d - today)/86400000);
+}
+// 카드/모달에 쓸 마감 표시 정보
+function dueInfo(due){
+  const dl = daysLeft(due);
+  if(dl===null) return null;
+  if(dl < 0)  return {cls:'overdue', text:`⚠️ ${-dl}일 지남`, overdue:true};
+  if(dl === 0)return {cls:'overdue', text:'⚠️ 오늘 마감', overdue:true};
+  if(dl <= 2) return {cls:'soon', text:`D-${dl}`, overdue:false};
+  return {cls:'', text:`D-${dl}`, overdue:false};
+}
+
+/* ---------- 렌더링 ---------- */
+const board = document.getElementById('board');
+const togglesEl = document.getElementById('toggles');
+let hiddenEmps = new Set();
+
+function render(){
+  togglesEl.innerHTML = '';
+  employees.forEach(e=>{
+    const b = document.createElement('div');
+    b.className = 'emp-toggle' + (hiddenEmps.has(e.id)?' off':'');
+    b.innerHTML = `<span class="dot" style="background:${e.color}"></span><span class="label">${e.name}</span>`;
+    b.onclick = ()=>{ hiddenEmps.has(e.id)?hiddenEmps.delete(e.id):hiddenEmps.add(e.id); render(); };
+    togglesEl.appendChild(b);
+  });
+
+  board.innerHTML = '';
+  board.appendChild(buildColumn(null));
+  employees.forEach(e=>{ if(!hiddenEmps.has(e.id)) board.appendChild(buildColumn(e)); });
+}
+
+function buildColumn(emp){
+  const col = document.createElement('div');
+  col.className = 'column' + (emp?'':' unassigned');
+  let colTasks = emp
+    ? tasks.filter(t=>t.assignees.includes(emp.id))
+    : tasks.filter(t=>t.assignees.length===0);
+  // 완료는 아래로 → 마감 임박(지남 포함) 우선 → 우선순위
+  colTasks = colTasks.slice().sort((a,b)=>{
+    if(a.done!==b.done) return a.done?1:-1;
+    const da=daysLeft(a.due), db=daysLeft(b.due);
+    const va = da===null? Infinity : da;
+    const vb = db===null? Infinity : db;
+    if(va!==vb) return va-vb;
+    return PRIO_RANK[a.prio]-PRIO_RANK[b.prio];
+  });
+
+  const head = document.createElement('div');
+  head.className = 'col-head';
+  if(emp){
+    head.innerHTML = `<span class="avatar" style="background:${emp.color}">${emp.name[0]}</span>
+      <span>${emp.name}</span><span class="role">${emp.role}</span><span class="count">${colTasks.length}</span>`;
+  } else {
+    head.innerHTML = `<span>📥 미배정</span><span class="count">${colTasks.length}</span>`;
+  }
+  const addBtn = document.createElement('button');
+  addBtn.className = 'add-btn';
+  addBtn.textContent = '+';
+  addBtn.title = '할일 추가';
+  addBtn.onclick = (ev)=>{ ev.stopPropagation(); openAddModal(emp?emp.id:null); };
+  head.appendChild(addBtn);
+  col.appendChild(head);
+
+  const body = document.createElement('div');
+  body.className = 'col-body';
+  body.dataset.emp = emp?emp.id:'';
+  colTasks.forEach(t=>body.appendChild(buildCard(t)));
+
+  body.addEventListener('dragover', ev=>{ev.preventDefault(); body.classList.add('drag-over');});
+  body.addEventListener('dragleave', ()=>body.classList.remove('drag-over'));
+  body.addEventListener('drop', ev=>{
+    ev.preventDefault(); body.classList.remove('drag-over');
+    const tid = ev.dataTransfer.getData('text/plain');
+    const task = tasks.find(t=>t.id===tid);
+    if(!task) return;
+    if(emp){ if(!task.assignees.includes(emp.id)) task.assignees=[emp.id]; }
+    else { task.assignees = []; }
+    render();
+  });
+
+  col.appendChild(body);
+  return col;
+}
+
+function buildCard(t){
+  const card = document.createElement('div');
+  const di = dueInfo(t.due);
+  const overdue = di && di.overdue && !t.done;
+  card.className = 'task prio-' + t.prio + (t.done?' done':'') + (overdue?' overdue':'');
+  card.draggable = true;
+  const avatars = t.assignees.map(id=>{
+    const e=empById(id);
+    return `<span class="mini-avatar" style="background:${e.color}" title="${e.name}">${e.name[0]}</span>`;
+  }).join('');
+  const dueHtml = di
+    ? `<span class="due ${t.done?'':di.cls}">${di.text}</span>`
+    : '';
+  const metaHtml = (dueHtml || t.assignees.length)
+    ? `<div class="meta">${dueHtml}${t.assignees.length?`<div class="assignees">${avatars}</div>`:''}</div>`
+    : '';
+  card.innerHTML = `<div class="cat"><span>${t.cat}</span>
+      <span class="prio-badge prio-${t.prio}">${PRIO_LABEL[t.prio]}</span>
+      ${t.done?'<span class="done-check">✓ 완료</span>':''}</div>
+    <div class="title">${t.title}</div>
+    ${metaHtml}`;
+
+  card.addEventListener('dragstart', ev=>{
+    ev.dataTransfer.setData('text/plain', t.id); card.classList.add('dragging');
+  });
+  card.addEventListener('dragend', ()=>card.classList.remove('dragging'));
+  card.addEventListener('click', ()=>openModal(t.id));
+  return card;
+}
+
+/* ---------- 상세 모달 ---------- */
+let currentTaskId = null;
+const overlay = document.getElementById('overlay');
+
+function openModal(id){
+  const t = tasks.find(x=>x.id===id);
+  currentTaskId = id;
+  document.getElementById('m-title').textContent = t.title;
+  document.getElementById('m-cat').textContent = '카테고리: ' + t.cat;
+  document.getElementById('m-memo').value = t.memo || '';
+  document.getElementById('m-due').value = t.due || '';
+  const db = document.getElementById('m-done-btn');
+  if(t.done){ db.textContent='완료 취소'; db.className='btn undone'; }
+  else { db.textContent='완료'; db.className='btn done'; }
+  document.querySelectorAll('#m-prio .prio-opt').forEach(p=>{
+    p.classList.toggle('active', p.dataset.p===t.prio);
+    p.onclick = ()=>{
+      document.querySelectorAll('#m-prio .prio-opt').forEach(x=>x.classList.remove('active'));
+      p.classList.add('active');
+    };
+  });
+  const picker = document.getElementById('m-picker');
+  picker.innerHTML = '';
+  employees.forEach(e=>{
+    const p = document.createElement('div');
+    p.className = 'pick' + (t.assignees.includes(e.id)?' active':'');
+    p.innerHTML = `<span class="dot" style="background:${e.color}"></span>${e.name}`;
+    p.onclick = ()=>{ p.classList.toggle('active'); };
+    p.dataset.emp = e.id;
+    picker.appendChild(p);
+  });
+  overlay.classList.add('show');
+}
+
+function toggleDone(){
+  const t = tasks.find(x=>x.id===currentTaskId);
+  t.done = !t.done;
+  const db = document.getElementById('m-done-btn');
+  if(t.done){ db.textContent='완료 취소'; db.className='btn undone'; }
+  else { db.textContent='완료'; db.className='btn done'; }
+  render();
+}
+
+function saveModal(){
+  const t = tasks.find(x=>x.id===currentTaskId);
+  t.assignees = [...document.querySelectorAll('#m-picker .pick.active')].map(p=>p.dataset.emp);
+  const sel = document.querySelector('#m-prio .prio-opt.active');
+  if(sel) t.prio = sel.dataset.p;
+  t.due = document.getElementById('m-due').value;
+  t.memo = document.getElementById('m-memo').value;
+  closeModal(); render();
+}
+function closeModal(){ overlay.classList.remove('show'); currentTaskId=null; }
+overlay.addEventListener('click', e=>{ if(e.target===overlay) closeModal(); });
+
+/* ---------- 추가 모달 ---------- */
+let addTargetEmp = null;
+const addOverlay = document.getElementById('add-overlay');
+
+function openAddModal(empId){
+  addTargetEmp = empId;
+  const emp = empId ? empById(empId) : null;
+  document.getElementById('add-target').textContent =
+    emp ? `대상: ${emp.name} (${emp.role})` : '대상: 미배정';
+  document.getElementById('a-title').value = '';
+  document.getElementById('a-cat').value = emp ? emp.role : '';
+  document.getElementById('a-due').value = '';
+  document.querySelectorAll('#a-prio .prio-opt').forEach(p=>{
+    p.classList.toggle('active', p.dataset.p==='mid');
+    p.onclick = ()=>{
+      document.querySelectorAll('#a-prio .prio-opt').forEach(x=>x.classList.remove('active'));
+      p.classList.add('active');
+    };
+  });
+  addOverlay.classList.add('show');
+  setTimeout(()=>document.getElementById('a-title').focus(), 50);
+}
+
+function saveAddModal(){
+  const title = document.getElementById('a-title').value.trim();
+  if(!title){ document.getElementById('a-title').focus(); return; }
+  const cat = document.getElementById('a-cat').value.trim() || '기타';
+  const sel = document.querySelector('#a-prio .prio-opt.active');
+  const prio = sel ? sel.dataset.p : 'mid';
+  const due = document.getElementById('a-due').value;
+  tasks.push({
+    id:'t'+(taskSeq++),
+    title, cat, prio, done:false, due,
+    assignees: addTargetEmp ? [addTargetEmp] : []
+  });
+  closeAddModal(); render();
+}
+function closeAddModal(){ addOverlay.classList.remove('show'); addTargetEmp=null; }
+addOverlay.addEventListener('click', e=>{ if(e.target===addOverlay) closeAddModal(); });
+document.getElementById('a-title').addEventListener('keydown', e=>{
+  if(e.key==='Enter') saveAddModal();
+});
+
+render();
+</script>
+</body>
+</html>
